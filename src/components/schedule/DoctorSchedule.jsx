@@ -32,7 +32,6 @@ export default function DoctorSchedule() {
       const { data, error } = await supabase
         .from('doctors')
         .select('*')
-        .eq('is_active', true)
         .order('name')
 
       if (error) throw error
