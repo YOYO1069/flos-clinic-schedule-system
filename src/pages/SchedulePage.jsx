@@ -11,7 +11,7 @@ import ScheduleCalendar from '@/components/schedule/ScheduleCalendar'
 
 export default function SchedulePage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('doctor')
+  const [activeTab, setActiveTab] = useState('calendar')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900">
@@ -106,19 +106,23 @@ export default function SchedulePage() {
           <CardContent className="p-4 md:p-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4 bg-slate-800/50">
-                <TabsTrigger value="doctor" className="data-[state=active]:bg-blue-600">
-                  醫師排班
+                <TabsTrigger value="calendar" className="data-[state=active]:bg-blue-600">
+                  📅 日曆排班
                 </TabsTrigger>
-                <TabsTrigger value="staff" className="data-[state=active]:bg-green-600">
-                  員工排班
+                <TabsTrigger value="doctor" className="data-[state=active]:bg-green-600">
+                  👨‍⚕️ 醫師排班
                 </TabsTrigger>
-                <TabsTrigger value="management" className="data-[state=active]:bg-purple-600">
-                  人員管理
+                <TabsTrigger value="staff" className="data-[state=active]:bg-purple-600">
+                  👤 員工排班
                 </TabsTrigger>
-                <TabsTrigger value="calendar" className="data-[state=active]:bg-orange-600">
-                  月曆輸出
+                <TabsTrigger value="management" className="data-[state=active]:bg-orange-600">
+                  📊 人員管理
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="calendar" className="mt-6">
+                <ScheduleCalendar />
+              </TabsContent>
 
               <TabsContent value="doctor" className="mt-6">
                 <DoctorSchedule />
@@ -130,10 +134,6 @@ export default function SchedulePage() {
 
               <TabsContent value="management" className="mt-6">
                 <StaffManagement />
-              </TabsContent>
-
-              <TabsContent value="calendar" className="mt-6">
-                <ScheduleCalendar />
               </TabsContent>
             </Tabs>
           </CardContent>

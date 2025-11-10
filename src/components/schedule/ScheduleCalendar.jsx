@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Download, Printer, ChevronLeft, ChevronRight 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
+import ScheduleDialog from './ScheduleDialog'
 
 export default function ScheduleCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -11,6 +12,9 @@ export default function ScheduleCalendar() {
   const [doctors, setDoctors] = useState([])
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [dialogType, setDialogType] = useState('doctor')
 
   useEffect(() => {
     loadData()
@@ -146,6 +150,18 @@ export default function ScheduleCalendar() {
     window.print()
   }
 
+  const handleDateClick = (day, type = 'doctor') => {
+    if (!day) return
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+    setSelectedDate(date)
+    setDialogType(type)
+    setDialogOpen(true)
+  }
+
+  const handleDialogSuccess = () => {
+    loadData()
+  }
+
   const days = getDaysInMonth()
   const monthName = currentDate.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' })
 
@@ -161,6 +177,30 @@ export default function ScheduleCalendar() {
     <div className="space-y-6">
       {/* 控制列 */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* 排班類型切換 */}
+        <div className="flex gap-2 bg-slate-700/50 p-1 rounded-lg">
+          <button
+            onClick={() => setDialogType('doctor')}
+            className={`px-4 py-2 rounded-md font-medium transition-all ${
+              dialogType === 'doctor'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:text-white'
+            }`}
+          >
+            👨‍⚕️ 醫師排班
+          </button>
+          <button
+            onClick={() => setDialogType('staff')}
+            className={`px-4 py-2 rounded-md font-medium transition-all ${
+              dialogType === 'staff'
+                ? 'bg-green-600 text-white'
+                : 'text-gray-300 hover:text-white'
+            }`}
+          >
+            👤 員工排班
+          </button>
+        </div>
+
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -231,12 +271,13 @@ export default function ScheduleCalendar() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[100px] p-2 rounded border ${
+                  onClick={() => handleDateClick(day, dialogType)}
+                  className={`min-h-[100px] p-2 rounded border cursor-pointer transition-all ${
                     day 
                       ? isToday
-                        ? 'bg-blue-900/50 border-blue-500'
-                        : 'bg-slate-700/30 border-slate-600/30'
-                      : 'bg-transparent border-transparent'
+                        ? 'bg-blue-900/50 border-blue-500 hover:bg-blue-900/70'
+                        : 'bg-slate-700/30 border-slate-600/30 hover:bg-slate-700/50'
+                      : 'bg-transparent border-transparent pointer-events-none'
                   }`}
                 >
                   {day && (
@@ -290,6 +331,15 @@ export default function ScheduleCalendar() {
           <span className="text-white">今天</span>
         </div>
       </div>
+
+      {/* 排班對話框 */}
+      <ScheduleDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        selectedDate={selectedDate}
+        type={dialogType}
+        onSuccess={handleDialogSuccess}
+      />
     </div>
   )
 }
