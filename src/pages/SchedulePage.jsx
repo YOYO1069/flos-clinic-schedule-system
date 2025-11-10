@@ -23,7 +23,7 @@ export default function SchedulePage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => navigate('/')}
+                onClick={() => window.location.href = 'https://classy-biscotti-42a418.netlify.app/'}
                 className="text-white hover:bg-white/10 w-8 h-8 md:w-10 md:h-10"
               >
                 <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
