@@ -69,7 +69,7 @@ export default function SchedulePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-200">員工總數</p>
-                  <p className="text-2xl font-bold text-white">10</p>
+                  <p className="text-2xl font-bold text-white">14</p>
                 </div>
                 <UserCog className="w-8 h-8 text-green-400" />
               </div>
