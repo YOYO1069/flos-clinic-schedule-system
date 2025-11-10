@@ -393,7 +393,60 @@ export default function DoctorSchedule() {
                 </div>
               </div>
 
-
+              {/* 快速班次按鈕 */}
+              <div>
+                <label className="block text-sm text-blue-200 mb-2">快速班次</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '12:00', end_time: '20:30'})}
+                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
+                  >
+                    日班
+                    <div className="text-xs opacity-75">12:00-20:30</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '17:00', end_time: '21:00'})}
+                    className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded transition-colors"
+                  >
+                    夜班
+                    <div className="text-xs opacity-75">17:00-21:00</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '10:30', end_time: '19:00'})}
+                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors"
+                  >
+                    週六班
+                    <div className="text-xs opacity-75">10:30-19:00</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '11:00', end_time: '18:30'})}
+                    className="px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded transition-colors"
+                  >
+                    短班
+                    <div className="text-xs opacity-75">11:00-18:30</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '17:30', end_time: '21:00'})}
+                    className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded transition-colors"
+                  >
+                    晚夜班
+                    <div className="text-xs opacity-75">17:30-21:00</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, start_time: '13:00', end_time: '17:30'})}
+                    className="px-3 py-2 bg-teal-600 hover:bg-teal-700 text-white text-sm rounded transition-colors"
+                  >
+                    午班
+                    <div className="text-xs opacity-75">13:00-17:30</div>
+                  </button>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-sm text-blue-200 mb-2">備註</label>
