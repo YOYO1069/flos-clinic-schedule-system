@@ -35,6 +35,9 @@ const STATUS_CONFIG = {
 }
 
 export default function LeavePage() {
+  const handleBackToAdmin = () => {
+    window.location.href = 'https://classy-biscotti-42a418.netlify.app/'
+  }
   const [loading, setLoading] = useState(false)
   const [leaveRequests, setLeaveRequests] = useState([])
   const [formData, setFormData] = useState({
@@ -113,6 +116,20 @@ export default function LeavePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      {/* 返回後台按鈕 */}
+      <div className="max-w-6xl mx-auto mb-4">
+        <Button
+          variant="outline"
+          onClick={handleBackToAdmin}
+          className="flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m12 19-7-7 7-7"/>
+            <path d="M19 12H5"/>
+          </svg>
+          返回後台
+        </Button>
+      </div>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* 標題 */}
         <div>
