@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { supabase, doctors } from "@/lib/supabase";
 import { APP_TITLE } from "@/const";
+import { useLocation } from 'wouter';
 
 interface Schedule {
   id?: number;
@@ -12,6 +13,7 @@ interface Schedule {
 }
 
 export default function Home() {
+  const [, setLocation] = useLocation();
   const [currentYear, setCurrentYear] = useState(2025);
   const [currentMonth, setCurrentMonth] = useState(10);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -155,11 +157,19 @@ export default function Home() {
           >
             👥 員工排班
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            👤 人員管理
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setLocation('/attendance')}
+          >
+            ⏰ 員工打卡
           </Button>
-          <Button variant="outline" className="flex items-center gap-2">
-            📊 統計報表
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setLocation('/leave')}
+          >
+            📝 請假管理
           </Button>
         </div>
 

@@ -45,3 +45,26 @@ export const businessHours = {
   saturday: { start: '10:30', end: '19:00' },
   sunday: { closed: true }
 }
+
+// 資料庫表格結構
+export const tables = {
+  schedules: 'flos_schedules',
+  employees: 'employees',
+  attendanceRecords: 'attendance_records',
+  leaveRequests: 'leave_requests',
+  overtimeRequests: 'overtime_requests',
+  salaryRecords: 'salary_records',
+  attendanceSettings: 'attendance_settings'
+}
+
+// 即時訂閱功能
+export const subscribeToChanges = (table: string, callback: (payload: any) => void) => {
+  const subscription = supabase
+    .channel(`public:${table}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: table }, callback)
+    .subscribe()
+
+  return () => {
+    subscription.unsubscribe()
+  }
+}
