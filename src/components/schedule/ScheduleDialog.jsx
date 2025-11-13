@@ -91,7 +91,7 @@ export default function ScheduleDialog({
         date: dateStr,
         start_time: selectedShift.startTime,
         end_time: selectedShift.endTime,
-        note: note || null
+        notes: note || null
       }))
 
       const tableName = type === 'doctor' ? 'doctor_schedules' : 'staff_schedules'
