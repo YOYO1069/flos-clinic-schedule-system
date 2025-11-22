@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm run build:client"
+  command = "npm install -g pnpm && pnpm install && pnpm run build:client"
   publish = "client/dist"
 
 [[redirects]]
@@ -9,3 +9,4 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
