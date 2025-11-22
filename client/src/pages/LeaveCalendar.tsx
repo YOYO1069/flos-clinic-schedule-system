@@ -454,6 +454,12 @@ export default function LeaveCalendar() {
                 </Button>
               )}
               
+              {['admin', 'senior_supervisor', 'supervisor'].includes(currentUser?.role) && (
+                <Button variant="outline" size="sm" onClick={() => setLocation('/approval')}>
+                  審核請假
+                </Button>
+              )}
+              
               <Button 
                 variant="destructive" 
                 size="sm" 

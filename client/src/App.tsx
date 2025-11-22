@@ -10,6 +10,7 @@ import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
+import LeaveApproval from "./pages/LeaveApproval";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/approval" component={LeaveApproval} />
       <Route path={"/"} component={LeaveCalendar} />
       <Route path="/schedule" component={Home} />
       <Route path="/attendance" component={Attendance} />
