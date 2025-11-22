@@ -7,12 +7,14 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
+import LeaveCalendar from "./pages/LeaveCalendar";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"} component={LeaveCalendar} />
+      <Route path="/schedule" component={Home} />
       <Route path="/attendance" component={Attendance} />
       <Route path="/leave" component={LeaveManagement} />
       <Route path={"/404"} component={NotFound} />

@@ -160,6 +160,13 @@ export default function Home() {
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
+            onClick={() => setLocation('/')}
+          >
+            📅 休假月曆
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
             onClick={() => setLocation('/attendance')}
           >
             ⏰ 員工打卡
