@@ -8,11 +8,15 @@ import Home from "./pages/Home";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
+import Login from "./pages/Login";
+import AdminPanel from "./pages/AdminPanel";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      <Route path="/login" component={Login} />
+      <Route path="/admin" component={AdminPanel} />
       <Route path={"/"} component={LeaveCalendar} />
       <Route path="/schedule" component={Home} />
       <Route path="/attendance" component={Attendance} />

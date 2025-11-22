@@ -59,6 +59,17 @@ const MONTH_NAMES = [
 
 export default function LeaveCalendar() {
   const [, setLocation] = useLocation();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // 檢查登入狀態
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    setCurrentUser(JSON.parse(userStr));
+  }, []);
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -435,6 +446,23 @@ export default function LeaveCalendar() {
               <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
                 <FileText className="w-4 h-4 mr-2" />
                 請假管理
+              </Button>
+              
+              {currentUser?.role === 'admin' && (
+                <Button variant="outline" size="sm" onClick={() => setLocation('/admin')}>
+                  管理者主控台
+                </Button>
+              )}
+              
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => {
+                  localStorage.removeItem('user');
+                  setLocation('/login');
+                }}
+              >
+                登出
               </Button>
               
               {/* 次要功能選單 */}
