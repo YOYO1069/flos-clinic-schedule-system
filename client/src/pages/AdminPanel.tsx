@@ -116,6 +116,10 @@ export default function AdminPanel() {
                 <Calendar className="w-4 h-4 mr-2" />
                 休假月曆
               </Button>
+              <Button variant="outline" onClick={() => setLocation('/calendar')}>
+                <Calendar className="w-4 h-4 mr-2" />
+                月曆排班
+              </Button>
               <Button variant="outline" onClick={() => setLocation('/schedule')}>
                 <Users className="w-4 h-4 mr-2" />
                 排班系統

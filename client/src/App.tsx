@@ -11,6 +11,7 @@ import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
+import CalendarSchedule from "./pages/CalendarSchedule";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/approval" component={LeaveApproval} />
       <Route path={"/"} component={LeaveCalendar} />
       <Route path="/schedule" component={Home} />
+      <Route path="/calendar" component={CalendarSchedule} />
       <Route path="/attendance" component={Attendance} />
       <Route path="/leave" component={LeaveManagement} />
       <Route path={"/404"} component={NotFound} />
