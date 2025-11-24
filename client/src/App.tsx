@@ -11,11 +11,13 @@ import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
+import TestEnv from "./pages/TestEnv";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      <Route path="/test-env" component={TestEnv} />
       <Route path="/login" component={Login} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/approval" component={LeaveApproval} />
