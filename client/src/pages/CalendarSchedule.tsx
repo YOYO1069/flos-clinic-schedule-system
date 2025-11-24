@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X, Upload, Download, Home } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 // 班別類型
 type ShiftType = "morning" | "afternoon" | "evening" | "off";
@@ -67,6 +70,7 @@ const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
 };
 
 export default function CalendarSchedule() {
+  const [, setLocation] = useLocation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -78,6 +82,10 @@ export default function CalendarSchedule() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedShift, setSelectedShift] = useState<ShiftType>("morning");
+
+  // 批量補做對話框
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
+  const [batchData, setBatchData] = useState("");
 
   // 獲取當月第一天和最後一天
   const getMonthBounds = (date: Date) => {
@@ -119,56 +127,71 @@ export default function CalendarSchedule() {
 
   // 載入員工資料
   const loadEmployees = async () => {
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .order("name");
-    
-    if (error) {
-      console.error("載入員工失敗:", error);
-      toast.error("載入員工資料失敗");
-      return;
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .order("name");
+      
+      if (error) {
+        console.error("載入員工失敗:", error);
+        toast.error("載入員工資料失敗");
+        return;
+      }
+      
+      setEmployees(data || []);
+    } catch (err) {
+      console.error("載入員工錯誤:", err);
+      toast.error("載入員工時發生錯誤");
     }
-    
-    setEmployees(data || []);
   };
 
   // 載入排班資料
   const loadSchedules = async () => {
-    const { firstDay, lastDay } = getMonthBounds(currentDate);
-    
-    const { data, error } = await supabase
-      .from("staff_schedules")
-      .select("*")
-      .gte("date", firstDay.toISOString().split("T")[0])
-      .lte("date", lastDay.toISOString().split("T")[0]);
-    
-    if (error) {
-      console.error("載入排班失敗:", error);
-      toast.error("載入排班資料失敗");
-      return;
+    try {
+      const { firstDay, lastDay } = getMonthBounds(currentDate);
+      
+      const { data, error } = await supabase
+        .from("staff_schedules")
+        .select("*")
+        .gte("date", firstDay.toISOString().split("T")[0])
+        .lte("date", lastDay.toISOString().split("T")[0]);
+      
+      if (error) {
+        console.error("載入排班失敗:", error);
+        toast.error("載入排班資料失敗");
+        return;
+      }
+      
+      setSchedules(data || []);
+    } catch (err) {
+      console.error("載入排班錯誤:", err);
+      toast.error("載入排班時發生錯誤");
     }
-    
-    setSchedules(data || []);
   };
 
   // 載入請假資料
   const loadLeaveRequests = async () => {
-    const { firstDay, lastDay } = getMonthBounds(currentDate);
-    
-    const { data, error } = await supabase
-      .from("leave_requests")
-      .select("*")
-      .eq("status", "approved")
-      .gte("start_date", firstDay.toISOString().split("T")[0])
-      .lte("end_date", lastDay.toISOString().split("T")[0]);
-    
-    if (error) {
-      console.error("載入請假資料失敗:", error);
-      return;
+    try {
+      const { firstDay, lastDay } = getMonthBounds(currentDate);
+      
+      const { data, error } = await supabase
+        .from("leave_requests")
+        .select("*")
+        .eq("status", "approved")
+        .gte("start_date", firstDay.toISOString().split("T")[0])
+        .lte("end_date", lastDay.toISOString().split("T")[0]);
+      
+      if (error) {
+        console.error("載入請假資料失敗:", error);
+        // 不顯示錯誤訊息,因為表可能還沒建立
+        return;
+      }
+      
+      setLeaveRequests(data || []);
+    } catch (err) {
+      console.error("載入請假錯誤:", err);
     }
-    
-    setLeaveRequests(data || []);
   };
 
   // 初始化載入
@@ -249,43 +272,130 @@ export default function CalendarSchedule() {
     const dateStr = selectedDate.toISOString().split("T")[0];
     const times = shiftTimes[selectedShift];
 
-    const { error } = await supabase
-      .from("staff_schedules")
-      .insert({
-        date: dateStr,
-        employee_id: employee.employee_id,
-        employee_name: employee.name,
-        shift_type: selectedShift,
-        start_time: times.start,
-        end_time: times.end,
-      });
+    try {
+      const { error } = await supabase
+        .from("staff_schedules")
+        .insert({
+          date: dateStr,
+          employee_id: employee.employee_id,
+          employee_name: employee.name,
+          shift_type: selectedShift,
+          start_time: times.start,
+          end_time: times.end,
+        });
 
-    if (error) {
-      console.error("新增排班失敗:", error);
-      toast.error("新增排班失敗");
-      return;
+      if (error) {
+        console.error("新增排班失敗:", error);
+        toast.error("新增排班失敗");
+        return;
+      }
+
+      toast.success("排班已新增");
+      setShowEditDialog(false);
+      loadSchedules();
+    } catch (err) {
+      console.error("新增排班錯誤:", err);
+      toast.error("新增排班時發生錯誤");
     }
-
-    toast.success("排班已新增");
-    setShowEditDialog(false);
-    loadSchedules();
   };
 
   // 刪除排班
   const handleDeleteSchedule = async (scheduleId: string) => {
-    const { error } = await supabase
-      .from("staff_schedules")
-      .delete()
-      .eq("id", scheduleId);
+    try {
+      const { error } = await supabase
+        .from("staff_schedules")
+        .delete()
+        .eq("id", scheduleId);
 
-    if (error) {
-      console.error("刪除排班失敗:", error);
-      toast.error("刪除排班失敗");
+      if (error) {
+        console.error("刪除排班失敗:", error);
+        toast.error("刪除排班失敗");
+        return;
+      }
+
+      toast.success("排班已刪除");
+      loadSchedules();
+    } catch (err) {
+      console.error("刪除排班錯誤:", err);
+      toast.error("刪除排班時發生錯誤");
+    }
+  };
+
+  // 批量補做排班
+  const handleBatchImport = async () => {
+    if (!batchData.trim()) {
+      toast.error("請輸入排班資料");
       return;
     }
 
-    toast.success("排班已刪除");
-    loadSchedules();
+    try {
+      // 解析 CSV 格式: 日期,員工編號,員工姓名,班別
+      const lines = batchData.trim().split("\n");
+      const schedules = [];
+
+      for (const line of lines) {
+        const [date, employeeId, employeeName, shiftType] = line.split(",").map(s => s.trim());
+        
+        if (!date || !employeeId || !employeeName || !shiftType) {
+          continue;
+        }
+
+        const times = shiftTimes[shiftType as ShiftType] || shiftTimes.morning;
+        
+        schedules.push({
+          date,
+          employee_id: employeeId,
+          employee_name: employeeName,
+          shift_type: shiftType,
+          start_time: times.start,
+          end_time: times.end,
+        });
+      }
+
+      if (schedules.length === 0) {
+        toast.error("沒有有效的排班資料");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("staff_schedules")
+        .insert(schedules);
+
+      if (error) {
+        console.error("批量新增失敗:", error);
+        toast.error("批量新增失敗");
+        return;
+      }
+
+      toast.success(`成功新增 ${schedules.length} 筆排班`);
+      setShowBatchDialog(false);
+      setBatchData("");
+      loadSchedules();
+    } catch (err) {
+      console.error("批量新增錯誤:", err);
+      toast.error("批量新增時發生錯誤");
+    }
+  };
+
+  // 匯出排班資料
+  const handleExport = () => {
+    if (schedules.length === 0) {
+      toast.error("沒有排班資料可匯出");
+      return;
+    }
+
+    const csv = schedules.map(s => 
+      `${s.date},${s.employee_id},${s.employee_name},${s.shift_type}`
+    ).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `排班表_${currentDate.getFullYear()}_${currentDate.getMonth() + 1}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("匯出成功");
   };
 
   const calendarDates = getCalendarDates();
@@ -315,6 +425,18 @@ export default function CalendarSchedule() {
           </div>
           
           <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => setLocation('/admin')}>
+              <Home className="w-4 h-4 mr-2" />
+              返回主控台
+            </Button>
+            <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              批量補做
+            </Button>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              匯出
+            </Button>
             <Button variant="outline" onClick={goToToday}>
               <CalendarIcon className="w-4 h-4 mr-2" />
               今天
@@ -357,9 +479,10 @@ export default function CalendarSchedule() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[140px] border-r border-b p-2 relative group ${
+                  className={`min-h-[140px] border-r border-b p-2 relative group cursor-pointer hover:bg-gray-50 ${
                     isOtherMonth ? "bg-gray-50" : "bg-white"
                   } ${isTodayDate ? "ring-2 ring-blue-500 ring-inset" : ""}`}
+                  onClick={() => !isOtherMonth && handleAddSchedule(date)}
                 >
                   {/* 日期數字與新增按鈕 */}
                   <div className="flex items-center justify-between mb-2">
@@ -376,7 +499,10 @@ export default function CalendarSchedule() {
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => handleAddSchedule(date)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddSchedule(date);
+                        }}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -391,6 +517,7 @@ export default function CalendarSchedule() {
                         className={`text-xs px-2 py-1 rounded border relative group/item ${
                           shiftColors[schedule.shift_type]
                         }`}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
@@ -403,7 +530,10 @@ export default function CalendarSchedule() {
                           </div>
                           <button
                             className="opacity-0 group-hover/item:opacity-100 ml-1"
-                            onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              schedule.id && handleDeleteSchedule(schedule.id);
+                            }}
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -416,6 +546,7 @@ export default function CalendarSchedule() {
                       <div
                         key={`leave-${idx}`}
                         className="text-xs px-2 py-1 rounded border bg-orange-100 text-orange-800 border-orange-300"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <div className="font-medium truncate">
                           {leave.employee_name}
@@ -501,6 +632,40 @@ export default function CalendarSchedule() {
             </Button>
             <Button onClick={handleSaveSchedule}>
               儲存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 批量補做對話框 */}
+      <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>批量補做排班</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>排班資料 (CSV 格式)</Label>
+              <p className="text-sm text-gray-600">
+                格式: 日期,員工編號,員工姓名,班別<br/>
+                班別: morning (早班), afternoon (中班), evening (晚班), off (休假)<br/>
+                範例: 2025-11-24,ADMIN-HBH012,黃柏翰,morning
+              </p>
+              <Textarea
+                value={batchData}
+                onChange={(e) => setBatchData(e.target.value)}
+                placeholder="2025-11-24,ADMIN-HBH012,黃柏翰,morning&#10;2025-11-24,SUPER-LDX011,劉道玄,afternoon"
+                rows={10}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBatchDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleBatchImport}>
+              匯入
             </Button>
           </DialogFooter>
         </DialogContent>
