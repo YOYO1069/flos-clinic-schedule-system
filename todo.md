@@ -126,3 +126,14 @@
 - Channel secret: ae25135b2ba1d26ff8b1afe952b3c72a
 - Channel access token: ti+rzKuJYhtA7sz6Yk00Mw1Wlc3ER4TlBzq1RB97Zy8gwEk3qepKRdzGFDZAREn22tBe9Z8MqvhcRRvoF0hU7eXFbN0AHvRgw8fK6pCzMQxVqOUPaaOhvA1l65sc0SOwVQQzIfb+051AFsvFWvImDwdB04t89/1O/w1cDnyilFU=
 - Webhook URL: https://rad-paletas-14483a.netlify.app/.netlify/functions/yuemei-webhook
+
+
+## 緊急:恢復原有資料和完整功能
+- [x] 找回原先的排班記錄並匯入新系統
+- [x] 參考之前討論的完整功能規格
+- [x] 保留原有優秀的 UI/UX 設計
+- [x] 使用嵌入方式整合,不破壞原有功能
+- [x] 確保所有已排定的班表資料不遺失
+- [x] 恢復醫師排班頁面(原有設計)
+- [x] 保留員工排班月曆視圖(新功能)
+- [x] 在主控台新增醫師排班入口
