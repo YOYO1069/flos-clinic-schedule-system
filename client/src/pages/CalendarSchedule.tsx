@@ -1,20 +1,25 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 // 班別類型
-type ShiftType = "morning" | "afternoon" | "evening" | "off" | "leave";
+type ShiftType = "morning" | "afternoon" | "evening" | "off";
 
 // 排班資料結構
 interface ScheduleEntry {
-  id?: number;
+  id?: string;
   date: string;
   employee_id: string;
   employee_name: string;
   shift_type: ShiftType;
+  start_time?: string;
+  end_time?: string;
   notes?: string;
 }
 
@@ -29,30 +34,50 @@ interface LeaveRequest {
   status: string;
 }
 
+// 員工資料
+interface Employee {
+  id: number;
+  employee_id: string;
+  name: string;
+  role: string;
+}
+
 // 班別顏色配置
 const shiftColors: Record<ShiftType, string> = {
   morning: "bg-blue-100 text-blue-800 border-blue-300",
   afternoon: "bg-green-100 text-green-800 border-green-300",
   evening: "bg-purple-100 text-purple-800 border-purple-300",
   off: "bg-gray-100 text-gray-600 border-gray-300",
-  leave: "bg-red-100 text-red-800 border-red-300",
 };
 
 // 班別名稱
 const shiftNames: Record<ShiftType, string> = {
-  morning: "早班",
-  afternoon: "中班",
-  evening: "晚班",
+  morning: "早班 (09:00-17:00)",
+  afternoon: "中班 (13:00-21:00)",
+  evening: "晚班 (17:00-01:00)",
   off: "休假",
-  leave: "請假",
+};
+
+// 班別時間
+const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
+  morning: { start: "09:00", end: "17:00" },
+  afternoon: { start: "13:00", end: "21:00" },
+  evening: { start: "17:00", end: "01:00" },
+  off: { start: "", end: "" },
 };
 
 export default function CalendarSchedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // 編輯對話框狀態
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [selectedShift, setSelectedShift] = useState<ShiftType>("morning");
 
   // 獲取當月第一天和最後一天
   const getMonthBounds = (date: Date) => {
@@ -70,9 +95,9 @@ export default function CalendarSchedule() {
     
     // 補齊月初的日期(從週日開始)
     const firstDayOfWeek = firstDay.getDay();
-    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+    for (let i = firstDayOfWeek; i > 0; i--) {
       const date = new Date(firstDay);
-      date.setDate(date.getDate() - i - 1);
+      date.setDate(date.getDate() - i);
       dates.push(date);
     }
     
@@ -200,6 +225,69 @@ export default function CalendarSchedule() {
     return date.toDateString() === today.toDateString();
   };
 
+  // 打開新增排班對話框
+  const handleAddSchedule = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedEmployee("");
+    setSelectedShift("morning");
+    setShowEditDialog(true);
+  };
+
+  // 儲存排班
+  const handleSaveSchedule = async () => {
+    if (!selectedDate || !selectedEmployee) {
+      toast.error("請選擇員工");
+      return;
+    }
+
+    const employee = employees.find(e => e.employee_id === selectedEmployee);
+    if (!employee) {
+      toast.error("找不到員工資料");
+      return;
+    }
+
+    const dateStr = selectedDate.toISOString().split("T")[0];
+    const times = shiftTimes[selectedShift];
+
+    const { error } = await supabase
+      .from("staff_schedules")
+      .insert({
+        date: dateStr,
+        employee_id: employee.employee_id,
+        employee_name: employee.name,
+        shift_type: selectedShift,
+        start_time: times.start,
+        end_time: times.end,
+      });
+
+    if (error) {
+      console.error("新增排班失敗:", error);
+      toast.error("新增排班失敗");
+      return;
+    }
+
+    toast.success("排班已新增");
+    setShowEditDialog(false);
+    loadSchedules();
+  };
+
+  // 刪除排班
+  const handleDeleteSchedule = async (scheduleId: string) => {
+    const { error } = await supabase
+      .from("staff_schedules")
+      .delete()
+      .eq("id", scheduleId);
+
+    if (error) {
+      console.error("刪除排班失敗:", error);
+      toast.error("刪除排班失敗");
+      return;
+    }
+
+    toast.success("排班已刪除");
+    loadSchedules();
+  };
+
   const calendarDates = getCalendarDates();
   const weekDays = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -269,18 +357,30 @@ export default function CalendarSchedule() {
               return (
                 <div
                   key={index}
-                  className={`min-h-[120px] border-r border-b p-2 ${
+                  className={`min-h-[140px] border-r border-b p-2 relative group ${
                     isOtherMonth ? "bg-gray-50" : "bg-white"
                   } ${isTodayDate ? "ring-2 ring-blue-500 ring-inset" : ""}`}
                 >
-                  {/* 日期數字 */}
-                  <div className={`text-sm font-semibold mb-2 ${
-                    isOtherMonth ? "text-gray-400" : 
-                    index % 7 === 0 ? "text-red-600" : 
-                    index % 7 === 6 ? "text-blue-600" : 
-                    "text-gray-700"
-                  }`}>
-                    {date.getDate()}
+                  {/* 日期數字與新增按鈕 */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className={`text-sm font-semibold ${
+                      isOtherMonth ? "text-gray-400" : 
+                      index % 7 === 0 ? "text-red-600" : 
+                      index % 7 === 6 ? "text-blue-600" : 
+                      "text-gray-700"
+                    }`}>
+                      {date.getDate()}
+                    </div>
+                    {!isOtherMonth && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => handleAddSchedule(date)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* 排班資訊 */}
@@ -288,15 +388,25 @@ export default function CalendarSchedule() {
                     {daySchedules.map((schedule, idx) => (
                       <div
                         key={idx}
-                        className={`text-xs px-2 py-1 rounded border ${
+                        className={`text-xs px-2 py-1 rounded border relative group/item ${
                           shiftColors[schedule.shift_type]
                         }`}
                       >
-                        <div className="font-medium truncate">
-                          {schedule.employee_name}
-                        </div>
-                        <div className="text-[10px]">
-                          {shiftNames[schedule.shift_type]}
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">
+                              {schedule.employee_name}
+                            </div>
+                            <div className="text-[10px]">
+                              {shiftNames[schedule.shift_type].split(" ")[0]}
+                            </div>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover/item:opacity-100 ml-1"
+                            onClick={() => schedule.id && handleDeleteSchedule(schedule.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -336,6 +446,65 @@ export default function CalendarSchedule() {
           </div>
         </div>
       </div>
+
+      {/* 新增/編輯排班對話框 */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>新增排班</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>日期</Label>
+              <div className="text-sm text-gray-600">
+                {selectedDate?.toLocaleDateString("zh-TW", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>員工</Label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="請選擇員工" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map((emp) => (
+                    <SelectItem key={emp.id} value={emp.employee_id}>
+                      {emp.name} ({emp.employee_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>班別</Label>
+              <Select value={selectedShift} onValueChange={(v) => setSelectedShift(v as ShiftType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(shiftNames).map(([type, name]) => (
+                    <SelectItem key={type} value={type}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveSchedule}>
+              儲存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

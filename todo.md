@@ -91,21 +91,24 @@
 
 
 ## 階段九:月曆表格式排班系統重構
-- [ ] 將排班介面改為月曆表格式(類似 Google Calendar)
-- [ ] 每個日期格子顯示當日排班員工
+- [x] 將排班介面改為月曆表格式(類似 Google Calendar)
+- [x] 每個日期格子顯示當日排班員工
 - [ ] 支援拖拉方式調整排班
-- [ ] 月份切換功能(上一月/下一月)
-- [ ] 顯示當月所有員工的休假狀態
-- [ ] 在月曆上標示員工請假日期(不同假別不同顏色)
-- [ ] 點擊日期可查看該日所有請假員工
+- [x] 月份切換功能(上一月/下一月)
+- [x] 顯示當月所有員工的休假狀態
+- [x] 在月曆上標示員工請假日期(不同假別不同顏色)
+- [x] 點擊日期可查看該日所有請假員工
 - [ ] 支援批量審核請假申請
-- [ ] 支援多種班別設定(早班/中班/晚班/休假)
+- [x] 支援多種班別設定(早班/中班/晚班/休假)
 - [ ] 自動檢查排班衝突
 - [ ] 排班範本功能
 - [ ] 匯出月度排班表為 PDF/Excel
 - [ ] 主管可在月曆上直接審核請假
 - [ ] 請假衝突提醒(人力不足警告)
 - [ ] 請假歷史記錄查詢
+- [x] 新增排班功能(點擊日期新增)
+- [x] 刪除排班功能(hover 顯示刪除按鈕)
+- [x] 修改資料庫表結構支援排班
 
 ## 階段十:登入問題修正
 - [x] 診斷 Supabase API Key 問題
@@ -114,3 +117,12 @@
 - [x] 直接在程式碼中寫死 Supabase 配置
 - [x] 測試登入功能正常運作
 - [x] 確認 16 位員工資料完整
+
+
+## LINE Bot 資訊 (邊美小秘書)
+- User ID: Ub0992e5cf905ab756f4113ffda8d2634
+- Channel ID: 2008492676
+- Bot basic ID: @759wnkso
+- Channel secret: ae25135b2ba1d26ff8b1afe952b3c72a
+- Channel access token: ti+rzKuJYhtA7sz6Yk00Mw1Wlc3ER4TlBzq1RB97Zy8gwEk3qepKRdzGFDZAREn22tBe9Z8MqvhcRRvoF0hU7eXFbN0AHvRgw8fK6pCzMQxVqOUPaaOhvA1l65sc0SOwVQQzIfb+051AFsvFWvImDwdB04t89/1O/w1cDnyilFU=
+- Webhook URL: https://rad-paletas-14483a.netlify.app/.netlify/functions/yuemei-webhook
