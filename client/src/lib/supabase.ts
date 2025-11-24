@@ -68,3 +68,4 @@ export const subscribeToChanges = (table: string, callback: (payload: any) => vo
     subscription.unsubscribe()
   }
 }
+// Force rebuild Sun Nov 23 20:40:42 EST 2025
