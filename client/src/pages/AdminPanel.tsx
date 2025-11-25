@@ -116,17 +116,13 @@ export default function AdminPanel() {
                 <Calendar className="w-4 h-4 mr-2" />
                 休假月曆
               </Button>
-              <Button variant="outline" onClick={() => setLocation('/doctor-schedule')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                醫師排班
-              </Button>
               <Button variant="outline" onClick={() => setLocation('/calendar')}>
                 <Calendar className="w-4 h-4 mr-2" />
-                員工排班
+                員工排班月曆
               </Button>
-              <Button variant="outline" onClick={() => setLocation('/schedule')}>
+              <Button variant="outline" onClick={() => setLocation('/staff-management')}>
                 <Users className="w-4 h-4 mr-2" />
-                排班系統
+                員工管理
               </Button>
               <Button variant="outline" onClick={() => setLocation('/attendance')}>
                 <Clock className="w-4 h-4 mr-2" />
@@ -176,27 +172,7 @@ export default function AdminPanel() {
                               {ROLE_LABELS[user.role]?.label}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">員工編號: {user.employee_id}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500">預設密碼</p>
-                            <p className="font-mono text-sm">
-                              {showPasswords[user.id] ? user.password : '••••••••'}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => togglePasswordVisibility(user.id)}
-                          >
-                            {showPasswords[user.id] ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </Button>
+                          <p className="text-sm text-gray-600 mt-1">加入時間: {new Date(user.created_at).toLocaleDateString('zh-TW')}</p>
                         </div>
                       </div>
                     </div>

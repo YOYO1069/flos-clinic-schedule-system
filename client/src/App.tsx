@@ -13,6 +13,7 @@ import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
 import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
+import StaffManagement from "./pages/StaffManagement";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/schedule" component={Home} />
       <Route path="/calendar" component={CalendarSchedule} />
       <Route path="/doctor-schedule" component={DoctorSchedule} />
+      <Route path="/staff-management" component={StaffManagement} />
       <Route path="/attendance" component={Attendance} />
       <Route path="/leave" component={LeaveManagement} />
       <Route path={"/404"} component={NotFound} />
