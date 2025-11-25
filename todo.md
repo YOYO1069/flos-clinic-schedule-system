@@ -173,3 +173,19 @@
 - [x] 更新月曆顯示邏輯
 - [x] 更新批量匯入說明
 - [x] 簡化衝突檢查邏輯
+
+
+## 緊急修復:網站無法開啟
+- [ ] 檢查 Netlify 部署日誌
+- [ ] 檢查 JavaScript 錯誤
+- [ ] 測試登入功能
+- [ ] 測試月曆頁面
+- [ ] 確認所有功能正常運作
+
+
+## 緊急修復:JavaScript split 錯誤
+- [x] 修復 TypeError: Cannot read properties of undefined (reading 'split')
+- [x] 檢查所有 .split() 調用
+- [x] 添加空值檢查
+- [x] 修復語法錯誤
+- [ ] 測試月曆頁面正常顯示

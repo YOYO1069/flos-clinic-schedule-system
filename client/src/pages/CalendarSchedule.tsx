@@ -222,18 +222,22 @@ export default function CalendarSchedule() {
     setCurrentDate(new Date());
   };
 
-  // 獲取指定日期的排班
+  // 獲取某日的排班
   const getSchedulesForDate = (date: Date): ScheduleEntry[] => {
+    if (!date) return [];
     const dateStr = date.toISOString().split("T")[0];
     return schedules.filter(s => s.date === dateStr);
   };
 
-  // 獲取指定日期的請假
+  // 獲取某日的請假
   const getLeaveForDate = (date: Date): LeaveRequest[] => {
+    if (!date) return [];
     const dateStr = date.toISOString().split("T")[0];
-    return leaveRequests.filter(lr => {
-      return dateStr >= lr.start_date && dateStr <= lr.end_date;
-    });
+    return leaveRequests.filter(l => 
+      l.status === "approved" && 
+      l.start_date <= dateStr && 
+      l.end_date >= dateStr
+    );
   };
 
   // 檢查是否為當月
@@ -264,6 +268,7 @@ export default function CalendarSchedule() {
 
   // 檢查排班衝突
   const checkScheduleConflict = (employeeId: string, date: string, shiftType: ShiftType): boolean => {
+    if (!employeeId || !date) return false;
     const dateSchedules = schedules.filter(s => s.date === date && s.employee_id === employeeId);
     
     // 如果已有任何排班,不能重複排班
@@ -553,7 +558,7 @@ export default function CalendarSchedule() {
                               {schedule.employee_name}
                             </div>
                             <div className="text-[10px]">
-                              {shiftNames[schedule.shift_type].split(" ")[0]}
+                              {shiftNames[schedule.shift_type] || "未知"}
                             </div>
                           </div>
                           <button
