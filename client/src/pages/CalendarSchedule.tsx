@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X, Upload, Download, Home } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X, Upload, Download, Home, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import LeaveApprovalDialog from "@/components/LeaveApprovalDialog";
 
 // 班別類型
 type ShiftType = "morning" | "afternoon" | "evening" | "off";
@@ -86,6 +87,10 @@ export default function CalendarSchedule() {
   // 批量補做對話框
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [batchData, setBatchData] = useState("");
+
+  // 請假審核對話框
+  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
+  const [approvalDate, setApprovalDate] = useState<Date | null>(null);
 
   // 獲取當月第一天和最後一天
   const getMonthBounds = (date: Date) => {
@@ -249,11 +254,45 @@ export default function CalendarSchedule() {
   };
 
   // 打開新增排班對話框
-  const handleAddSchedule = (date: Date) => {
+  const handleAddSchedule = (date: Date, e: React.MouseEvent) => {
+    // 如果按下 Ctrl/Cmd 鍵,打開審核對話框
+    if (e.ctrlKey || e.metaKey) {
+      setApprovalDate(date);
+      setShowApprovalDialog(true);
+      return;
+    }
+    
     setSelectedDate(date);
     setSelectedEmployee("");
     setSelectedShift("morning");
     setShowEditDialog(true);
+  };
+
+  // 檢查排班衝突
+  const checkScheduleConflict = (employeeId: string, date: string, shiftType: ShiftType): boolean => {
+    const dateSchedules = schedules.filter(s => s.date === date && s.employee_id === employeeId);
+    
+    // 如果是休假,不能有其他排班
+    if (shiftType === "off" && dateSchedules.length > 0) {
+      return true;
+    }
+    
+    // 如果已有休假,不能再排班
+    if (dateSchedules.some(s => s.shift_type === "off")) {
+      return true;
+    }
+    
+    // 檢查時間重疊
+    const newTimes = shiftTimes[shiftType];
+    for (const schedule of dateSchedules) {
+      const existingTimes = shiftTimes[schedule.shift_type];
+      // 簡單的時間重疊檢查
+      if (newTimes.start < existingTimes.end && newTimes.end > existingTimes.start) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   // 儲存排班
@@ -270,6 +309,13 @@ export default function CalendarSchedule() {
     }
 
     const dateStr = selectedDate.toISOString().split("T")[0];
+    
+    // 檢查衝突
+    if (checkScheduleConflict(selectedEmployee, dateStr, selectedShift)) {
+      toast.error("排班衝突!該員工在此時段已有排班或休假");
+      return;
+    }
+    
     const times = shiftTimes[selectedShift];
 
     try {
@@ -422,6 +468,9 @@ export default function CalendarSchedule() {
             <p className="text-gray-600 mt-1">
               {currentDate.getFullYear()} 年 {currentDate.getMonth() + 1} 月
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              提示: 按住 Ctrl/Cmd + 點擊日期可快速審核請假
+            </p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -482,7 +531,7 @@ export default function CalendarSchedule() {
                   className={`min-h-[140px] border-r border-b p-2 relative group cursor-pointer hover:bg-gray-50 ${
                     isOtherMonth ? "bg-gray-50" : "bg-white"
                   } ${isTodayDate ? "ring-2 ring-blue-500 ring-inset" : ""}`}
-                  onClick={() => !isOtherMonth && handleAddSchedule(date)}
+                  onClick={(e) => !isOtherMonth && handleAddSchedule(date, e)}
                 >
                   {/* 日期數字與新增按鈕 */}
                   <div className="flex items-center justify-between mb-2">
@@ -670,6 +719,17 @@ export default function CalendarSchedule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 請假審核對話框 */}
+      <LeaveApprovalDialog
+        open={showApprovalDialog}
+        onOpenChange={setShowApprovalDialog}
+        date={approvalDate}
+        onApprovalComplete={() => {
+          loadLeaveRequests();
+          loadSchedules();
+        }}
+      />
     </div>
   );
 }
