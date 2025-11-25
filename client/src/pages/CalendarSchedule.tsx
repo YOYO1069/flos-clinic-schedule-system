@@ -13,7 +13,7 @@ import { useLocation } from "wouter";
 import LeaveApprovalDialog from "@/components/LeaveApprovalDialog";
 
 // 班別類型
-type ShiftType = "morning" | "afternoon" | "evening" | "off";
+type ShiftType = "work" | "off";
 
 // 排班資料結構
 interface ScheduleEntry {
@@ -48,25 +48,19 @@ interface Employee {
 
 // 班別顏色配置
 const shiftColors: Record<ShiftType, string> = {
-  morning: "bg-blue-100 text-blue-800 border-blue-300",
-  afternoon: "bg-green-100 text-green-800 border-green-300",
-  evening: "bg-purple-100 text-purple-800 border-purple-300",
+  work: "bg-blue-100 text-blue-800 border-blue-300",
   off: "bg-gray-100 text-gray-600 border-gray-300",
 };
 
 // 班別名稱
 const shiftNames: Record<ShiftType, string> = {
-  morning: "早班 (09:00-17:00)",
-  afternoon: "中班 (13:00-21:00)",
-  evening: "晚班 (17:00-01:00)",
+  work: "上班",
   off: "休假",
 };
 
-// 班別時間
+// 班別時間(彈性,由打卡決定)
 const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
-  morning: { start: "09:00", end: "17:00" },
-  afternoon: { start: "13:00", end: "21:00" },
-  evening: { start: "17:00", end: "01:00" },
+  work: { start: "", end: "" }, // 實際時間由打卡記錄
   off: { start: "", end: "" },
 };
 
@@ -82,7 +76,7 @@ export default function CalendarSchedule() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [selectedShift, setSelectedShift] = useState<ShiftType>("morning");
+  const [selectedShift, setSelectedShift] = useState<ShiftType>("work");
 
   // 批量補做對話框
   const [showBatchDialog, setShowBatchDialog] = useState(false);
@@ -264,7 +258,7 @@ export default function CalendarSchedule() {
     
     setSelectedDate(date);
     setSelectedEmployee("");
-    setSelectedShift("morning");
+    setSelectedShift("work");
     setShowEditDialog(true);
   };
 
@@ -272,24 +266,9 @@ export default function CalendarSchedule() {
   const checkScheduleConflict = (employeeId: string, date: string, shiftType: ShiftType): boolean => {
     const dateSchedules = schedules.filter(s => s.date === date && s.employee_id === employeeId);
     
-    // 如果是休假,不能有其他排班
-    if (shiftType === "off" && dateSchedules.length > 0) {
+    // 如果已有任何排班,不能重複排班
+    if (dateSchedules.length > 0) {
       return true;
-    }
-    
-    // 如果已有休假,不能再排班
-    if (dateSchedules.some(s => s.shift_type === "off")) {
-      return true;
-    }
-    
-    // 檢查時間重疊
-    const newTimes = shiftTimes[shiftType];
-    for (const schedule of dateSchedules) {
-      const existingTimes = shiftTimes[schedule.shift_type];
-      // 簡單的時間重疊檢查
-      if (newTimes.start < existingTimes.end && newTimes.end > existingTimes.start) {
-        return true;
-      }
     }
     
     return false;
@@ -613,17 +592,22 @@ export default function CalendarSchedule() {
         </Card>
 
         {/* 圖例 */}
-        <div className="mt-6 flex flex-wrap gap-4 justify-center">
-          {Object.entries(shiftNames).map(([type, name]) => (
-            <div key={type} className="flex items-center gap-2">
-              <div className={`w-4 h-4 rounded border ${shiftColors[type as ShiftType]}`}></div>
-              <span className="text-sm text-gray-700">{name}</span>
+        <div className="mt-6 space-y-3">
+          <div className="flex flex-wrap gap-4 justify-center">
+            {Object.entries(shiftNames).map(([type, name]) => (
+              <div key={type} className="flex items-center gap-2">
+                <div className={`w-4 h-4 rounded border ${shiftColors[type as ShiftType]}`}></div>
+                <span className="text-sm text-gray-700">{name}</span>
+              </div>
+            ))}
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded border bg-orange-100 border-orange-300"></div>
+              <span className="text-sm text-gray-700">請假</span>
             </div>
-          ))}
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded border bg-orange-100 border-orange-300"></div>
-            <span className="text-sm text-gray-700">請假</span>
           </div>
+          <p className="text-xs text-center text-gray-500">
+            說明: 上班時間由員工打卡記錄決定,無固定班別時間限制
+          </p>
         </div>
       </div>
 
@@ -697,13 +681,14 @@ export default function CalendarSchedule() {
               <Label>排班資料 (CSV 格式)</Label>
               <p className="text-sm text-gray-600">
                 格式: 日期,員工編號,員工姓名,班別<br/>
-                班別: morning (早班), afternoon (中班), evening (晚班), off (休假)<br/>
-                範例: 2025-11-24,ADMIN-HBH012,黃柏翰,morning
+                班別: work (上班), off (休假)<br/>
+                範例: 2025-11-24,ADMIN-HBH012,黃柏翰,work<br/>
+                說明: 上班時間由打卡記錄決定,不需設定固定時間
               </p>
               <Textarea
                 value={batchData}
                 onChange={(e) => setBatchData(e.target.value)}
-                placeholder="2025-11-24,ADMIN-HBH012,黃柏翰,morning&#10;2025-11-24,SUPER-LDX011,劉道玄,afternoon"
+                placeholder="2025-11-24,ADMIN-HBH012,黃柏翰,work&#10;2025-11-25,SUPER-LDX011,劉道玄,work&#10;2025-11-26,STAFF-LZX003,劉哲軒,off"
                 rows={10}
                 className="font-mono text-sm"
               />
