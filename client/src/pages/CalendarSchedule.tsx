@@ -1,33 +1,33 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, X, Upload, Download, Home, CheckCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
 import { useLocation } from "wouter";
-import LeaveApprovalDialog from "@/components/LeaveApprovalDialog";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Calendar as CalendarIcon,
+  Home,
+  Plus,
+  X,
+  Upload,
+  Download
+} from "lucide-react";
 
-// 班別類型
 type ShiftType = "work" | "off";
 
-// 排班資料結構
-interface ScheduleEntry {
-  id?: string;
+interface Schedule {
+  id?: number;
   date: string;
   employee_id: string;
   employee_name: string;
   shift_type: ShiftType;
-  start_time?: string;
-  end_time?: string;
-  notes?: string;
 }
 
-// 請假資料結構
 interface LeaveRequest {
   id: number;
   employee_id: string;
@@ -38,7 +38,6 @@ interface LeaveRequest {
   status: string;
 }
 
-// 員工資料
 interface Employee {
   id: number;
   employee_id: string;
@@ -46,28 +45,10 @@ interface Employee {
   role: string;
 }
 
-// 班別顏色配置
-const shiftColors: Record<ShiftType, string> = {
-  work: "bg-blue-100 text-blue-800 border-blue-300",
-  off: "bg-gray-100 text-gray-600 border-gray-300",
-};
-
-// 班別名稱
-const shiftNames: Record<ShiftType, string> = {
-  work: "上班",
-  off: "休假",
-};
-
-// 班別時間(彈性,由打卡決定)
-const shiftTimes: Record<ShiftType, { start: string; end: string }> = {
-  work: { start: "", end: "" }, // 實際時間由打卡記錄
-  off: { start: "", end: "" },
-};
-
 export default function CalendarSchedule() {
   const [, setLocation] = useLocation();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [schedules, setSchedules] = useState<ScheduleEntry[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,9 +63,16 @@ export default function CalendarSchedule() {
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [batchData, setBatchData] = useState("");
 
-  // 請假審核對話框
-  const [showApprovalDialog, setShowApprovalDialog] = useState(false);
-  const [approvalDate, setApprovalDate] = useState<Date | null>(null);
+  // 班別配置
+  const shiftNames: Record<ShiftType, string> = {
+    work: "上班",
+    off: "休假"
+  };
+
+  const shiftColors: Record<ShiftType, string> = {
+    work: "bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-900 border-blue-300",
+    off: "bg-gradient-to-r from-gray-400/20 to-gray-500/20 text-gray-800 border-gray-400"
+  };
 
   // 獲取當月第一天和最後一天
   const getMonthBounds = (date: Date) => {
@@ -95,33 +83,38 @@ export default function CalendarSchedule() {
     return { firstDay, lastDay };
   };
 
-  // 獲取月曆顯示的所有日期(包含前後月份補齊)
-  const getCalendarDates = () => {
-    const { firstDay, lastDay } = getMonthBounds(currentDate);
-    const dates: Date[] = [];
-    
-    // 補齊月初的日期(從週日開始)
-    const firstDayOfWeek = firstDay.getDay();
-    for (let i = firstDayOfWeek; i > 0; i--) {
-      const date = new Date(firstDay);
-      date.setDate(date.getDate() - i);
-      dates.push(date);
+  // 獲取月曆顯示的所有日期
+  const getCalendarDates = (): Date[] => {
+    try {
+      const { firstDay, lastDay } = getMonthBounds(currentDate);
+      const dates: Date[] = [];
+      
+      // 補齊月初
+      const firstDayOfWeek = firstDay.getDay();
+      for (let i = firstDayOfWeek; i > 0; i--) {
+        const date = new Date(firstDay);
+        date.setDate(date.getDate() - i);
+        dates.push(date);
+      }
+      
+      // 當月所有日期
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        dates.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), d));
+      }
+      
+      // 補齊月末
+      const lastDayOfWeek = lastDay.getDay();
+      for (let i = 1; i < 7 - lastDayOfWeek; i++) {
+        const date = new Date(lastDay);
+        date.setDate(date.getDate() + i);
+        dates.push(date);
+      }
+      
+      return dates;
+    } catch (error) {
+      console.error("獲取日期錯誤:", error);
+      return [];
     }
-    
-    // 當月所有日期
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      dates.push(new Date(currentDate.getFullYear(), currentDate.getMonth(), d));
-    }
-    
-    // 補齊月末的日期(到週六結束)
-    const lastDayOfWeek = lastDay.getDay();
-    for (let i = 1; i < 7 - lastDayOfWeek; i++) {
-      const date = new Date(lastDay);
-      date.setDate(date.getDate() + i);
-      dates.push(date);
-    }
-    
-    return dates;
   };
 
   // 載入員工資料
@@ -130,18 +123,17 @@ export default function CalendarSchedule() {
       const { data, error } = await supabase
         .from("users")
         .select("*")
+        .eq("role", "staff")
         .order("name");
       
       if (error) {
         console.error("載入員工失敗:", error);
-        toast.error("載入員工資料失敗");
         return;
       }
       
       setEmployees(data || []);
     } catch (err) {
       console.error("載入員工錯誤:", err);
-      toast.error("載入員工時發生錯誤");
     }
   };
 
@@ -158,14 +150,12 @@ export default function CalendarSchedule() {
       
       if (error) {
         console.error("載入排班失敗:", error);
-        toast.error("載入排班資料失敗");
         return;
       }
       
       setSchedules(data || []);
     } catch (err) {
       console.error("載入排班錯誤:", err);
-      toast.error("載入排班時發生錯誤");
     }
   };
 
@@ -183,7 +173,6 @@ export default function CalendarSchedule() {
       
       if (error) {
         console.error("載入請假資料失敗:", error);
-        // 不顯示錯誤訊息,因為表可能還沒建立
         return;
       }
       
@@ -197,86 +186,67 @@ export default function CalendarSchedule() {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([
-        loadEmployees(),
-        loadSchedules(),
-        loadLeaveRequests(),
-      ]);
-      setLoading(false);
+      try {
+        await Promise.all([
+          loadEmployees(),
+          loadSchedules(),
+          loadLeaveRequests()
+        ]);
+      } catch (error) {
+        console.error("初始化失敗:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     init();
   }, [currentDate]);
 
-  // 切換到上個月
+  // 月份切換
   const previousMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
   };
 
-  // 切換到下個月
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
 
-  // 切換到今天
   const goToToday = () => {
     setCurrentDate(new Date());
   };
 
-  // 獲取某日的排班
-  const getSchedulesForDate = (date: Date): ScheduleEntry[] => {
-    if (!date) return [];
-    const dateStr = date.toISOString().split("T")[0];
-    return schedules.filter(s => s.date === dateStr);
-  };
-
-  // 獲取某日的請假
-  const getLeaveForDate = (date: Date): LeaveRequest[] => {
-    if (!date) return [];
-    const dateStr = date.toISOString().split("T")[0];
-    return leaveRequests.filter(l => 
-      l.status === "approved" && 
-      l.start_date <= dateStr && 
-      l.end_date >= dateStr
-    );
-  };
-
-  // 檢查是否為當月
+  // 判斷是否為當月日期
   const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentDate.getMonth();
   };
 
-  // 檢查是否為今天
+  // 判斷是否為今天
   const isToday = (date: Date) => {
     const today = new Date();
     return date.toDateString() === today.toDateString();
   };
 
-  // 打開新增排班對話框
-  const handleAddSchedule = (date: Date, e: React.MouseEvent) => {
-    // 如果按下 Ctrl/Cmd 鍵,打開審核對話框
-    if (e.ctrlKey || e.metaKey) {
-      setApprovalDate(date);
-      setShowApprovalDialog(true);
-      return;
-    }
-    
+  // 獲取指定日期的排班
+  const getSchedulesForDate = (date: Date | null): Schedule[] => {
+    if (!date) return [];
+    const dateStr = date.toISOString().split("T")[0];
+    return schedules.filter(s => s.date === dateStr);
+  };
+
+  // 獲取指定日期的請假
+  const getLeaveForDate = (date: Date | null): LeaveRequest[] => {
+    if (!date) return [];
+    const dateStr = date.toISOString().split("T")[0];
+    return leaveRequests.filter(lr => {
+      return dateStr >= lr.start_date && dateStr <= lr.end_date;
+    });
+  };
+
+  // 新增排班
+  const handleAddSchedule = (date: Date) => {
     setSelectedDate(date);
     setSelectedEmployee("");
     setSelectedShift("work");
     setShowEditDialog(true);
-  };
-
-  // 檢查排班衝突
-  const checkScheduleConflict = (employeeId: string, date: string, shiftType: ShiftType): boolean => {
-    if (!employeeId || !date) return false;
-    const dateSchedules = schedules.filter(s => s.date === date && s.employee_id === employeeId);
-    
-    // 如果已有任何排班,不能重複排班
-    if (dateSchedules.length > 0) {
-      return true;
-    }
-    
-    return false;
   };
 
   // 儲存排班
@@ -286,33 +256,31 @@ export default function CalendarSchedule() {
       return;
     }
 
-    const employee = employees.find(e => e.employee_id === selectedEmployee);
-    if (!employee) {
-      toast.error("找不到員工資料");
-      return;
-    }
-
-    const dateStr = selectedDate.toISOString().split("T")[0];
-    
-    // 檢查衝突
-    if (checkScheduleConflict(selectedEmployee, dateStr, selectedShift)) {
-      toast.error("排班衝突!該員工在此時段已有排班或休假");
-      return;
-    }
-    
-    const times = shiftTimes[selectedShift];
-
     try {
-      const { error } = await supabase
-        .from("staff_schedules")
-        .insert({
-          date: dateStr,
-          employee_id: employee.employee_id,
-          employee_name: employee.name,
-          shift_type: selectedShift,
-          start_time: times.start,
-          end_time: times.end,
-        });
+      const employee = employees.find(e => e.employee_id === selectedEmployee);
+      if (!employee) {
+        toast.error("找不到員工資料");
+        return;
+      }
+
+      const dateStr = selectedDate.toISOString().split("T")[0];
+
+      // 檢查衝突
+      const existing = schedules.find(
+        s => s.date === dateStr && s.employee_id === selectedEmployee
+      );
+
+      if (existing) {
+        toast.error("該員工當天已有排班");
+        return;
+      }
+
+      const { error } = await supabase.from("staff_schedules").insert({
+        date: dateStr,
+        employee_id: employee.employee_id,
+        employee_name: employee.name,
+        shift_type: selectedShift
+      });
 
       if (error) {
         console.error("新增排班失敗:", error);
@@ -320,7 +288,7 @@ export default function CalendarSchedule() {
         return;
       }
 
-      toast.success("排班已新增");
+      toast.success("排班新增成功");
       setShowEditDialog(false);
       loadSchedules();
     } catch (err) {
@@ -330,12 +298,12 @@ export default function CalendarSchedule() {
   };
 
   // 刪除排班
-  const handleDeleteSchedule = async (scheduleId: string) => {
+  const handleDeleteSchedule = async (id: number) => {
     try {
       const { error } = await supabase
         .from("staff_schedules")
         .delete()
-        .eq("id", scheduleId);
+        .eq("id", id);
 
       if (error) {
         console.error("刪除排班失敗:", error);
@@ -351,45 +319,30 @@ export default function CalendarSchedule() {
     }
   };
 
-  // 批量補做排班
+  // 批量新增
   const handleBatchImport = async () => {
-    if (!batchData.trim()) {
-      toast.error("請輸入排班資料");
-      return;
-    }
-
     try {
-      // 解析 CSV 格式: 日期,員工編號,員工姓名,班別
       const lines = batchData.trim().split("\n");
-      const schedules = [];
+      const newSchedules: any[] = [];
 
       for (const line of lines) {
         const [date, employeeId, employeeName, shiftType] = line.split(",").map(s => s.trim());
-        
-        if (!date || !employeeId || !employeeName || !shiftType) {
-          continue;
+        if (date && employeeId && employeeName && shiftType) {
+          newSchedules.push({
+            date,
+            employee_id: employeeId,
+            employee_name: employeeName,
+            shift_type: shiftType as ShiftType
+          });
         }
-
-        const times = shiftTimes[shiftType as ShiftType] || shiftTimes.morning;
-        
-        schedules.push({
-          date,
-          employee_id: employeeId,
-          employee_name: employeeName,
-          shift_type: shiftType,
-          start_time: times.start,
-          end_time: times.end,
-        });
       }
 
-      if (schedules.length === 0) {
-        toast.error("沒有有效的排班資料");
+      if (newSchedules.length === 0) {
+        toast.error("沒有有效的資料");
         return;
       }
 
-      const { error } = await supabase
-        .from("staff_schedules")
-        .insert(schedules);
+      const { error } = await supabase.from("staff_schedules").insert(newSchedules);
 
       if (error) {
         console.error("批量新增失敗:", error);
@@ -397,7 +350,7 @@ export default function CalendarSchedule() {
         return;
       }
 
-      toast.success(`成功新增 ${schedules.length} 筆排班`);
+      toast.success(`成功新增 ${newSchedules.length} 筆排班`);
       setShowBatchDialog(false);
       setBatchData("");
       loadSchedules();
@@ -433,52 +386,77 @@ export default function CalendarSchedule() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">載入中...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-cyan-300 text-lg font-medium">載入中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 標題列 */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">員工排班月曆</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+              員工排班月曆
+            </h1>
+            <p className="text-cyan-300 mt-2 text-lg">
               {currentDate.getFullYear()} 年 {currentDate.getMonth() + 1} 月
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              提示: 按住 Ctrl/Cmd + 點擊日期可快速審核請假
             </p>
           </div>
           
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setLocation('/admin')}>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation('/admin')}
+              className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+            >
               <Home className="w-4 h-4 mr-2" />
               返回主控台
             </Button>
-            <Button variant="outline" onClick={() => setShowBatchDialog(true)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBatchDialog(true)}
+              className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+            >
               <Upload className="w-4 h-4 mr-2" />
               批量補做
             </Button>
-            <Button variant="outline" onClick={handleExport}>
+            <Button 
+              variant="outline" 
+              onClick={handleExport}
+              className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+            >
               <Download className="w-4 h-4 mr-2" />
               匯出
             </Button>
-            <Button variant="outline" onClick={goToToday}>
+            <Button 
+              variant="outline" 
+              onClick={goToToday}
+              className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+            >
               <CalendarIcon className="w-4 h-4 mr-2" />
               今天
             </Button>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={previousMonth}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={previousMonth}
+                className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={nextMonth}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={nextMonth}
+                className="bg-slate-800/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-700/50"
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
@@ -486,14 +464,14 @@ export default function CalendarSchedule() {
         </div>
 
         {/* 月曆表格 */}
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden bg-slate-800/30 backdrop-blur-sm border-cyan-500/20">
           {/* 星期標題 */}
-          <div className="grid grid-cols-7 bg-gray-100 border-b">
+          <div className="grid grid-cols-7 bg-gradient-to-r from-slate-800/80 to-blue-900/80 border-b border-cyan-500/20">
             {weekDays.map((day, index) => (
               <div
                 key={index}
-                className={`p-3 text-center font-semibold text-sm ${
-                  index === 0 ? "text-red-600" : index === 6 ? "text-blue-600" : "text-gray-700"
+                className={`p-4 text-center font-bold text-base ${
+                  index === 0 ? "text-red-400" : index === 6 ? "text-blue-400" : "text-cyan-300"
                 }`}
               >
                 {day}
@@ -503,223 +481,220 @@ export default function CalendarSchedule() {
 
           {/* 日期格子 */}
           <div className="grid grid-cols-7">
-            {calendarDates.map((date, index) => {
-              const daySchedules = getSchedulesForDate(date);
-              const dayLeaves = getLeaveForDate(date);
-              const isOtherMonth = !isCurrentMonth(date);
-              const isTodayDate = isToday(date);
+            {calendarDates.length > 0 ? (
+              calendarDates.map((date, index) => {
+                const daySchedules = getSchedulesForDate(date);
+                const dayLeaves = getLeaveForDate(date);
+                const isOtherMonth = !isCurrentMonth(date);
+                const isTodayDate = isToday(date);
 
-              return (
-                <div
-                  key={index}
-                  className={`min-h-[140px] border-r border-b p-2 relative group cursor-pointer hover:bg-gray-50 ${
-                    isOtherMonth ? "bg-gray-50" : "bg-white"
-                  } ${isTodayDate ? "ring-2 ring-blue-500 ring-inset" : ""}`}
-                  onClick={(e) => !isOtherMonth && handleAddSchedule(date, e)}
-                >
-                  {/* 日期數字與新增按鈕 */}
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`text-sm font-semibold ${
-                      isOtherMonth ? "text-gray-400" : 
-                      index % 7 === 0 ? "text-red-600" : 
-                      index % 7 === 6 ? "text-blue-600" : 
-                      "text-gray-700"
-                    }`}>
-                      {date.getDate()}
+                return (
+                  <div
+                    key={index}
+                    className={`min-h-[140px] border-r border-b border-cyan-500/10 p-3 relative group cursor-pointer transition-all duration-200 ${
+                      isOtherMonth ? "bg-slate-900/30" : "bg-slate-800/20 hover:bg-slate-700/30"
+                    } ${isTodayDate ? "ring-2 ring-cyan-400 ring-inset" : ""}`}
+                    onClick={() => !isOtherMonth && handleAddSchedule(date)}
+                  >
+                    {/* 日期數字 */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`text-sm font-bold ${
+                        isOtherMonth ? "text-slate-600" : 
+                        index % 7 === 0 ? "text-red-400" : 
+                        index % 7 === 6 ? "text-blue-400" : 
+                        "text-cyan-300"
+                      }`}>
+                        {date.getDate()}
+                      </div>
+                      {!isOtherMonth && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-cyan-400 hover:bg-cyan-500/20"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddSchedule(date);
+                          }}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {!isOtherMonth && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddSchedule(date);
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
 
-                  {/* 排班資訊 */}
-                  <div className="space-y-1">
-                    {daySchedules.map((schedule, idx) => (
-                      <div
-                        key={idx}
-                        className={`text-xs px-2 py-1 rounded border relative group/item ${
-                          shiftColors[schedule.shift_type]
-                        }`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">
-                              {schedule.employee_name}
+                    {/* 排班資訊 */}
+                    <div className="space-y-1">
+                      {daySchedules.map((schedule, idx) => (
+                        <div
+                          key={idx}
+                          className={`text-xs px-2 py-1.5 rounded-lg border backdrop-blur-sm relative group/item transition-all ${
+                            shiftColors[schedule.shift_type]
+                          }`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold truncate">
+                                {schedule.employee_name}
+                              </div>
+                              <div className="text-[10px] opacity-80">
+                                {shiftNames[schedule.shift_type]}
+                              </div>
                             </div>
-                            <div className="text-[10px]">
-                              {shiftNames[schedule.shift_type] || "未知"}
-                            </div>
+                            <button
+                              className="opacity-0 group-hover/item:opacity-100 ml-1 hover:bg-red-500/20 rounded p-0.5 transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                schedule.id && handleDeleteSchedule(schedule.id);
+                              }}
+                            >
+                              <X className="h-3 w-3 text-red-400" />
+                            </button>
                           </div>
-                          <button
-                            className="opacity-0 group-hover/item:opacity-100 ml-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              schedule.id && handleDeleteSchedule(schedule.id);
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    {/* 請假資訊 */}
-                    {dayLeaves.map((leave, idx) => (
-                      <div
-                        key={`leave-${idx}`}
-                        className="text-xs px-2 py-1 rounded border bg-orange-100 text-orange-800 border-orange-300"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="font-medium truncate">
-                          {leave.employee_name}
+                      {/* 請假資訊 */}
+                      {dayLeaves.map((leave, idx) => (
+                        <div
+                          key={`leave-${idx}`}
+                          className="text-xs px-2 py-1.5 rounded-lg border bg-gradient-to-r from-orange-500/20 to-red-500/20 text-orange-300 border-orange-500/30 backdrop-blur-sm"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="font-semibold truncate">
+                            {leave.employee_name}
+                          </div>
+                          <div className="text-[10px] opacity-80">
+                            {leave.leave_type}
+                          </div>
                         </div>
-                        <div className="text-[10px]">
-                          {leave.leave_type}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="col-span-7 p-12 text-center text-slate-500">
+                無法載入月曆資料
+              </div>
+            )}
           </div>
         </Card>
 
         {/* 圖例 */}
-        <div className="mt-6 space-y-3">
-          <div className="flex flex-wrap gap-4 justify-center">
-            {Object.entries(shiftNames).map(([type, name]) => (
-              <div key={type} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded border ${shiftColors[type as ShiftType]}`}></div>
-                <span className="text-sm text-gray-700">{name}</span>
-              </div>
-            ))}
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded border bg-orange-100 border-orange-300"></div>
-              <span className="text-sm text-gray-700">請假</span>
-            </div>
+        <div className="mt-6 flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gradient-to-r from-blue-500/40 to-cyan-500/40 border border-blue-400/50"></div>
+            <span className="text-cyan-300">上班</span>
           </div>
-          <p className="text-xs text-center text-gray-500">
-            說明: 上班時間由員工打卡記錄決定,無固定班別時間限制
-          </p>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gradient-to-r from-gray-500/40 to-gray-600/40 border border-gray-500/50"></div>
+            <span className="text-cyan-300">休假</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded bg-gradient-to-r from-orange-500/40 to-red-500/40 border border-orange-500/50"></div>
+            <span className="text-cyan-300">請假</span>
+          </div>
         </div>
       </div>
 
       {/* 新增/編輯排班對話框 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="bg-slate-800 border-cyan-500/30 text-cyan-100">
           <DialogHeader>
-            <DialogTitle>新增排班</DialogTitle>
+            <DialogTitle className="text-cyan-300">新增排班</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>日期</Label>
-              <div className="text-sm text-gray-600">
-                {selectedDate?.toLocaleDateString("zh-TW", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-cyan-300 mb-2 block">日期</label>
+              <div className="text-lg font-semibold text-white">
+                {selectedDate?.toLocaleDateString('zh-TW')}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>員工</Label>
+            <div>
+              <label className="text-sm text-cyan-300 mb-2 block">員工</label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                <SelectTrigger>
-                  <SelectValue placeholder="請選擇員工" />
+                <SelectTrigger className="bg-slate-700/50 border-cyan-500/30 text-white">
+                  <SelectValue placeholder="選擇員工" />
                 </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp) => (
-                    <SelectItem key={emp.id} value={emp.employee_id}>
-                      {emp.name} ({emp.employee_id})
+                <SelectContent className="bg-slate-800 border-cyan-500/30">
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.employee_id} className="text-white hover:bg-slate-700">
+                      {emp.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>班別</Label>
+            <div>
+              <label className="text-sm text-cyan-300 mb-2 block">班別</label>
               <Select value={selectedShift} onValueChange={(v) => setSelectedShift(v as ShiftType)}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-slate-700/50 border-cyan-500/30 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(shiftNames).map(([type, name]) => (
-                    <SelectItem key={type} value={type}>
-                      {name}
-                    </SelectItem>
-                  ))}
+                <SelectContent className="bg-slate-800 border-cyan-500/30">
+                  <SelectItem value="work" className="text-white hover:bg-slate-700">上班</SelectItem>
+                  <SelectItem value="off" className="text-white hover:bg-slate-700">休假</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleSaveSchedule} 
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+              >
+                儲存
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEditDialog(false)}
+                className="flex-1 bg-slate-700/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-600/50"
+              >
+                取消
+              </Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              取消
-            </Button>
-            <Button onClick={handleSaveSchedule}>
-              儲存
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* 批量補做對話框 */}
       <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="bg-slate-800 border-cyan-500/30 text-cyan-100 max-w-2xl">
           <DialogHeader>
-            <DialogTitle>批量補做排班</DialogTitle>
+            <DialogTitle className="text-cyan-300">批量補做排班</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>排班資料 (CSV 格式)</Label>
-              <p className="text-sm text-gray-600">
-                格式: 日期,員工編號,員工姓名,班別<br/>
-                班別: work (上班), off (休假)<br/>
-                範例: 2025-11-24,ADMIN-HBH012,黃柏翰,work<br/>
-                說明: 上班時間由打卡記錄決定,不需設定固定時間
-              </p>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm text-cyan-300 mb-2 block">CSV 格式資料</label>
               <Textarea
                 value={batchData}
                 onChange={(e) => setBatchData(e.target.value)}
-                placeholder="2025-11-24,ADMIN-HBH012,黃柏翰,work&#10;2025-11-25,SUPER-LDX011,劉道玄,work&#10;2025-11-26,STAFF-LZX003,劉哲軒,off"
+                placeholder="2025-11-24,STAFF-003,劉哲軒,work&#10;2025-11-25,STAFF-004,李文華,work&#10;2025-11-26,STAFF-005,張耿齊,off"
                 rows={10}
-                className="font-mono text-sm"
+                className="font-mono text-sm bg-slate-700/50 border-cyan-500/30 text-white"
               />
             </div>
+            <div className="text-xs text-slate-400 space-y-1">
+              <p>格式: 日期,員工編號,員工姓名,班別</p>
+              <p>班別: work (上班) 或 off (休假)</p>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleBatchImport}
+                className="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white"
+              >
+                匯入
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowBatchDialog(false)}
+                className="flex-1 bg-slate-700/50 border-cyan-500/30 text-cyan-300 hover:bg-slate-600/50"
+              >
+                取消
+              </Button>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBatchDialog(false)}>
-              取消
-            </Button>
-            <Button onClick={handleBatchImport}>
-              匯入
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* 請假審核對話框 */}
-      <LeaveApprovalDialog
-        open={showApprovalDialog}
-        onOpenChange={setShowApprovalDialog}
-        date={approvalDate}
-        onApprovalComplete={() => {
-          loadLeaveRequests();
-          loadSchedules();
-        }}
-      />
     </div>
   );
 }
