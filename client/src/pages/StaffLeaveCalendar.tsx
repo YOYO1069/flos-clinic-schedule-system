@@ -84,7 +84,7 @@ export default function StaffLeaveCalendar() {
     // 檢查是否有編輯權限(不顯示給使用者)
     const hasPermission = EDIT_PERMISSION_IDS.includes(user.employee_id);
     setHasEditPermission(hasPermission);
-  }, []);
+  }, [setLocation]);
 
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

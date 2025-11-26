@@ -233,5 +233,8 @@
   - [x] SUPER-CYA002 (陳韻安 - 一般主管)
 - [x] 隱藏權限資訊 - 使用者之間不顯示誰有權限
 - [x] 在 AdminPanel 和 LeaveCalendar 新增入口
+- [ ] 修復 Supabase RLS 權限問題
+  - [ ] 執行 setup_rls_policies.sql 設定 staff_members 表 RLS
+  - [ ] 執行 setup_rls_policies.sql 設定 leave_records 表 RLS
 - [ ] 測試權限控制功能
-- [ ] 推送到 GitHub 並部署到 Netlify
+- [x] 推送到 GitHub 並部署到 Netlify
