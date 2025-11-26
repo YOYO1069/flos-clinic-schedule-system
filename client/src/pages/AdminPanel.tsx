@@ -124,6 +124,10 @@ export default function AdminPanel() {
                 <Users className="w-4 h-4 mr-2" />
                 員工管理
               </Button>
+              <Button variant="outline" onClick={() => setLocation('/staff-leave')}>
+                <Calendar className="w-4 h-4 mr-2" />
+                員工休假月曆
+              </Button>
               <Button variant="outline" onClick={() => setLocation('/attendance')}>
                 <Clock className="w-4 h-4 mr-2" />
                 員工打卡

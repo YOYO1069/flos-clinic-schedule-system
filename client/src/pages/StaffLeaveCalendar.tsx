@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, ArrowLeft } from "lucide-react";
 import html2canvas from "html2canvas";
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
@@ -35,6 +35,15 @@ interface StaffMember {
   updated_at?: string;
 }
 
+// 有編輯權限的員工編號列表
+const EDIT_PERMISSION_IDS = [
+  'ADMIN-HBH012',    // 黃柏翰 - 管理者
+  'SUPER-LDX011',    // 劉道玄 - 高階主管
+  'SUPER-ZYR016',    // 鍾曜任 - 高階主管
+  'SUPER-WQ001',     // 萬晴 - 一般主管
+  'SUPER-CYA002',    // 陳韻安 - 一般主管
+];
+
 // 取得某月的天數
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
@@ -57,25 +66,32 @@ const MONTH_NAMES = [
   "7月", "8月", "9月", "10月", "11月", "12月"
 ];
 
-export default function LeaveCalendar() {
+export default function StaffLeaveCalendar() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [hasEditPermission, setHasEditPermission] = useState(false);
 
-  // 檢查登入狀態
+  // 檢查登入狀態和權限
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
       return;
     }
-    setCurrentUser(JSON.parse(userStr));
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+    
+    // 檢查是否有編輯權限(不顯示給使用者)
+    const hasPermission = EDIT_PERMISSION_IDS.includes(user.employee_id);
+    setHasEditPermission(hasPermission);
   }, []);
+
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // 當前選擇的年月
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState(11);
+  const [selectedMonth, setSelectedMonth] = useState(1);
   
   // 員工名單
   const [staffMembers, setStaffMembers] = useState<string[]>([]);
@@ -145,8 +161,13 @@ export default function LeaveCalendar() {
     init();
   }, [selectedYear, selectedMonth]);
 
-  // 切換休假狀態
+  // 切換休假狀態(只有有權限的人可以操作)
   const toggleLeave = async (staffName: string, day: number) => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
+
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
     const isCurrentlyLeave = leaveStatus.has(key);
 
@@ -211,7 +232,7 @@ export default function LeaveCalendar() {
       toast.info("正在生成圖片...");
       const canvas = await html2canvas(calendarRef.current, {
         scale: 2,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#0f172a'
       });
       
       const link = document.createElement('a');
@@ -253,13 +274,22 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 處理圖片上傳
+  // 處理圖片上傳(只有有權限的人可以操作)
   const handleImageUpload = () => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
     fileInputRef.current?.click();
   };
 
   // 處理檔案選擇
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -283,7 +313,7 @@ export default function LeaveCalendar() {
       const text = result.data.text;
       console.log("辨識結果:", text);
 
-      const newLeaveRecords: any[] = [];
+      const newLeaveRecords: LeaveRecord[] = [];
       const lines = text.split('\n');
       
       for (const line of lines) {
@@ -334,8 +364,13 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 清除當前月份的所有休假記錄
+  // 清除當前月份的所有休假記錄(只有有權限的人可以操作)
   const handleClear = async () => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
+
     if (confirm(`確定要清除 ${selectedYear} 年 ${selectedMonth} 月的所有休假記錄嗎?`)) {
       try {
         const { error } = await supabase
@@ -355,8 +390,13 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 新增員工
+  // 新增員工(只有有權限的人可以操作)
   const handleAddStaff = async () => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
+
     if (!newStaffName.trim()) {
       toast.error("請輸入員工名字");
       return;
@@ -385,19 +425,22 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 刪除員工
+  // 刪除員工(只有有權限的人可以操作)
   const handleRemoveStaff = async (staffName: string) => {
+    if (!hasEditPermission) {
+      toast.error("您沒有編輯權限");
+      return;
+    }
+
     if (confirm(`確定要刪除員工「${staffName}」嗎?相關的休假記錄也會被清除。`)) {
       try {
-        // 刪除員工
-        const { error: staffError } = await supabase
+        const { error: deleteError } = await supabase
           .from('staff_members')
           .delete()
           .eq('name', staffName);
 
-        if (staffError) throw staffError;
+        if (deleteError) throw deleteError;
 
-        // 刪除該員工的所有休假記錄
         const { error: leaveError } = await supabase
           .from('leave_records')
           .delete()
@@ -415,154 +458,145 @@ export default function LeaveCalendar() {
     }
   };
 
+  // 載入中畫面
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">載入中...</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-400 mx-auto" />
+          <p className="text-blue-200 text-lg">載入中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 print:p-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 print:p-2 print:bg-white">
       <div className="max-w-[1800px] mx-auto">
         {/* 標題和操作按鈕 */}
-        <div className="mb-4 space-y-3 print:hidden">
+        <div className="mb-6 space-y-4 print:hidden">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
-            <div className="flex gap-2">
-              {/* 導航按鈕 */}
-              <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                醫師/員工排班
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
-                <Clock className="w-4 h-4 mr-2" />
-                員工打卡
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
-                <FileText className="w-4 h-4 mr-2" />
-                請假管理
-              </Button>
-              
-              {currentUser?.role === 'admin' && (
-                <Button variant="outline" size="sm" onClick={() => setLocation('/admin')}>
-                  管理者主控台
-                </Button>
-              )}
-              
-              {['admin', 'senior_supervisor', 'supervisor'].includes(currentUser?.role) && (
-                <Button variant="outline" size="sm" onClick={() => setLocation('/approval')}>
-                  審核請假
-                </Button>
-              )}
-              
-              <Button variant="outline" size="sm" onClick={() => setLocation('/staff-leave')}>
-                員工休假月曆
-              </Button>
-              
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={() => {
-                  localStorage.removeItem('user');
-                  setLocation('/login');
-                }}
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation('/')}
+                className="bg-slate-800/50 border-blue-500/30 text-blue-200 hover:bg-slate-700/50"
               >
-                登出
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                返回
               </Button>
-              
-              {/* 次要功能選單 */}
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                員工休假月曆
+              </h1>
+            </div>
+            
+            <div className="flex gap-2">
+              {/* 只有有權限的人才能看到編輯員工按鈕 */}
+              {hasEditPermission && (
+                <Dialog open={isEditingStaff} onOpenChange={setIsEditingStaff}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="bg-slate-800/50 border-blue-500/30 text-blue-200 hover:bg-slate-700/50">
+                      <Users className="w-4 h-4 mr-2" />
+                      編輯員工
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto bg-slate-800 border-blue-500/30">
+                    <DialogHeader>
+                      <DialogTitle className="text-blue-200">編輯員工名單</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="輸入員工名字"
+                          value={newStaffName}
+                          onChange={(e) => setNewStaffName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleAddStaff()}
+                          className="bg-slate-700/50 border-blue-500/30 text-blue-100"
+                        />
+                        <Button onClick={handleAddStaff} size="sm" className="bg-blue-600 hover:bg-blue-700">
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        {staffMembers.map((staff, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-slate-700/50 rounded border border-blue-500/20">
+                            <span className="text-blue-100">{staff}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveStaff(staff)}
+                              className="hover:bg-red-500/20"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-400" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+
+              {/* 功能選單 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="bg-slate-800/50 border-blue-500/30 text-blue-200 hover:bg-slate-700/50">
                     <MoreVertical className="w-4 h-4 mr-2" />
                     更多功能
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <Dialog open={isEditingStaff} onOpenChange={setIsEditingStaff}>
-                    <DialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Users className="w-4 h-4 mr-2" />
-                        編輯員工
+                <DropdownMenuContent className="bg-slate-800 border-blue-500/30">
+                  {hasEditPermission && (
+                    <>
+                      <DropdownMenuItem 
+                        onClick={handleImageUpload}
+                        disabled={isProcessing}
+                        className="text-blue-200 hover:bg-slate-700"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            辨識中...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            匯入圖片
+                          </>
+                        )}
                       </DropdownMenuItem>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>編輯員工名單</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        {/* 新增員工 */}
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="輸入員工名字"
-                            value={newStaffName}
-                            onChange={(e) => setNewStaffName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddStaff()}
-                          />
-                          <Button onClick={handleAddStaff} size="sm">
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        
-                        {/* 員工列表 */}
-                        <div className="space-y-2">
-                          {staffMembers.map((staff, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <span>{staff}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveStaff(staff)}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-
-                  <DropdownMenuItem onClick={handleImageUpload} disabled={isProcessing}>
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        辨識中...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-4 h-4 mr-2" />
-                        匯入圖片
-                      </>
-                    )}
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={handleExportExcel}>
+                      <DropdownMenuItem 
+                        onClick={handleClear}
+                        className="text-blue-200 hover:bg-slate-700"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        清除記錄
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-blue-500/20" />
+                    </>
+                  )}
+                  <DropdownMenuItem 
+                    onClick={handleExportExcel}
+                    className="text-blue-200 hover:bg-slate-700"
+                  >
                     <FileSpreadsheet className="w-4 h-4 mr-2" />
                     匯出 Excel
                   </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={handlePrint}>
+                  <DropdownMenuItem 
+                    onClick={handlePrint}
+                    className="text-blue-200 hover:bg-slate-700"
+                  >
                     <Printer className="w-4 h-4 mr-2" />
                     列印
                   </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={handleSaveImage}>
+                  <DropdownMenuItem 
+                    onClick={handleSaveImage}
+                    className="text-blue-200 hover:bg-slate-700"
+                  >
                     <Download className="w-4 h-4 mr-2" />
                     儲存圖片
-                  </DropdownMenuItem>
-
-                  <DropdownMenuSeparator />
-
-                  <DropdownMenuItem onClick={handleClear} className="text-red-600">
-                    清除記錄
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -571,11 +605,11 @@ export default function LeaveCalendar() {
 
           {/* 月份選擇器 */}
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">選擇月份:</label>
+            <label className="text-sm font-medium text-blue-200">選擇月份:</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1.5 bg-slate-800/50 border border-blue-500/30 rounded-md text-sm text-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {Array.from({ length: 5 }, (_, i) => 2024 + i).map(year => (
                 <option key={year} value={year}>{year}年</option>
@@ -584,13 +618,13 @@ export default function LeaveCalendar() {
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-1.5 bg-slate-800/50 border border-blue-500/30 rounded-md text-sm text-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {MONTH_NAMES.map((name, index) => (
                 <option key={index + 1} value={index + 1}>{name}</option>
               ))}
             </select>
-            <span className="text-sm text-gray-600">共 {daysInMonth} 天</span>
+            <span className="text-sm text-blue-300">共 {daysInMonth} 天</span>
           </div>
         </div>
 
@@ -603,27 +637,27 @@ export default function LeaveCalendar() {
           className="hidden"
         />
 
-        {/* 月曆表格 - 主要看板 */}
-        <div ref={calendarRef} className="bg-white rounded-lg shadow-lg overflow-hidden print:shadow-none">
+        {/* 月曆表格 */}
+        <div ref={calendarRef} className="bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-2xl overflow-hidden border border-blue-500/20 print:shadow-none print:bg-white print:border-gray-300">
           {/* 列印時顯示的標題 */}
           <div className="hidden print:block p-4 text-center border-b-2 border-gray-800">
-            <h1 className="text-xl font-bold">員工休假月曆 - {selectedYear}年{selectedMonth}月</h1>
+            <h1 className="text-xl font-bold text-gray-900">員工休假月曆 - {selectedYear}年{selectedMonth}月</h1>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-10 bg-gray-800 text-white border border-gray-600 px-3 py-2 text-sm font-bold min-w-[100px]">
+                  <th className="sticky left-0 z-10 bg-gradient-to-r from-blue-600 to-cyan-600 text-white border border-blue-500/30 px-3 py-3 text-sm font-bold min-w-[100px] print:bg-gray-800">
                     員工姓名
                   </th>
                   {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                     <th
                       key={day}
-                      className={`border border-gray-600 px-2 py-2 text-sm font-bold min-w-[50px] ${
+                      className={`border border-blue-500/30 px-2 py-3 text-sm font-bold min-w-[50px] print:border-gray-600 ${
                         isWeekend(selectedYear, selectedMonth, day)
-                          ? 'bg-gray-700 text-white' 
-                          : 'bg-gray-800 text-white'
+                          ? 'bg-gradient-to-b from-slate-700 to-slate-800 text-cyan-300 print:bg-gray-700' 
+                          : 'bg-gradient-to-b from-blue-700 to-blue-800 text-white print:bg-gray-800'
                       }`}
                     >
                       {day}
@@ -633,20 +667,28 @@ export default function LeaveCalendar() {
               </thead>
               <tbody>
                 {staffMembers.map((staff) => (
-                  <tr key={staff}>
-                    <td className="sticky left-0 z-10 bg-gray-100 border border-gray-400 px-3 py-2 text-sm font-medium">
+                  <tr key={staff} className="hover:bg-blue-500/5 transition-colors">
+                    <td className="sticky left-0 z-10 bg-slate-700/80 backdrop-blur-sm border border-blue-500/30 px-3 py-2 text-sm font-medium text-blue-100 print:bg-gray-100 print:text-gray-900">
                       {staff}
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                       <td
                         key={day}
                         onClick={() => toggleLeave(staff, day)}
-                        className={`border border-gray-400 px-2 py-2 text-center text-xs cursor-pointer transition-colors hover:bg-blue-100 print:cursor-default ${
-                          isWeekend(selectedYear, selectedMonth, day) ? 'bg-gray-200' : 'bg-white'
+                        className={`border border-blue-500/30 px-2 py-2 text-center text-xs transition-all print:border-gray-400 print:bg-white ${
+                          hasEditPermission 
+                            ? 'cursor-pointer hover:bg-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20' 
+                            : 'cursor-not-allowed'
+                        } ${
+                          isWeekend(selectedYear, selectedMonth, day) 
+                            ? 'bg-slate-700/30 print:bg-gray-200' 
+                            : 'bg-slate-800/20'
                         }`}
                       >
                         {isLeave(staff, day) && (
-                          <span className="font-bold text-red-600">OFF</span>
+                          <span className="font-bold text-sm bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent animate-pulse print:text-red-600">
+                            OFF
+                          </span>
                         )}
                       </td>
                     ))}
@@ -658,11 +700,21 @@ export default function LeaveCalendar() {
         </div>
 
         {/* 說明文字 */}
-        <div className="mt-4 text-sm text-gray-600 print:hidden">
-          <p>• 點擊格子可以標記/取消 OFF (休假)</p>
-          <p>• 深色背景為週末日期</p>
-          <p>• 其他功能(編輯員工、匯入圖片、匯出等)請點擊右上角選單</p>
-          <p>• 資料已永久儲存到雲端資料庫,可跨裝置存取</p>
+        <div className="mt-6 text-sm text-blue-200/80 space-y-1 print:hidden">
+          {hasEditPermission ? (
+            <>
+              <p>• 點擊格子可以標記/取消 OFF (休假)</p>
+              <p>• 深色背景為週末日期</p>
+              <p>• 可以編輯員工名單、切換不同月份、匯出 Excel、列印或儲存為圖片</p>
+              <p>• 可以上傳之前儲存的月曆圖片,系統會自動辨識並還原休假記錄</p>
+            </>
+          ) : (
+            <>
+              <p>• 深色背景為週末日期</p>
+              <p>• 您目前為檢視模式,無法編輯休假記錄</p>
+              <p>• 可以匯出 Excel、列印或儲存為圖片</p>
+            </>
+          )}
         </div>
       </div>
     </div>
