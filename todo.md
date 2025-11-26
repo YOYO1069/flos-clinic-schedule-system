@@ -261,5 +261,15 @@
   - [x] 新增家庭照顧假
 - [x] 設定上述假別不扣全勤
 - [x] 移除請假理由欄位
-- [ ] 執行 SQL 設定資料庫
+- [x] 執行 SQL 設定資料庫
+- [x] 測試並部署
+- [x] 測試高階主管登入功能
+- [x] 測試員工休假月曆功能
+
+
+## 緊急修正 (2025-01-26)
+- [x] 修正假別分類 - 保留原本病假事假，只有指定 14 種不扣全勤
+- [x] 修復月曆格子顯示問題 - LeaveCalendar 程式碼正常，等待 Netlify 部署
+- [x] 合併重複的月曆頁面 - LeaveCalendar 和 StaffLeaveCalendar
+- [x] 移除 StaffLeaveCalendar，只保留 LeaveCalendar
 - [ ] 測試並部署

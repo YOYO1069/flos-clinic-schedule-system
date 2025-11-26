@@ -29,6 +29,7 @@ interface LeaveRequest {
 }
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
+  // 不扣全勤
   special: '特休假',
   marriage: '婚假',
   bereavement: '喪假',
@@ -42,7 +43,12 @@ const LEAVE_TYPE_LABELS: Record<string, string> = {
   breastfeeding: '哺乳假',
   typhoon: '颱風假',
   menstrual: '生理假',
-  family_care: '家庭照顧假'
+  family_care: '家庭照顧假',
+  // 會扣全勤
+  sick: '病假',
+  personal: '事假',
+  compensatory: '補休',
+  other: '其他'
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {

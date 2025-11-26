@@ -14,7 +14,7 @@ import LeaveApproval from "./pages/LeaveApproval";
 import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import StaffManagement from "./pages/StaffManagement";
-import StaffLeaveCalendar from "./pages/StaffLeaveCalendar";
+// StaffLeaveCalendar 已移除，統一使用 LeaveCalendar
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -28,7 +28,7 @@ function Router() {
       <Route path="/calendar" component={CalendarSchedule} />
       <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/staff-management" component={StaffManagement} />
-      <Route path="/staff-leave" component={StaffLeaveCalendar} />
+      <Route path="/staff-leave" component={LeaveCalendar} />
       <Route path="/attendance" component={Attendance} />
       <Route path="/leave" component={LeaveManagement} />
       <Route path={"/404"} component={NotFound} />

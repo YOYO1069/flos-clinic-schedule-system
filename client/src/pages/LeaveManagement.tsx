@@ -26,6 +26,7 @@ interface LeaveRequest {
 }
 
 const leaveTypes = [
+  // 不扣全勤的假別
   { value: 'special', label: '特休假', noDeduct: true },
   { value: 'marriage', label: '婚假', noDeduct: true },
   { value: 'bereavement', label: '喪假', noDeduct: true },
@@ -39,7 +40,13 @@ const leaveTypes = [
   { value: 'breastfeeding', label: '哺乳假', noDeduct: true },
   { value: 'typhoon', label: '颱風假', noDeduct: true },
   { value: 'menstrual', label: '生理假', noDeduct: true },
-  { value: 'family_care', label: '家庭照顧假', noDeduct: true }
+  { value: 'family_care', label: '家庭照顧假', noDeduct: true },
+  
+  // 會扣全勤的假別
+  { value: 'sick', label: '病假', noDeduct: false },
+  { value: 'personal', label: '事假', noDeduct: false },
+  { value: 'compensatory', label: '補休', noDeduct: false },
+  { value: 'other', label: '其他', noDeduct: false }
 ];
 
 export default function LeaveManagement() {
@@ -239,12 +246,28 @@ export default function LeaveManagement() {
                 </div>
               )}
 
-              {/* 不需要填寫請假理由 */}
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                <p className="text-sm text-green-700">
-                  ✅ 所有假別均不扣全勤，且不需填寫請假理由
-                </p>
-              </div>
+              {/* 顯示是否扣全勤 */}
+              {(() => {
+                const selectedType = leaveTypes.find(t => t.value === leaveType);
+                const noDeduct = selectedType?.noDeduct || false;
+                return (
+                  <div className={`p-3 rounded-lg border ${
+                    noDeduct 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-orange-50 border-orange-200'
+                  }`}>
+                    <p className={`text-sm ${
+                      noDeduct 
+                        ? 'text-green-700' 
+                        : 'text-orange-700'
+                    }`}>
+                      {noDeduct 
+                        ? '✅ 此假別不扣全勤' 
+                        : '⚠️ 此假別會扣全勤'}
+                    </p>
+                  </div>
+                );
+              })()}
 
               <Button
                 className="w-full bg-gradient-to-r from-pink-500 to-purple-600"
