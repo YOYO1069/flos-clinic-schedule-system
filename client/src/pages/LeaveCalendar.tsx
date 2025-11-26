@@ -147,6 +147,18 @@ export default function LeaveCalendar() {
 
   // 切換休假狀態
   const toggleLeave = async (staffName: string, day: number) => {
+    // 權限檢查：只有管理者和主管可以編輯
+    if (!currentUser) {
+      toast.error("請先登入");
+      return;
+    }
+    
+    const allowedRoles = ['admin', 'senior_supervisor', 'supervisor'];
+    if (!allowedRoles.includes(currentUser.role)) {
+      toast.error("權限不足：只有主管以上可以編輯月曆");
+      return;
+    }
+    
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
     const isCurrentlyLeave = leaveStatus.has(key);
 
