@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, KeyRound } from "lucide-react";
 import html2canvas from "html2canvas";
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
@@ -460,6 +460,11 @@ export default function LeaveCalendar() {
               <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
                 <FileText className="w-4 h-4 mr-2" />
                 請假管理
+              </Button>
+              
+              <Button variant="outline" size="sm" onClick={() => setLocation('/change-password')}>
+                <KeyRound className="w-4 h-4 mr-2" />
+                修改密碼
               </Button>
               
               {currentUser?.role === 'admin' && (

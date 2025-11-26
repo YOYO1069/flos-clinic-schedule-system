@@ -4,7 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
-import { LogOut, Users, Calendar, Clock, FileText, Shield, Eye, EyeOff } from "lucide-react";
+import { LogOut, Users, Calendar, Clock, FileText, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface User {
   id: number;
@@ -28,6 +31,9 @@ export default function AdminPanel() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
+  const [resetPasswordUserId, setResetPasswordUserId] = useState<number | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     // 檢查登入狀態
@@ -80,6 +86,39 @@ export default function AdminPanel() {
       ...prev,
       [userId]: !prev[userId]
     }));
+  };
+
+  const handleResetPassword = async (user: User) => {
+    if (!newPassword) {
+      toast.error("請輸入新密碼");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("密碼至少需要 6 個字元");
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ password: newPassword })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success(`已重設 ${user.name} 的密碼`);
+      setResetPasswordUserId(null);
+      setNewPassword("");
+      loadUsers();
+    } catch (error) {
+      console.error('重設密碼失敗:', error);
+      toast.error("重設密碼失敗");
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const groupedUsers = users.reduce((acc, user) => {
@@ -177,6 +216,65 @@ export default function AdminPanel() {
                             </span>
                           </div>
                           <p className="text-sm text-gray-600 mt-1">加入時間: {new Date(user.created_at).toLocaleDateString('zh-TW')}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Dialog open={resetPasswordUserId === user.id} onOpenChange={(open) => {
+                            if (!open) {
+                              setResetPasswordUserId(null);
+                              setNewPassword("");
+                            }
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setResetPasswordUserId(user.id)}
+                              >
+                                <KeyRound className="w-4 h-4 mr-1" />
+                                重設密碼
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>重設密碼</DialogTitle>
+                                <DialogDescription>
+                                  為 {user.name} ({user.employee_id}) 設定新密碼
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="newPassword">新密碼</Label>
+                                  <Input
+                                    id="newPassword"
+                                    type="text"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="請輸入新密碼(至少 6 個字元)"
+                                    disabled={isResetting}
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() => handleResetPassword(user)}
+                                    disabled={isResetting}
+                                    className="flex-1"
+                                  >
+                                    {isResetting ? "處理中..." : "確認重設"}
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setResetPasswordUserId(null);
+                                      setNewPassword("");
+                                    }}
+                                    disabled={isResetting}
+                                  >
+                                    取消
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     </div>
