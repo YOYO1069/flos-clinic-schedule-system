@@ -434,15 +434,17 @@ export default function LeaveCalendar() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
             <div className="flex gap-2">
-              {/* 導航按鈕 */}
-              <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                醫師/員工排班
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
+              {/* 醫目的打卡快速按鈕 */}
+              <Button 
+                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg"
+                size="sm" 
+                onClick={() => setLocation('/attendance')}
+              >
                 <Clock className="w-4 h-4 mr-2" />
-                員工打卡
+                打卡
               </Button>
+              
+              {/* 其他導航按鈕 */}
               <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
                 <FileText className="w-4 h-4 mr-2" />
                 請假管理
@@ -459,10 +461,6 @@ export default function LeaveCalendar() {
                   審核請假
                 </Button>
               )}
-              
-              <Button variant="outline" size="sm" onClick={() => setLocation('/staff-leave')}>
-                員工休假月曆
-              </Button>
               
               <Button 
                 variant="destructive" 

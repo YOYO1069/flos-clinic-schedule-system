@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase, tables } from "@/lib/supabase";
-import { Calendar, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, FileText, CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
+import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 
@@ -182,11 +183,27 @@ export default function LeaveManagement() {
     );
   };
 
+  const [, setLocation] = useLocation();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* 標題 */}
+        {/* 標題和導航 */}
         <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="ghost" onClick={() => setLocation('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回首頁
+            </Button>
+            <Button 
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg"
+              size="sm" 
+              onClick={() => setLocation('/attendance')}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              打卡
+            </Button>
+          </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             請假管理系統
           </h1>
