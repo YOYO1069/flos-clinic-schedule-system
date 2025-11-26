@@ -26,14 +26,20 @@ interface LeaveRequest {
 }
 
 const leaveTypes = [
-  { value: 'annual', label: '年假' },
-  { value: 'sick', label: '病假' },
-  { value: 'personal', label: '事假' },
-  { value: 'marriage', label: '婚假' },
-  { value: 'maternity', label: '產假' },
-  { value: 'paternity', label: '陪產假' },
-  { value: 'bereavement', label: '喪假' },
-  { value: 'other', label: '其他' }
+  { value: 'special', label: '特休假', noDeduct: true },
+  { value: 'marriage', label: '婚假', noDeduct: true },
+  { value: 'bereavement', label: '喪假', noDeduct: true },
+  { value: 'maternity', label: '產假', noDeduct: true },
+  { value: 'job_seeking', label: '謀職假', noDeduct: true },
+  { value: 'miscarriage', label: '流產假', noDeduct: true },
+  { value: 'prenatal_care', label: '安胎假', noDeduct: true },
+  { value: 'prenatal_checkup', label: '產檢假', noDeduct: true },
+  { value: 'paternity_checkup', label: '陪產檢假', noDeduct: true },
+  { value: 'official_injury', label: '公假工傷假', noDeduct: true },
+  { value: 'breastfeeding', label: '哺乳假', noDeduct: true },
+  { value: 'typhoon', label: '颱風假', noDeduct: true },
+  { value: 'menstrual', label: '生理假', noDeduct: true },
+  { value: 'family_care', label: '家庭照顧假', noDeduct: true }
 ];
 
 export default function LeaveManagement() {
@@ -42,10 +48,11 @@ export default function LeaveManagement() {
   const [showForm, setShowForm] = useState(false);
   
   // 表單狀態
-  const [leaveType, setLeaveType] = useState('annual');
+  const [leaveType, setLeaveType] = useState('special');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
+  const [noDeductAttendance, setNoDeductAttendance] = useState(true);
 
   // 模擬員工 ID
   const employeeId = 1;
@@ -83,8 +90,8 @@ export default function LeaveManagement() {
 
   // 提交請假申請
   async function submitRequest() {
-    if (!startDate || !endDate || !reason) {
-      alert('請填寫完整資訊');
+    if (!startDate || !endDate) {
+      alert('請選擇請假日期');
       return;
     }
 
@@ -96,6 +103,10 @@ export default function LeaveManagement() {
 
     setLoading(true);
     try {
+      // 檢查是否不扣全勤
+      const selectedType = leaveTypes.find(t => t.value === leaveType);
+      const noDeduct = selectedType?.noDeduct || false;
+
       const { error } = await supabase
         .from(tables.leaveRequests)
         .insert([{
@@ -104,7 +115,8 @@ export default function LeaveManagement() {
           start_date: startDate,
           end_date: endDate,
           days: days,
-          reason: reason,
+          reason: '', // 不需要理由
+          no_deduct_attendance: noDeduct,
           status: 'pending'
         }]);
 
@@ -112,7 +124,7 @@ export default function LeaveManagement() {
 
       alert('✅ 請假申請已提交!');
       setShowForm(false);
-      setLeaveType('annual');
+      setLeaveType('special');
       setStartDate('');
       setEndDate('');
       setReason('');
@@ -227,14 +239,11 @@ export default function LeaveManagement() {
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label>請假事由</Label>
-                <Textarea
-                  placeholder="請說明請假原因..."
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={4}
-                />
+              {/* 不需要填寫請假理由 */}
+              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <p className="text-sm text-green-700">
+                  ✅ 所有假別均不扣全勤，且不需填寫請假理由
+                </p>
               </div>
 
               <Button

@@ -29,16 +29,20 @@ interface LeaveRequest {
 }
 
 const LEAVE_TYPE_LABELS: Record<string, string> = {
-  annual: '年假',
-  sick: '病假',
-  personal: '事假',
-  menstrual: '生理假',
+  special: '特休假',
   marriage: '婚假',
-  maternity: '產假',
-  paternity: '陪產假',
   bereavement: '喪假',
-  compensatory: '補休',
-  other: '其他'
+  maternity: '產假',
+  job_seeking: '謀職假',
+  miscarriage: '流產假',
+  prenatal_care: '安胎假',
+  prenatal_checkup: '產檢假',
+  paternity_checkup: '陪產檢假',
+  official_injury: '公假工傷假',
+  breastfeeding: '哺乳假',
+  typhoon: '颱風假',
+  menstrual: '生理假',
+  family_care: '家庭照顧假'
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
