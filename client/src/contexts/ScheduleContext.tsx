@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { DaySchedule, DoctorShift, MonthSchedule } from '@/types/schedule';
-import { supabase, DoctorSchedule, SCHEDULE_TABLE } from '@/lib/supabase';
+import { doctorScheduleClient, DoctorSchedule, SCHEDULE_TABLE } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface ScheduleContextType {
@@ -31,7 +31,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const loadSchedules = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .select('*')
         .order('date', { ascending: true });
@@ -86,7 +86,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .insert({
           date: date,
@@ -128,7 +128,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const updateShift = async (date: string, shiftId: string, shift: Omit<DoctorShift, 'id'>) => {
     try {
-      const { error } = await supabase
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .update({
           doctor_name: shift.doctorName,
@@ -166,7 +166,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const deleteShift = async (date: string, shiftId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .delete()
         .eq('id', shiftId);
@@ -208,7 +208,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const clearAllSchedules = async () => {
     try {
-      const { error } = await supabase
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000'); // 刪除所有記錄
