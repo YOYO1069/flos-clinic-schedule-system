@@ -13,6 +13,7 @@ import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
 import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
+import Dashboard from "./pages/Dashboard";
 import StaffManagement from "./pages/StaffManagement";
 import ChangePassword from "./pages/ChangePassword";
 import TestEnv from "./pages/TestEnv";
@@ -26,7 +27,8 @@ function Router() {
       <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/approval" component={LeaveApproval} />
-      <Route path={"/"} component={LeaveCalendar} />
+      <Route path={"/"} component={Dashboard} />
+      <Route path="/leave-calendar" component={LeaveCalendar} />
       <Route path="/schedule" component={Home} />
       <Route path="/calendar" component={CalendarSchedule} />
       <Route path="/staff-management" component={StaffManagement} />
