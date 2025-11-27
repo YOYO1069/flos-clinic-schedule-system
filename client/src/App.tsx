@@ -17,12 +17,14 @@ import Dashboard from "./pages/Dashboard";
 import StaffManagement from "./pages/StaffManagement";
 import ChangePassword from "./pages/ChangePassword";
 import TestEnv from "./pages/TestEnv";
+import TestDB from "./pages/TestDB";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/test-env" component={TestEnv} />
+      <Route path="/test-db" component={TestDB} />
       <Route path="/login" component={Login} />
       <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/admin" component={AdminPanel} />
