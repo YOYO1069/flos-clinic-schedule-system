@@ -15,19 +15,20 @@ import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import StaffManagement from "./pages/StaffManagement";
 import ChangePassword from "./pages/ChangePassword";
-// StaffLeaveCalendar 已移除，統一使用 LeaveCalendar
+import TestEnv from "./pages/TestEnv";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
+      <Route path="/test-env" component={TestEnv} />
       <Route path="/login" component={Login} />
+      <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/approval" component={LeaveApproval} />
       <Route path={"/"} component={LeaveCalendar} />
       <Route path="/schedule" component={Home} />
       <Route path="/calendar" component={CalendarSchedule} />
-      <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/staff-management" component={StaffManagement} />
       <Route path="/staff-leave" component={LeaveCalendar} />
       <Route path="/attendance" component={Attendance} />

@@ -1,8 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// 直接使用固定的 Supabase 配置
-const supabaseUrl = 'https://pizzpwesrbulfjylejlu.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpenpwd2VzcmJ1bGZqeWxlamx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDE1MzgsImV4cCI6MjA3NjIxNzUzOH0.xkVhoQhKBaPGkBzU1tuzAH49rP91gUaBLZFffcnKZIk'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://pizzpwesrbulfjylejlu.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpenpwd2VzcmJ1bGZqeWxlamx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDE1MzgsImV4cCI6MjA3NjIxNzUzOH0.xkVhoQhKBaPGkBzU1tuzAH49rP91gUaBLZFffcnKZIk'
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
@@ -47,6 +46,20 @@ export const businessHours = {
   sunday: { closed: true }
 }
 
+// 醫師排班資料庫表名
+export const SCHEDULE_TABLE = 'doctor_shift_schedules';
+
+// 醫師排班資料類型
+export interface DoctorSchedule {
+  id: string;
+  date: string;
+  doctor_name: string;
+  start_time: string;
+  end_time: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // 資料庫表格結構
 export const tables = {
   schedules: 'flos_schedules',
@@ -69,4 +82,3 @@ export const subscribeToChanges = (table: string, callback: (payload: any) => vo
     subscription.unsubscribe()
   }
 }
-// Force rebuild Sun Nov 23 20:40:42 EST 2025

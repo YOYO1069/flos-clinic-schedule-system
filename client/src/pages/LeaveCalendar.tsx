@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, KeyRound } from "lucide-react";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
 import html2canvas from "html2canvas";
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
@@ -147,18 +147,6 @@ export default function LeaveCalendar() {
 
   // 切換休假狀態
   const toggleLeave = async (staffName: string, day: number) => {
-    // 權限檢查：只有管理者和主管可以編輯
-    if (!currentUser) {
-      toast.error("請先登入");
-      return;
-    }
-    
-    const allowedRoles = ['admin', 'senior_supervisor', 'supervisor'];
-    if (!allowedRoles.includes(currentUser.role)) {
-      toast.error("權限不足：只有主管以上可以編輯月曆");
-      return;
-    }
-    
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
     const isCurrentlyLeave = leaveStatus.has(key);
 
@@ -446,25 +434,22 @@ export default function LeaveCalendar() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
             <div className="flex gap-2">
-              {/* 醫目的打卡快速按鈕 */}
-              <Button 
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg"
-                size="sm" 
-                onClick={() => setLocation('/attendance')}
-              >
-                <Clock className="w-4 h-4 mr-2" />
-                打卡
+              {/* 導航按鈕 */}
+              <Button variant="default" size="sm" onClick={() => setLocation('/doctor-schedule')} className="bg-teal-600 hover:bg-teal-700">
+                <Calendar className="w-4 h-4 mr-2" />
+                醫師排班
               </Button>
-              
-              {/* 其他導航按鈕 */}
+              <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
+                <Calendar className="w-4 h-4 mr-2" />
+                員工排班
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
+                <Clock className="w-4 h-4 mr-2" />
+                員工打卡
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
                 <FileText className="w-4 h-4 mr-2" />
                 請假管理
-              </Button>
-              
-              <Button variant="outline" size="sm" onClick={() => setLocation('/change-password')}>
-                <KeyRound className="w-4 h-4 mr-2" />
-                修改密碼
               </Button>
               
               {currentUser?.role === 'admin' && (
