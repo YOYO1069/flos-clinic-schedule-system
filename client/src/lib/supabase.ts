@@ -46,6 +46,20 @@ export const businessHours = {
   sunday: { closed: true }
 }
 
+// 醫師排班資料庫表名
+export const SCHEDULE_TABLE = 'doctor_shift_schedules';
+
+// 醫師排班資料類型
+export interface DoctorSchedule {
+  id: string;
+  date: string;
+  doctor_name: string;
+  start_time: string;
+  end_time: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // 資料庫表格結構
 export const tables = {
   schedules: 'flos_schedules',

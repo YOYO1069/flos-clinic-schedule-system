@@ -435,9 +435,13 @@ export default function LeaveCalendar() {
             <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
             <div className="flex gap-2">
               {/* 導航按鈕 */}
+              <Button variant="default" size="sm" onClick={() => setLocation('/doctor-schedule')} className="bg-teal-600 hover:bg-teal-700">
+                <Calendar className="w-4 h-4 mr-2" />
+                醫師排班
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
                 <Calendar className="w-4 h-4 mr-2" />
-                醫師/員工排班
+                員工排班
               </Button>
               <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
                 <Clock className="w-4 h-4 mr-2" />
