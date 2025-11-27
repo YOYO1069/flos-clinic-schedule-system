@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { supabase, doctors } from "@/lib/supabase";
 import { APP_TITLE } from "@/const";
-import { useLocation } from 'wouter';
+import { useLocation } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface Schedule {
   id?: number;
@@ -14,6 +16,15 @@ interface Schedule {
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const { permissions } = usePermissions(user?.role as UserRole);
+  
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setUser(JSON.parse(userStr));
+    }
+  }, []);
   const [currentYear, setCurrentYear] = useState(2025);
   const [currentMonth, setCurrentMonth] = useState(10);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -150,41 +161,66 @@ export default function Home() {
           >
             🏠 返回首頁
           </Button>
-          <Button 
-            onClick={() => setActiveTab('doctor')}
-            variant={activeTab === 'doctor' ? 'default' : 'outline'}
-            className="flex items-center gap-2"
-          >
-            👨‍⚕️ 醫師排班
-          </Button>
-          <Button 
-            onClick={() => setActiveTab('staff')}
-            variant={activeTab === 'staff' ? 'default' : 'outline'}
-            className="flex items-center gap-2"
-          >
-            👥 員工排班
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/')}
-          >
-            📅 休假月曆
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/attendance')}
-          >
-            ⏰ 員工打卡
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/leave')}
-          >
-            📝 請假管理
-          </Button>
+          
+          {permissions.canManageDoctorSchedule && (
+            <Button 
+              onClick={() => setActiveTab('doctor')}
+              variant={activeTab === 'doctor' ? 'default' : 'outline'}
+              className="flex items-center gap-2"
+            >
+              👨‍⚕️ 醫師排班
+            </Button>
+          )}
+          
+          {permissions.canManageStaffSchedule && (
+            <Button 
+              onClick={() => setActiveTab('staff')}
+              variant={activeTab === 'staff' ? 'default' : 'outline'}
+              className="flex items-center gap-2"
+            >
+              👥 員工排班
+            </Button>
+          )}
+          
+          {permissions.canAccessLeaveCalendar && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setLocation('/leave-calendar')}
+            >
+              📅 休假月曆
+            </Button>
+          )}
+          
+          {permissions.canAccessAttendance && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setLocation('/attendance')}
+            >
+              ⏰ 員工打卡
+            </Button>
+          )}
+          
+          {permissions.canAccessLeaveManagement && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setLocation('/leave')}
+            >
+              📝 請假管理
+            </Button>
+          )}
+          
+          {permissions.canAccessLeaveApproval && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => setLocation('/approval')}
+            >
+              ✅ 請假審核
+            </Button>
+          )}
         </div>
 
         {/* 醫師陣容 */}
