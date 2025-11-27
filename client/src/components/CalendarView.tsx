@@ -16,7 +16,7 @@ export function CalendarView() {
         {WEEKDAYS.map((day) => (
           <div
             key={day}
-            className="py-3 text-center text-sm font-semibold text-muted-foreground border-b border-border"
+            className="py-2 md:py-3 text-center text-xs md:text-sm font-semibold text-muted-foreground border-b border-border"
           >
             {day}
           </div>

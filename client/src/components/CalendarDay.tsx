@@ -55,15 +55,15 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
     <>
       <div
         className={cn(
-          'min-h-32 border border-border bg-card p-2 transition-colors',
+          'min-h-24 md:min-h-32 border border-border bg-card p-1.5 md:p-2 transition-colors',
           !isCurrentMonth && 'bg-muted/30 text-muted-foreground',
           isToday && 'ring-2 ring-primary'
         )}
       >
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-1 md:mb-2">
           <span
             className={cn(
-              'text-sm font-medium',
+              'text-xs md:text-sm font-medium',
               isToday && 'text-primary font-bold'
             )}
           >
@@ -73,10 +73,10 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 md:h-6 md:w-6"
               onClick={handleAddShift}
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           )}
         </div>
@@ -87,14 +87,14 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    'text-xs p-1.5 rounded bg-primary/10 hover:bg-primary/20 cursor-pointer transition-colors w-full text-left',
-                    'border border-primary/20'
+                    'text-[10px] md:text-xs p-1 md:p-1.5 rounded bg-primary/10 hover:bg-primary/20 cursor-pointer transition-colors w-full text-left',
+                    'border border-primary/20 min-h-[2.5rem] md:min-h-0'
                   )}
                 >
-                  <div className="font-medium text-foreground truncate">
+                  <div className="font-medium text-foreground truncate leading-tight">
                     {shift.doctorName}
                   </div>
-                  <div className="text-muted-foreground">
+                  <div className="text-muted-foreground leading-tight mt-0.5">
                     {shift.startTime} - {shift.endTime}
                   </div>
                 </button>

@@ -22,20 +22,20 @@ export function Toolbar({ onExportExcel, onExportPDF }: ToolbarProps) {
   const { clearAllSchedules } = useSchedule();
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={onExportExcel}>
-        <FileSpreadsheet className="h-4 w-4 mr-2" />
-        匯出 Excel
+    <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-4">
+      <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={onExportExcel}>
+        <FileSpreadsheet className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+        <span className="hidden sm:inline">匯出 </span>Excel
       </Button>
-      <Button variant="outline" onClick={onExportPDF}>
-        <FileDown className="h-4 w-4 mr-2" />
-        匯出 PDF
+      <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={onExportPDF}>
+        <FileDown className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+        <span className="hidden sm:inline">匯出 </span>PDF
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" className="text-destructive">
-            <Trash2 className="h-4 w-4 mr-2" />
-            清空所有排班
+          <Button variant="outline" size="sm" className="text-destructive text-xs md:text-sm">
+            <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">清空所有</span>排班
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
