@@ -142,7 +142,14 @@ export default function Home() {
 
       {/* 功能選單 */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 flex-wrap">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+            onClick={() => setLocation('/')}
+          >
+            🏠 返回首頁
+          </Button>
           <Button 
             onClick={() => setActiveTab('doctor')}
             variant={activeTab === 'doctor' ? 'default' : 'outline'}

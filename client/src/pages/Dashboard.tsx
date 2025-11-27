@@ -59,7 +59,7 @@ export default function Dashboard() {
             <CardContent>
               <Button 
                 className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={() => setLocation('/leave-calendar')}
+                onClick={() => setLocation('/schedule')}
               >
                 進入員工排班管理
                 <ArrowRight className="ml-2 h-4 w-4" />
