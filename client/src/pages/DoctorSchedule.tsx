@@ -32,7 +32,7 @@ export default function DoctorSchedule() {
             <Toolbar currentDate={currentDate} />
 
             {/* Calendar */}
-            <CalendarView currentDate={currentDate} />
+            <CalendarView />
           </div>
         </div>
       </div>
