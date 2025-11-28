@@ -15,26 +15,47 @@ export default function DoctorSchedule() {
   const calendarRef = useRef<HTMLDivElement>(null);
 
   const handleExportImage = async () => {
-    if (!calendarRef.current) return;
+    if (!calendarRef.current) {
+      toast.error('找不到月曆元素');
+      return;
+    }
     
     try {
+      toast.info('正在生成圖片...');
+      
       const canvas = await html2canvas(calendarRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
-        logging: false,
+        logging: true,
+        useCORS: true,
+        allowTaint: true,
       });
       
-      const link = document.createElement('a');
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
-      link.download = `醫師排班表_${year}年${month}月.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+      const filename = `醫師排班表_${year}年${month}月.png`;
       
-      toast.success('圖片已下載');
+      // 轉換為 blob
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error('生成圖片失敗');
+          return;
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success('圖片已下載');
+      }, 'image/png');
     } catch (error) {
       console.error('匯出圖片失敗:', error);
-      toast.error('匯出圖片失敗');
+      toast.error(`匯出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     }
   };
 
