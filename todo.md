@@ -95,7 +95,7 @@
 - [ ] 保持現有職等分級不變
 
 ## 階段九:修復醫師排班匯出圖片功能
-- [ ] 解決 html2canvas 不支援 OKLCH 顏色格式問題
-- [ ] 改用 dom-to-image 或其他替代方案
-- [ ] 測試圖片匯出功能
-- [ ] 部署修復到 Netlify
+- [x] 解決 html2canvas 不支援 OKLCH 顏色格式問題
+- [x] 改用 dom-to-image-more 替代方案
+- [x] 測試圖片匯出功能
+- [x] 部署修復到 Netlify

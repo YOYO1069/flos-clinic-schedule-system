@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
-import html2canvas from "html2canvas";
+import domtoimage from 'dom-to-image-more';
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -221,15 +221,20 @@ export default function LeaveCalendar() {
     
     try {
       toast.info("正在生成圖片...");
-      const canvas = await html2canvas(calendarRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff'
+      const blob = await domtoimage.toBlob(calendarRef.current, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        scale: 2
       });
       
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
+      link.href = url;
       link.download = `員工休假月曆_${selectedYear}年${selectedMonth}月_${new Date().getTime()}.png`;
-      link.href = canvas.toDataURL();
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       toast.success("圖片已儲存!");
     } catch (error) {
       console.error('儲存圖片失敗:', error);
