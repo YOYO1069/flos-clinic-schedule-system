@@ -439,10 +439,6 @@ export default function LeaveCalendar() {
                 <Calendar className="w-4 h-4 mr-2" />
                 醫師排班
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                員工排班
-              </Button>
               <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
                 <Clock className="w-4 h-4 mr-2" />
                 員工打卡
