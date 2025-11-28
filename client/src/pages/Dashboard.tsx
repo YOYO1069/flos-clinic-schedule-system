@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Clock, ArrowRight, ArrowLeft } from "lucide-react";
+import { Calendar, Users, Clock, ArrowRight, ArrowLeft, Fingerprint } from "lucide-react";
 import { useLocation } from 'wouter';
 import { useState, useEffect } from 'react';
 import { usePermissions } from "@/hooks/usePermissions";
@@ -160,11 +160,23 @@ export default function Dashboard() {
         </div>
         
         {/* 標題 */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
             FLOS 曜診所排班系統
           </h1>
           <p className="text-slate-600">管理員儀表板</p>
+          
+          {/* 員工打卡按鈕 - 顯眼位置 */}
+          <div className="flex justify-center pt-2">
+            <Button 
+              size="lg"
+              onClick={() => setLocation('/attendance')}
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-6 text-lg font-semibold rounded-2xl"
+            >
+              <Fingerprint className="h-6 w-6 mr-3" />
+              員工打卡
+            </Button>
+          </div>
         </div>
 
         {/* 主要功能卡片 */}
