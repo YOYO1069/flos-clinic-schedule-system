@@ -21,7 +21,7 @@ interface AttendanceRecord {
   check_in_address: string | null;
   check_out_address: string | null;
   work_hours: number | null;
-  attendance_date: string;
+  work_date: string;
   source: string;
   created_at: string;
 }
@@ -70,7 +70,7 @@ export default function Attendance() {
         .from('attendance_records')
         .select('*')
         .eq('employee_id', user.employee_id)
-        .eq('attendance_date', today)
+        .eq('work_date', today)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -94,7 +94,7 @@ export default function Attendance() {
         .from('attendance_records')
         .select('*')
         .eq('employee_id', user.employee_id)
-        .order('attendance_date', { ascending: false })
+        .order('work_date', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(7);
 
@@ -160,7 +160,7 @@ export default function Attendance() {
         employee_id: user.employee_id,
         employee_name: user.name,
         check_in_time: now.toISOString(),
-        attendance_date: today,
+        work_date: today,
         source: 'web'
       };
 
@@ -403,7 +403,7 @@ export default function Attendance() {
                   <div key={record.id} className="border rounded-lg p-4 bg-white">
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-semibold text-gray-800">
-                        {format(new Date(record.attendance_date), 'yyyy-MM-dd EEEE', { locale: zhTW })}
+                        {format(new Date(record.work_date), 'yyyy-MM-dd EEEE', { locale: zhTW })}
                       </div>
                       <div className="text-xs text-gray-500">
                         {record.source === 'web' ? '網頁' : 'LINE'}
