@@ -25,6 +25,9 @@ interface LeaveRecord {
   month: number;
   staff_name: string;
   day: number;
+  leave_type?: string; // 'OFF', 'ON', '特'
+  operator_id?: number;
+  operator_name?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -33,6 +36,7 @@ interface StaffMember {
   id: number;
   name: string;
   order_index: number;
+  position?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -90,13 +94,13 @@ export default function LeaveCalendar() {
   const [selectedMonth, setSelectedMonth] = useState(11);
   
   // 員工名單
-  const [staffMembers, setStaffMembers] = useState<string[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [isEditingStaff, setIsEditingStaff] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
   const [editingStaff, setEditingStaff] = useState<{name: string, newName: string} | null>(null);
   
-  // 休假狀態
-  const [leaveStatus, setLeaveStatus] = useState<Map<string, boolean>>(new Map());
+  // 休假狀態 - 儲存類型: 'OFF', 'ON', '特'
+  const [leaveStatus, setLeaveStatus] = useState<Map<string, string>>(new Map());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -114,7 +118,7 @@ export default function LeaveCalendar() {
       if (error) throw error;
 
       if (data) {
-        setStaffMembers(data.map((s: StaffMember) => s.name));
+        setStaffMembers(data as StaffMember[]);
       }
     } catch (error) {
       console.error('載入員工名單失敗:', error);
@@ -133,11 +137,11 @@ export default function LeaveCalendar() {
 
       if (error) throw error;
 
-      const newMap = new Map<string, boolean>();
+      const newMap = new Map<string, string>();
       if (data) {
         data.forEach((record: LeaveRecord) => {
           const key = `${record.year}-${record.month}-${record.staff_name}-${record.day}`;
-          newMap.set(key, true);
+          newMap.set(key, record.leave_type || 'OFF');
         });
       }
       setLeaveStatus(newMap);
@@ -158,14 +162,32 @@ export default function LeaveCalendar() {
     init();
   }, [selectedYear, selectedMonth]);
 
-  // 切換休假狀態
+  // 切換休假狀態 - 循環: 空白 → OFF → ON → 特 → 空白
   const toggleLeave = async (staffName: string, day: number) => {
+    // 權限檢查:普通員工只能點自己的
+    if (currentUser && currentUser.role === 'employee' && currentUser.name !== staffName) {
+      toast.error('您只能操作自己的排班');
+      return;
+    }
+
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
-    const isCurrentlyLeave = leaveStatus.has(key);
+    const currentType = leaveStatus.get(key);
+    
+    // 定義循環順序: 無 → OFF → ON → 特 → 無
+    let nextType: string | null = null;
+    if (!currentType) {
+      nextType = 'OFF';
+    } else if (currentType === 'OFF') {
+      nextType = 'ON';
+    } else if (currentType === 'ON') {
+      nextType = '特';
+    } else {
+      nextType = null; // 刪除
+    }
 
     try {
-      if (isCurrentlyLeave) {
-        // 刪除休假記錄
+      if (nextType === null) {
+        // 刪除記錄
         const { error } = await supabase
           .from('leave_records')
           .delete()
@@ -176,27 +198,90 @@ export default function LeaveCalendar() {
 
         if (error) throw error;
 
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'remove',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: currentType,
+            new_value: null
+          });
+        }
+
         setLeaveStatus(prev => {
           const newMap = new Map(prev);
           newMap.delete(key);
           return newMap;
         });
-      } else {
-        // 新增休假記錄
+      } else if (!currentType) {
+        // 新增記錄
         const { error } = await supabase
           .from('leave_records')
           .insert({
             year: selectedYear,
             month: selectedMonth,
             staff_name: staffName,
-            day: day
+            day: day,
+            leave_type: nextType,
+            operator_id: currentUser?.id,
+            operator_name: currentUser?.name
           });
 
         if (error) throw error;
 
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'add',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: null,
+            new_value: nextType
+          });
+        }
+
         setLeaveStatus(prev => {
           const newMap = new Map(prev);
-          newMap.set(key, true);
+          newMap.set(key, nextType);
+          return newMap;
+        });
+      } else {
+        // 更新記錄
+        const { error } = await supabase
+          .from('leave_records')
+          .update({
+            leave_type: nextType,
+            operator_id: currentUser?.id,
+            operator_name: currentUser?.name
+          })
+          .eq('year', selectedYear)
+          .eq('month', selectedMonth)
+          .eq('staff_name', staffName)
+          .eq('day', day);
+
+        if (error) throw error;
+
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'edit',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: currentType,
+            new_value: nextType
+          });
+        }
+
+        setLeaveStatus(prev => {
+          const newMap = new Map(prev);
+          newMap.set(key, nextType);
           return newMap;
         });
       }
@@ -206,7 +291,12 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 檢查是否為休假
+  // 獲取休假類型
+  const getLeaveType = (staffName: string, day: number): string | undefined => {
+    return leaveStatus.get(`${selectedYear}-${selectedMonth}-${staffName}-${day}`);
+  };
+
+  // 檢查是否有休假記錄
   const isLeave = (staffName: string, day: number): boolean => {
     return leaveStatus.has(`${selectedYear}-${selectedMonth}-${staffName}-${day}`);
   };
@@ -252,9 +342,9 @@ export default function LeaveCalendar() {
       data.push(headerRow);
       
       staffMembers.forEach(staff => {
-        const row = [staff];
+        const row = [staff.name];
         for (let day = 1; day <= daysInMonth; day++) {
-          row.push(isLeave(staff, day) ? "OFF" : "");
+          row.push(getLeaveType(staff.name, day) || "");
         }
         data.push(row);
       });
@@ -305,7 +395,7 @@ export default function LeaveCalendar() {
       const lines = text.split('\n');
       
       for (const line of lines) {
-        const staffMatch = staffMembers.find(staff => line.includes(staff));
+        const staffMatch = staffMembers.find(staff => line.includes(staff.name));
         
         if (staffMatch) {
           const numberMatches = line.matchAll(/\b([1-9]|[12][0-9]|30|31)\b/g);
@@ -317,7 +407,7 @@ export default function LeaveCalendar() {
                 newLeaveRecords.push({
                   year: selectedYear,
                   month: selectedMonth,
-                  staff_name: staffMatch,
+                  staff_name: staffMatch.name,
                   day: day
                 });
               }
@@ -379,7 +469,7 @@ export default function LeaveCalendar() {
       toast.error("請輸入員工名字");
       return;
     }
-    if (staffMembers.includes(newStaffName.trim())) {
+    if (staffMembers.some(s => s.name === newStaffName.trim())) {
       toast.error("員工名字已存在");
       return;
     }
@@ -403,6 +493,41 @@ export default function LeaveCalendar() {
     }
   };
 
+  // 調整員工順序
+  const handleMoveStaff = async (staffName: string, direction: 'up' | 'down') => {
+    const currentIndex = staffMembers.findIndex(s => s.name === staffName);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= staffMembers.length) return;
+    
+    try {
+      const currentStaff = staffMembers[currentIndex];
+      const targetStaff = staffMembers[targetIndex];
+      
+      // 交換 order_index
+      const { error: error1 } = await supabase
+        .from('staff_members')
+        .update({ order_index: targetStaff.order_index })
+        .eq('id', currentStaff.id);
+      
+      if (error1) throw error1;
+      
+      const { error: error2 } = await supabase
+        .from('staff_members')
+        .update({ order_index: currentStaff.order_index })
+        .eq('id', targetStaff.id);
+      
+      if (error2) throw error2;
+      
+      await loadStaffMembers();
+      toast.success('順序已調整');
+    } catch (error) {
+      console.error('調整順序失敗:', error);
+      toast.error("調整順序失敗");
+    }
+  };
+
   // 編輯員工
   const handleEditStaff = async () => {
     if (!editingStaff) return;
@@ -413,7 +538,7 @@ export default function LeaveCalendar() {
       return;
     }
     
-    if (newName !== editingStaff.name && staffMembers.includes(newName)) {
+    if (newName !== editingStaff.name && staffMembers.some(s => s.name === newName)) {
       toast.error("員工名字已存在");
       return;
     }
@@ -569,12 +694,39 @@ export default function LeaveCalendar() {
                         <div className="space-y-2">
                           {staffMembers.map((staff, index) => (
                             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <span>{staff}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStaff(staff.name, 'up')}
+                                    disabled={index === 0}
+                                    className="h-6 px-2"
+                                  >
+                                    ↑
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStaff(staff.name, 'down')}
+                                    disabled={index === staffMembers.length - 1}
+                                    className="h-6 px-2"
+                                  >
+                                    ↓
+                                  </Button>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span>{staff.name}</span>
+                                  {staff.position && (
+                                    <span className="text-xs text-gray-500">{staff.position}</span>
+                                  )}
+                                </div>
+                              </div>
                               <div className="flex gap-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setEditingStaff({ name: staff, newName: staff })}
+                                  onClick={() => setEditingStaff({ name: staff.name, newName: staff.name })}
                                   className="text-blue-600 hover:text-blue-700"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -582,7 +734,7 @@ export default function LeaveCalendar() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleRemoveStaff(staff)}
+                                  onClick={() => handleRemoveStaff(staff.name)}
                                 >
                                   <Trash2 className="w-4 h-4 text-red-500" />
                                 </Button>
@@ -727,21 +879,33 @@ export default function LeaveCalendar() {
               </thead>
               <tbody>
                 {staffMembers.map((staff) => (
-                  <tr key={staff}>
+                  <tr key={staff.name}>
                     <td className="sticky left-0 z-10 bg-gray-100 border border-gray-400 px-3 py-2 text-sm font-medium">
-                      {staff}
+                      {staff.name}
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                       <td
                         key={day}
-                        onClick={() => toggleLeave(staff, day)}
+                        onClick={() => toggleLeave(staff.name, day)}
                         className={`border border-gray-400 px-2 py-2 text-center text-xs cursor-pointer transition-colors hover:bg-blue-100 print:cursor-default ${
                           isWeekend(selectedYear, selectedMonth, day) ? 'bg-gray-200' : 'bg-white'
                         }`}
                       >
-                        {isLeave(staff, day) && (
-                          <span className="font-bold text-red-600">OFF</span>
-                        )}
+                        {(() => {
+                          const leaveType = getLeaveType(staff.name, day);
+                          if (!leaveType) return null;
+                          
+                          const colorClass = 
+                            leaveType === 'OFF' ? 'text-red-600' :
+                            leaveType === 'ON' ? 'text-green-600' :
+                            'text-blue-600'; // 特
+                          
+                          return (
+                            <span className={`font-bold ${colorClass}`}>
+                              {leaveType}
+                            </span>
+                          );
+                        })()}
                       </td>
                     ))}
                   </tr>
