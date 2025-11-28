@@ -2,14 +2,41 @@ import { ScheduleProvider } from "@/contexts/ScheduleContext";
 import { CalendarView } from "@/components/CalendarView";
 import { MonthNavigation } from "@/components/MonthNavigation";
 import { Toolbar } from "@/components/Toolbar";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import html2canvas from "html2canvas";
+import { toast } from "sonner";
 
 export default function DoctorSchedule() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [, setLocation] = useLocation();
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  const handleExportImage = async () => {
+    if (!calendarRef.current) return;
+    
+    try {
+      const canvas = await html2canvas(calendarRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      
+      const link = document.createElement('a');
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      link.download = `醫師排班表_${year}年${month}月.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      toast.success('圖片已下載');
+    } catch (error) {
+      console.error('匯出圖片失敗:', error);
+      toast.error('匯出圖片失敗');
+    }
+  };
 
   return (
     <ScheduleProvider>
@@ -44,10 +71,17 @@ export default function DoctorSchedule() {
             />
 
             {/* Toolbar */}
-            <Toolbar currentDate={currentDate} />
+            <Toolbar 
+              currentDate={currentDate} 
+              onExportExcel={() => toast.info('功能開發中')} 
+              onExportPDF={() => toast.info('功能開發中')} 
+              onExportImage={handleExportImage} 
+            />
 
             {/* Calendar */}
-            <CalendarView />
+            <div ref={calendarRef}>
+              <CalendarView />
+            </div>
           </div>
         </div>
       </div>
