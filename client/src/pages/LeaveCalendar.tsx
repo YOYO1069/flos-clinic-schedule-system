@@ -97,7 +97,7 @@ export default function LeaveCalendar() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [isEditingStaff, setIsEditingStaff] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
-  const [editingStaff, setEditingStaff] = useState<{name: string, newName: string} | null>(null);
+  const [editingStaff, setEditingStaff] = useState<{name: string, newName: string, position: string} | null>(null);
   
   // 休假狀態 - 儲存類型: 'OFF', 'ON', '特'
   const [leaveStatus, setLeaveStatus] = useState<Map<string, string>>(new Map());
@@ -533,6 +533,8 @@ export default function LeaveCalendar() {
     if (!editingStaff) return;
     
     const newName = editingStaff.newName.trim();
+    const newPosition = editingStaff.position.trim();
+    
     if (!newName) {
       toast.error("請輸入員工名字");
       return;
@@ -544,10 +546,13 @@ export default function LeaveCalendar() {
     }
     
     try {
-      // 更新員工名稱
+      // 更新員工名稱和職稱
       const { error: staffError } = await supabase
         .from('staff_members')
-        .update({ name: newName })
+        .update({ 
+          name: newName,
+          position: newPosition || null
+        })
         .eq('name', editingStaff.name);
       
       if (staffError) throw staffError;
@@ -726,7 +731,7 @@ export default function LeaveCalendar() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setEditingStaff({ name: staff.name, newName: staff.name })}
+                                  onClick={() => setEditingStaff({ name: staff.name, newName: staff.name, position: staff.position || '' })}
                                   className="text-blue-600 hover:text-blue-700"
                                 >
                                   <FileText className="w-4 h-4" />
@@ -759,6 +764,15 @@ export default function LeaveCalendar() {
                             placeholder="輸入新名字"
                             value={editingStaff?.newName || ''}
                             onChange={(e) => setEditingStaff(prev => prev ? {...prev, newName: e.target.value} : null)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEditStaff()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">職稱</label>
+                          <Input
+                            placeholder="輸入職稱 (例:美容師、護理師)"
+                            value={editingStaff?.position || ''}
+                            onChange={(e) => setEditingStaff(prev => prev ? {...prev, position: e.target.value} : null)}
                             onKeyDown={(e) => e.key === 'Enter' && handleEditStaff()}
                           />
                         </div>
@@ -881,7 +895,12 @@ export default function LeaveCalendar() {
                 {staffMembers.map((staff) => (
                   <tr key={staff.name}>
                     <td className="sticky left-0 z-10 bg-gray-100 border border-gray-400 px-3 py-2 text-sm font-medium">
-                      {staff.name}
+                      <div className="flex flex-col">
+                        <span>{staff.name}</span>
+                        {staff.position && (
+                          <span className="text-xs text-gray-500">{staff.position}</span>
+                        )}
+                      </div>
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                       <td
