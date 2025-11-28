@@ -5,6 +5,132 @@ import { useLocation } from 'wouter';
 import { useState, useEffect } from 'react';
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
+import { doctorScheduleClient } from "@/lib/supabase";
+
+// 本週排班卡片組件
+function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => void }) {
+  const [weeklySchedules, setWeeklySchedules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadWeeklySchedules();
+  }, []);
+
+  const loadWeeklySchedules = async () => {
+    try {
+      // 獲取今天開始的 7 天
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 6);
+
+      const startDateStr = today.toISOString().split('T')[0];
+      const endDateStr = endDate.toISOString().split('T')[0];
+
+      const { data, error } = await doctorScheduleClient
+        .from('doctor_shift_schedules')
+        .select('*')
+        .gte('date', startDateStr)
+        .lte('date', endDateStr)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
+
+      if (error) {
+        console.error('載入排班失敗:', error);
+      } else {
+        setWeeklySchedules(data || []);
+      }
+    } catch (err) {
+      console.error('載入排班錯誤:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 按日期分組
+  const schedulesByDate = weeklySchedules.reduce((acc, schedule) => {
+    const date = schedule.date;
+    if (!acc[date]) {
+      acc[date] = [];
+    }
+    acc[date].push(schedule);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // 獲取星期幾
+  const getDayOfWeek = (dateStr: string) => {
+    const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+    const date = new Date(dateStr + 'T00:00:00');
+    return days[date.getDay()];
+  };
+
+  // 格式化日期
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    return `${date.getMonth() + 1}/${date.getDate()} (${getDayOfWeek(dateStr)})`;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Clock className="h-5 w-5 text-teal-600" />
+            <CardTitle>本週醫師排班</CardTitle>
+          </div>
+          <Button 
+            variant="outline"
+            size="sm"
+            className="border-teal-600 text-teal-600 hover:bg-teal-50"
+            onClick={() => setLocation('/doctor-schedule')}
+          >
+            查看完整排班
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-8 text-slate-500">
+            載入中...
+          </div>
+        ) : Object.keys(schedulesByDate).length === 0 ? (
+          <div className="text-center py-8 space-y-4">
+            <p className="text-slate-600">
+              本週無排班資料
+            </p>
+            <Button 
+              variant="outline"
+              className="border-teal-600 text-teal-600 hover:bg-teal-50"
+              onClick={() => setLocation('/doctor-schedule')}
+            >
+              查看完整排班表
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {Object.entries(schedulesByDate).map(([date, schedules]) => (
+              <div key={date} className="border-l-4 border-teal-500 pl-4 py-2">
+                <div className="font-semibold text-slate-800 mb-2">
+                  {formatDate(date)}
+                </div>
+                <div className="space-y-1">
+                  {schedules.map((schedule, idx) => (
+                    <div key={idx} className="text-sm text-slate-600">
+                      <span className="font-medium text-teal-700">{schedule.doctor_name}</span>
+                      <span className="mx-2">•</span>
+                      <span>{schedule.start_time} - {schedule.end_time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -94,30 +220,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* 快速訪問提示 */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-teal-600" />
-              <CardTitle>近期值班醫師</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-6 space-y-4">
-              <p className="text-slate-600">
-                點擊上方「醫師排班」按鈕查看完整的醫師排班表
-              </p>
-              <Button 
-                variant="outline"
-                className="border-teal-600 text-teal-600 hover:bg-teal-50"
-                onClick={() => setLocation('/doctor-schedule')}
-              >
-                查看醫師排班表
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* 本週醫師排班 */}
+        <WeeklyScheduleCard setLocation={setLocation} />
       </div>
     </div>
   );
