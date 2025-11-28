@@ -112,7 +112,7 @@ export default function Attendance() {
   async function getLocation(): Promise<{ latitude: number; longitude: number; address: string } | null> {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        toast.error('您的瀏覽器不支援定位功能');
+        console.log('瀏覽器不支援定位,跳過定位功能');
         resolve(null);
         return;
       }
@@ -124,16 +124,8 @@ export default function Attendance() {
           resolve({ latitude, longitude, address });
         },
         (error) => {
-          console.error('定位失敗:', error);
-          let errorMsg = '無法獲取定位';
-          if (error.code === error.PERMISSION_DENIED) {
-            errorMsg = '定位權限被拒絕,請在瀏覽器設定中允許定位';
-          } else if (error.code === error.POSITION_UNAVAILABLE) {
-            errorMsg = '定位資訊不可用';
-          } else if (error.code === error.TIMEOUT) {
-            errorMsg = '定位請求逾時';
-          }
-          toast.warning(errorMsg + ',將繼續打卡');
+          console.log('定位失敗(非致命錯誤):', error.code, error.message);
+          // 静默失敗,不顯示錯誤訊息,讓打卡繼續
           resolve(null);
         },
         {
@@ -161,8 +153,7 @@ export default function Attendance() {
         return;
       }
 
-      // 獲取定位
-      toast.info('正在獲取定位...');
+      // 獲取定位(非必須,失敗也可以打卡)
       const location = await getLocation();
 
       const recordData: any = {
@@ -190,8 +181,10 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        const locationInfo = location ? `\n📍 ${location.address}` : '';
-        toast.success(`✅ 上班打卡成功!\n⏰ 時間:${format(now, 'HH:mm')}${locationInfo}`);
+        const successMsg = location 
+          ? `✅ 上班打卡成功!\n⏰ 時間: ${format(now, 'HH:mm')}\n📍 地點: ${location.address}`
+          : `✅ 上班打卡成功!\n⏰ 時間: ${format(now, 'HH:mm')}`;
+        toast.success(successMsg);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -224,8 +217,7 @@ export default function Attendance() {
         return;
       }
 
-      // 獲取定位
-      toast.info('正在獲取定位...');
+      // 獲取定位(非必須,失敗也可以打卡)
       const location = await getLocation();
 
       // 計算工時
@@ -257,8 +249,10 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        const locationInfo = location ? `\n📍 ${location.address}` : '';
-        toast.success(`✅ 下班打卡成功!\n⏱️ 工時:${hours} 小時 ${minutes} 分鐘${locationInfo}`);
+        const successMsg = location
+          ? `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘\n📍 地點: ${location.address}`
+          : `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
+        toast.success(successMsg);
         await loadRecentRecords();
       }
     } catch (err) {
