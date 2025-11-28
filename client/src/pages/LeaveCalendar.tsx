@@ -93,6 +93,7 @@ export default function LeaveCalendar() {
   const [staffMembers, setStaffMembers] = useState<string[]>([]);
   const [isEditingStaff, setIsEditingStaff] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
+  const [editingStaff, setEditingStaff] = useState<{name: string, newName: string} | null>(null);
   
   // 休假狀態
   const [leaveStatus, setLeaveStatus] = useState<Map<string, boolean>>(new Map());
@@ -402,6 +403,48 @@ export default function LeaveCalendar() {
     }
   };
 
+  // 編輯員工
+  const handleEditStaff = async () => {
+    if (!editingStaff) return;
+    
+    const newName = editingStaff.newName.trim();
+    if (!newName) {
+      toast.error("請輸入員工名字");
+      return;
+    }
+    
+    if (newName !== editingStaff.name && staffMembers.includes(newName)) {
+      toast.error("員工名字已存在");
+      return;
+    }
+    
+    try {
+      // 更新員工名稱
+      const { error: staffError } = await supabase
+        .from('staff_members')
+        .update({ name: newName })
+        .eq('name', editingStaff.name);
+      
+      if (staffError) throw staffError;
+      
+      // 更新該員工的所有休假記錄
+      const { error: leaveError } = await supabase
+        .from('leave_records')
+        .update({ staff_name: newName })
+        .eq('staff_name', editingStaff.name);
+      
+      if (leaveError) throw leaveError;
+      
+      await loadStaffMembers();
+      await loadLeaveRecords();
+      setEditingStaff(null);
+      toast.success(`已更新員工: ${newName}`);
+    } catch (error) {
+      console.error('編輯員工失敗:', error);
+      toast.error("編輯員工失敗");
+    }
+  };
+
   // 刪除員工
   const handleRemoveStaff = async (staffName: string) => {
     if (confirm(`確定要刪除員工「${staffName}」嗎?相關的休假記錄也會被清除。`)) {
@@ -527,15 +570,53 @@ export default function LeaveCalendar() {
                           {staffMembers.map((staff, index) => (
                             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                               <span>{staff}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveStaff(staff)}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingStaff({ name: staff, newName: staff })}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveStaff(staff)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* 編輯員工對話框 */}
+                  <Dialog open={editingStaff !== null} onOpenChange={(open) => !open && setEditingStaff(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>編輯員工</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">員工名字</label>
+                          <Input
+                            placeholder="輸入新名字"
+                            value={editingStaff?.newName || ''}
+                            onChange={(e) => setEditingStaff(prev => prev ? {...prev, newName: e.target.value} : null)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEditStaff()}
+                          />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setEditingStaff(null)}>
+                            取消
+                          </Button>
+                          <Button onClick={handleEditStaff}>
+                            確認修改
+                          </Button>
                         </div>
                       </div>
                     </DialogContent>
