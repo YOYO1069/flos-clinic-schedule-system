@@ -94,11 +94,11 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
     canViewOwnPerformance: true,
   },
   
-  // 🟢 員工 - 打卡 + 請假申請 + 個人業績
+  // 👢 員工 - 打卡 + 請假申請 + 個人業績
   staff: {
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: false,
-    canAccessLeaveCalendar: false,
+    canAccessLeaveCalendar: false, // 員工不能查看員工休假月曆
     canAccessAttendance: true,
     canAccessLeaveManagement: true,
     canAccessLeaveApproval: false,

@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from 'wouter';
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface LeaveRecord {
   id?: number;
@@ -60,15 +62,25 @@ const MONTH_NAMES = [
 export default function LeaveCalendar() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
 
-  // 檢查登入狀態
+  // 檢查登入狀態和權限
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
       return;
     }
-    setCurrentUser(JSON.parse(userStr));
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+    
+    // 檢查是否有權限存取此頁面
+    const userPermissions = usePermissions(user.role as UserRole).permissions;
+    if (!userPermissions.canAccessLeaveCalendar) {
+      toast.error('您沒有權限存取此頁面');
+      setLocation('/');
+      return;
+    }
   }, []);
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

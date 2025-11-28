@@ -2,9 +2,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, Clock, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLocation } from 'wouter';
+import { useState, useEffect } from 'react';
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const { permissions } = usePermissions(user?.role as UserRole);
+  
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setUser(JSON.parse(userStr));
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
@@ -55,7 +67,8 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* 員工排班 */}
+          {/* 員工排班 - 只有主管以上可以看到 */}
+          {permissions.canAccessLeaveCalendar && (
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center space-x-3">
@@ -78,6 +91,7 @@ export default function Dashboard() {
               </Button>
             </CardContent>
           </Card>
+          )}
         </div>
 
         {/* 快速訪問提示 */}
