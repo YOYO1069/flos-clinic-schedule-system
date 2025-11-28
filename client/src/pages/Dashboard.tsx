@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users, Clock, ArrowRight } from "lucide-react";
+import { Calendar, Users, Clock, ArrowRight, ArrowLeft } from "lucide-react";
 import { useLocation } from 'wouter';
 
 export default function Dashboard() {
@@ -9,6 +9,18 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* 返回主網站按鈕 */}
+        <div className="flex justify-center">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = 'https://classy-biscotti-42a418.netlify.app/'}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            返回主網站
+          </Button>
+        </div>
+        
         {/* 標題 */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
