@@ -6,7 +6,7 @@ import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import html2canvas from "html2canvas";
+import domtoimage from 'dom-to-image-more';
 import { toast } from "sonner";
 
 export default function DoctorSchedule() {
@@ -23,36 +23,28 @@ export default function DoctorSchedule() {
     try {
       toast.info('正在生成圖片...');
       
-      const canvas = await html2canvas(calendarRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: true,
-        useCORS: true,
-        allowTaint: true,
-      });
-      
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       const filename = `醫師排班表_${year}年${month}月.png`;
       
-      // 轉換為 blob
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast.error('生成圖片失敗');
-          return;
-        }
-        
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success('圖片已下載');
-      }, 'image/png');
+      // 使用 dom-to-image-more 生成圖片
+      const blob = await domtoimage.toBlob(calendarRef.current, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        scale: 2,
+      });
+      
+      // 下載圖片
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('圖片已下載');
     } catch (error) {
       console.error('匯出圖片失敗:', error);
       toast.error(`匯出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
