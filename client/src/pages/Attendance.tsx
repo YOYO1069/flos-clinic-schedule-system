@@ -14,6 +14,12 @@ interface AttendanceRecord {
   employee_name: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  check_in_latitude: number | null;
+  check_in_longitude: number | null;
+  check_out_latitude: number | null;
+  check_out_longitude: number | null;
+  check_in_address: string | null;
+  check_out_address: string | null;
   work_hours: number | null;
   attendance_date: string;
   source: string;
@@ -102,6 +108,43 @@ export default function Attendance() {
     }
   }
 
+  // 獲取GPS定位
+  async function getLocation(): Promise<{ latitude: number; longitude: number; address: string } | null> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        toast.error('您的瀏覽器不支援定位功能');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)} (精度: ${Math.round(accuracy)}m)`;
+          resolve({ latitude, longitude, address });
+        },
+        (error) => {
+          console.error('定位失敗:', error);
+          let errorMsg = '無法獲取定位';
+          if (error.code === error.PERMISSION_DENIED) {
+            errorMsg = '定位權限被拒絕,請在瀏覽器設定中允許定位';
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            errorMsg = '定位資訊不可用';
+          } else if (error.code === error.TIMEOUT) {
+            errorMsg = '定位請求逾時';
+          }
+          toast.warning(errorMsg + ',將繼續打卡');
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
   // 上班打卡
   async function handleCheckIn() {
     if (!user) return;
@@ -118,15 +161,27 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
+      const recordData: any = {
+        employee_id: user.employee_id,
+        employee_name: user.name,
+        check_in_time: now.toISOString(),
+        attendance_date: today,
+        source: 'web'
+      };
+
+      if (location) {
+        recordData.check_in_latitude = location.latitude;
+        recordData.check_in_longitude = location.longitude;
+        recordData.check_in_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .insert({
-          employee_id: user.employee_id,
-          employee_name: user.name,
-          check_in_time: now.toISOString(),
-          attendance_date: today,
-          source: 'web'
-        })
+        .insert(recordData)
         .select()
         .single();
 
@@ -135,7 +190,8 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        toast.success(`✅ 上班打卡成功!時間:${format(now, 'HH:mm')}`);
+        const locationInfo = location ? `\n📍 ${location.address}` : '';
+        toast.success(`✅ 上班打卡成功!\n⏰ 時間:${format(now, 'HH:mm')}${locationInfo}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -168,16 +224,28 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
       // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
       const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
+      const updateData: any = {
+        check_out_time: now.toISOString(),
+        work_hours: Math.round(workHours * 100) / 100
+      };
+
+      if (location) {
+        updateData.check_out_latitude = location.latitude;
+        updateData.check_out_longitude = location.longitude;
+        updateData.check_out_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .update({
-          check_out_time: now.toISOString(),
-          work_hours: Math.round(workHours * 100) / 100
-        })
+        .update(updateData)
         .eq('id', todayRecord.id)
         .select()
         .single();
@@ -189,7 +257,8 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        toast.success(`✅ 下班打卡成功!工時:${hours} 小時 ${minutes} 分鐘`);
+        const locationInfo = location ? `\n📍 ${location.address}` : '';
+        toast.success(`✅ 下班打卡成功!\n⏱️ 工時:${hours} 小時 ${minutes} 分鐘${locationInfo}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -306,6 +375,18 @@ export default function Attendance() {
                     {todayRecord.source === 'web' ? '網頁打卡' : 'LINE 打卡'}
                   </span>
                 </div>
+                {todayRecord.check_in_address && (
+                  <div className="flex flex-col gap-1 pt-2 border-t">
+                    <span className="text-gray-600 text-sm">📍 上班打卡地點:</span>
+                    <span className="text-sm text-gray-700">{todayRecord.check_in_address}</span>
+                  </div>
+                )}
+                {todayRecord.check_out_address && (
+                  <div className="flex flex-col gap-1 pt-2 border-t">
+                    <span className="text-gray-600 text-sm">📍 下班打卡地點:</span>
+                    <span className="text-sm text-gray-700">{todayRecord.check_out_address}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-4">
