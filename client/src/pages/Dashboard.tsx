@@ -110,8 +110,8 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
         ) : (
           <div className="space-y-4">
             {Object.entries(schedulesByDate).map(([date, schedules]) => (
-              <div key={date} className="border-l-4 border-teal-500 pl-4 py-2">
-                <div className="font-semibold text-slate-800 mb-2">
+              <div key={date} className="border-l-4 border-teal-400 pl-4 py-3 bg-gradient-to-r from-teal-50/50 to-transparent rounded-r-lg">
+                <div className="font-semibold text-teal-900 mb-2">
                   {formatDate(date)}
                 </div>
                 <div className="space-y-1">
@@ -145,7 +145,7 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50/30 via-blue-50/20 to-slate-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* 返回主網站按鈕 */}
         <div className="flex justify-center">
@@ -170,10 +170,10 @@ export default function Dashboard() {
         {/* 主要功能卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 醫師排班 */}
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-teal-100/50 bg-gradient-to-br from-white to-teal-50/30">
             <CardHeader>
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-teal-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-teal-100 to-teal-200/50 rounded-xl shadow-sm">
                   <Calendar className="h-6 w-6 text-teal-600" />
                 </div>
                 <div>
@@ -195,10 +195,10 @@ export default function Dashboard() {
 
           {/* 員工排班 - 只有主管以上可以看到 */}
           {permissions.canAccessLeaveCalendar && (
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-teal-100/50 bg-gradient-to-br from-white to-teal-50/30">
             <CardHeader>
               <div className="flex items-center space-x-3">
-                <div className="p-3 bg-blue-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200/50 rounded-xl shadow-sm">
                   <Users className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
