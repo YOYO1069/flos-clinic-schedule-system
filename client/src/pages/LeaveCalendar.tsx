@@ -73,15 +73,15 @@ export default function LeaveCalendar() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
-    
-    // 檢查是否有權限存取此頁面
-    const userPermissions = usePermissions(user.role as UserRole).permissions;
-    if (!userPermissions.canAccessLeaveCalendar) {
+  }, []);
+  
+  // 檢查權限
+  useEffect(() => {
+    if (currentUser && !permissions.canAccessLeaveCalendar) {
       toast.error('您沒有權限存取此頁面');
       setLocation('/');
-      return;
     }
-  }, []);
+  }, [currentUser, permissions]);
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
