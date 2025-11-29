@@ -40,6 +40,12 @@ export default function Attendance() {
   const [endDate, setEndDate] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [user, setUser] = useState<any>(null);
+  
+  // 打卡方式設定
+  const [checkInMode, setCheckInMode] = useState<'gps' | 'manual' | 'quick' | 'bluetooth'>('gps');
+  const [manualLocation, setManualLocation] = useState('');
+  const [settings, setSettings] = useState<any>({});
+  const [bluetoothDeviceName, setBluetoothDeviceName] = useState('');
 
   // 檢查登入狀態
   useEffect(() => {
@@ -64,8 +70,30 @@ export default function Attendance() {
     if (user) {
       loadTodayRecord();
       loadRecentRecords();
+      loadSettings();
     }
   }, [user]);
+
+  // 載入打卡設定
+  async function loadSettings() {
+    try {
+      const { data, error } = await supabase
+        .from('attendance_settings')
+        .select('*');
+
+      if (error) {
+        console.error('載入設定失敗:', error);
+      } else {
+        const settingsObj: any = {};
+        data?.forEach(item => {
+          settingsObj[item.setting_key] = item.setting_value;
+        });
+        setSettings(settingsObj);
+      }
+    } catch (err) {
+      console.error('載入設定錯誤:', err);
+    }
+  }
 
   // 載入今日打卡記錄
   async function loadTodayRecord() {
@@ -160,9 +188,6 @@ export default function Attendance() {
         return;
       }
 
-      // 獲取定位(非必須,失敗也可以打卡)
-      const location = await getLocation();
-
       const recordData: any = {
         employee_id: user.employee_id,
         employee_name: user.name,
@@ -171,10 +196,42 @@ export default function Attendance() {
         source: 'web'
       };
 
-      if (location) {
-        recordData.check_in_latitude = location.latitude;
-        recordData.check_in_longitude = location.longitude;
-        recordData.check_in_address = location.address;
+      // 根據打卡模式處理
+      if (checkInMode === 'gps') {
+        // GPS 打卡
+        recordData.check_in_method = 'gps';
+        const location = await getLocation();
+        if (location) {
+          recordData.check_in_latitude = location.latitude;
+          recordData.check_in_longitude = location.longitude;
+          recordData.check_in_address = location.address;
+        } else if (settings.require_gps === 'true') {
+          toast.error('無法取得GPS定位，請使用其他打卡方式');
+          setLoading(false);
+          return;
+        }
+      } else if (checkInMode === 'manual') {
+        // 手動輸入地點
+        recordData.check_in_method = 'manual';
+        if (!manualLocation.trim()) {
+          toast.error('請輸入打卡地點');
+          setLoading(false);
+          return;
+        }
+        recordData.check_in_address = manualLocation;
+      } else if (checkInMode === 'bluetooth') {
+        // 藍牙打卡
+        recordData.check_in_method = 'bluetooth';
+        if (!bluetoothDeviceName.trim()) {
+          toast.error('請輸入藍牙裝置名稱');
+          setLoading(false);
+          return;
+        }
+        recordData.bluetooth_device_name = bluetoothDeviceName;
+        recordData.check_in_address = `藍牙裝置: ${bluetoothDeviceName}`;
+      } else if (checkInMode === 'quick') {
+        // 快速打卡
+        recordData.check_in_method = 'quick';
       }
 
       const { data, error } = await supabase
@@ -188,10 +245,17 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        const successMsg = location 
-          ? `✅ 上班打卡成功!\n⏰ 時間: ${format(now, 'HH:mm')}\n📍 地點: ${location.address}`
-          : `✅ 上班打卡成功!\n⏰ 時間: ${format(now, 'HH:mm')}`;
+        let successMsg = `✅ 上班打卡成功!\n⏰ 時間: ${format(now, 'HH:mm')}`;
+        if (checkInMode === 'gps' && recordData.check_in_address) {
+          successMsg += `\n📍 地點: ${recordData.check_in_address}`;
+        } else if (checkInMode === 'manual') {
+          successMsg += `\n📍 地點: ${manualLocation}`;
+        } else if (checkInMode === 'bluetooth') {
+          successMsg += `\n🔵 裝置: ${bluetoothDeviceName}`;
+        }
         toast.success(successMsg);
+        setManualLocation(''); // 清空手動輸入
+        setBluetoothDeviceName(''); // 清空藍牙裝置
         await loadRecentRecords();
       }
     } catch (err) {
@@ -224,9 +288,6 @@ export default function Attendance() {
         return;
       }
 
-      // 獲取定位(非必須,失敗也可以打卡)
-      const location = await getLocation();
-
       // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
       const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
@@ -236,10 +297,32 @@ export default function Attendance() {
         work_hours: Math.round(workHours * 100) / 100
       };
 
-      if (location) {
-        updateData.check_out_latitude = location.latitude;
-        updateData.check_out_longitude = location.longitude;
-        updateData.check_out_address = location.address;
+      // 根據打卡模式處理
+      if (checkInMode === 'gps') {
+        const location = await getLocation();
+        if (location) {
+          updateData.check_out_latitude = location.latitude;
+          updateData.check_out_longitude = location.longitude;
+          updateData.check_out_address = location.address;
+        } else if (settings.require_gps === 'true') {
+          toast.error('無法取得GPS定位，請使用其他打卡方式');
+          setLoading(false);
+          return;
+        }
+      } else if (checkInMode === 'manual') {
+        if (!manualLocation.trim()) {
+          toast.error('請輸入打卡地點');
+          setLoading(false);
+          return;
+        }
+        updateData.check_out_address = manualLocation;
+      } else if (checkInMode === 'bluetooth') {
+        if (!bluetoothDeviceName.trim()) {
+          toast.error('請輸入藍牙裝置名稱');
+          setLoading(false);
+          return;
+        }
+        updateData.check_out_address = `藍牙裝置: ${bluetoothDeviceName}`;
       }
 
       const { data, error } = await supabase
@@ -256,10 +339,17 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        const successMsg = location
-          ? `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘\n📍 地點: ${location.address}`
-          : `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
+        let successMsg = `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
+        if (checkInMode === 'gps' && updateData.check_out_address) {
+          successMsg += `\n📍 地點: ${updateData.check_out_address}`;
+        } else if (checkInMode === 'manual') {
+          successMsg += `\n📍 地點: ${manualLocation}`;
+        } else if (checkInMode === 'bluetooth') {
+          successMsg += `\n🔵 裝置: ${bluetoothDeviceName}`;
+        }
         toast.success(successMsg);
+        setManualLocation(''); // 清空手動輸入
+        setBluetoothDeviceName(''); // 清空藍牙裝置
         await loadRecentRecords();
       }
     } catch (err) {
@@ -390,6 +480,99 @@ export default function Attendance() {
             </div>
             <div className="text-center text-sm text-gray-500 mt-1">
               員工:{user.name} ({user.employee_id})
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 打卡方式選擇 */}
+        <Card className="mb-6 bg-white/80 backdrop-blur">
+          <CardHeader>
+            <CardTitle>選擇打卡方式</CardTitle>
+            <CardDescription>根據您的需求選擇不同的打卡方式</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+              <Button
+                variant={checkInMode === 'gps' ? 'default' : 'outline'}
+                onClick={() => setCheckInMode('gps')}
+                className="h-20 flex flex-col items-center justify-center"
+              >
+                <span className="text-2xl mb-1">📍</span>
+                <span className="text-sm">GPS打卡</span>
+              </Button>
+              <Button
+                variant={checkInMode === 'manual' ? 'default' : 'outline'}
+                onClick={() => setCheckInMode('manual')}
+                className="h-20 flex flex-col items-center justify-center"
+                disabled={settings.allow_manual_location === 'false'}
+              >
+                <span className="text-2xl mb-1">✍️</span>
+                <span className="text-sm">手動輸入</span>
+              </Button>
+              <Button
+                variant={checkInMode === 'quick' ? 'default' : 'outline'}
+                onClick={() => setCheckInMode('quick')}
+                className="h-20 flex flex-col items-center justify-center"
+                disabled={settings.allow_quick_checkin === 'false'}
+              >
+                <span className="text-2xl mb-1">⚡</span>
+                <span className="text-sm">快速打卡</span>
+              </Button>
+              <Button
+                variant={checkInMode === 'bluetooth' ? 'default' : 'outline'}
+                onClick={() => setCheckInMode('bluetooth')}
+                className="h-20 flex flex-col items-center justify-center"
+              >
+                <span className="text-2xl mb-1">🔵</span>
+                <span className="text-sm">藍牙打卡</span>
+              </Button>
+            </div>
+
+            {/* 手動輸入地點 */}
+            {checkInMode === 'manual' && (
+              <div className="mt-4">
+                <Label htmlFor="manualLocation">打卡地點</Label>
+                <Input
+                  id="manualLocation"
+                  placeholder="例如：FLOS 曜診所"
+                  value={manualLocation}
+                  onChange={(e) => setManualLocation(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+            )}
+
+            {/* 藍牙裝置名稱 */}
+            {checkInMode === 'bluetooth' && (
+              <div className="mt-4">
+                <Label htmlFor="bluetoothDevice">藍牙裝置名稱</Label>
+                <Input
+                  id="bluetoothDevice"
+                  placeholder="例如：iPhone 13 Pro"
+                  value={bluetoothDeviceName}
+                  onChange={(e) => setBluetoothDeviceName(e.target.value)}
+                  className="mt-2"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  請輸入您的藍牙裝置名稱，系統將自動記錄您的打卡記錄。
+                </p>
+              </div>
+            )}
+
+            {/* 打卡方式說明 */}
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
+              {checkInMode === 'gps' && (
+                <p>📍 <strong>GPS打卡</strong>：系統將自動取得您的GPS定位資訊。如果定位失敗，{settings.require_gps === 'true' ? '將無法打卡' : '仍可正常打卡'}。</p>
+              )}
+              {checkInMode === 'manual' && (
+                <p>✍️ <strong>手動輸入</strong>：請手動輸入您的打卡地點，不需要GPS定位。</p>
+              )}
+              {checkInMode === 'quick' && (
+                <p>⚡ <strong>快速打卡</strong>：快速打卡不需要任何地點資訊，適合快速記錄時間。</p>
+              )}
+              {checkInMode === 'bluetooth' && (
+                <p>🔵 <strong>藍牙打卡</strong>：系統將記錄您的藍牙裝置名稱，適合配合Windows監控程式使用。</p>
+              )}
             </div>
           </CardContent>
         </Card>

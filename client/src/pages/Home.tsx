@@ -231,6 +231,16 @@ export default function Home() {
               💰 操作費計算
             </Button>
           )}
+          
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100"
+              onClick={() => setLocation('/attendance-settings')}
+            >
+              ⚙️ 打卡設定
+            </Button>
+          )}
         </div>
 
         {/* 醫師陣容 */}

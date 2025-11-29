@@ -19,6 +19,7 @@ import ChangePassword from "./pages/ChangePassword";
 import TestEnv from "./pages/TestEnv";
 import TestDB from "./pages/TestDB";
 import OperationFee from "./pages/OperationFee";
+import AttendanceSettings from "./pages/AttendanceSettings";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/leave" component={LeaveManagement} />
       <Route path="/change-password" component={ChangePassword} />
       <Route path="/operation-fee" component={OperationFee} />
+      <Route path="/attendance-settings" component={AttendanceSettings} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
