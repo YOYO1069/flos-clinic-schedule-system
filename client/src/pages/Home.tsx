@@ -221,6 +221,16 @@ export default function Home() {
               ✅ 請假審核
             </Button>
           )}
+          
+          {(user?.position === '美容師' || user?.position === '護理師') && (
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100"
+              onClick={() => setLocation('/operation-fee')}
+            >
+              💰 操作費計算
+            </Button>
+          )}
         </div>
 
         {/* 醫師陣容 */}
