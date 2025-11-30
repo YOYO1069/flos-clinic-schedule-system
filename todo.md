@@ -327,7 +327,13 @@
 - [x] 部署到 Netlify
 
 ## 階段三十二:完成醫師排班表匯出功能
-- [ ] 實作匯出 Excel 功能
-- [ ] 實作匯出 PDF 功能
-- [ ] 測試匯出功能
+- [x] 實作匯出 Excel 功能
+- [x] 實作匯出 PDF 功能
+- [x] 測試匯出功能
+- [x] 部署到 Netlify
+
+## 階段三十三:移除匯出 Excel 和 PDF 按鈕
+- [ ] 移除 DoctorSchedule.tsx 中的 useSchedule 相關程式碼
+- [ ] 移除 Toolbar 中的 Excel 和 PDF 按鈕
+- [ ] 測試匯出圖片功能
 - [ ] 部署到 Netlify
