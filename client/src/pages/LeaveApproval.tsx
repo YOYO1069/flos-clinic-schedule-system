@@ -67,6 +67,8 @@ export default function LeaveApproval() {
   const [approvalAction, setApprovalAction] = useState<'approve' | 'reject'>('approve');
   const [rejectionReason, setRejectionReason] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [requestToDelete, setRequestToDelete] = useState<LeaveRequest | null>(null);
 
   useEffect(() => {
     // 檢查登入狀態和權限
@@ -149,6 +151,32 @@ export default function LeaveApproval() {
     setRejectionReason('');
     setShowApprovalDialog(true);
   };
+  const handleDeleteClick = (request: LeaveRequest) => {
+    setRequestToDelete(request);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteSubmit = async () => {
+    if (!requestToDelete) return;
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from(tables.leaveRequests)
+        .delete()
+        .eq('id', requestToDelete.id);
+      if (error) throw error;
+      toast.success("已刪除請假記錄");
+      setShowDeleteDialog(false);
+      loadLeaveRequests(currentUser);
+    } catch (error) {
+      console.error('刪除失敗:', error);
+      toast.error("刪除失敗,請重試");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+
 
   const handleApprovalSubmit = async () => {
     if (!selectedRequest || !currentUser) return;
@@ -319,6 +347,15 @@ export default function LeaveApproval() {
                             <XCircle className="w-4 h-4 mr-1" />
                             拒絕
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                            onClick={() => handleDeleteClick(request)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            刪除
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -430,6 +467,39 @@ export default function LeaveApproval() {
               variant={approvalAction === 'reject' ? 'destructive' : 'default'}
             >
               {isProcessing ? '處理中...' : approvalAction === 'approve' ? '確認核准' : '確認拒絕'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 刪除對話框 */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>刪除請假記錄</DialogTitle>
+            <DialogDescription>
+              {requestToDelete && (
+                <>
+                  員工: {requestToDelete.employee_name} | 
+                  假別: {LEAVE_TYPE_LABELS[requestToDelete.leave_type]} | 
+                  天數: {requestToDelete.days}天
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            確定要刪除此請假記錄嗎？此操作無法復原。
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isProcessing}>
+              取消
+            </Button>
+            <Button
+              onClick={handleDeleteSubmit}
+              disabled={isProcessing}
+              variant="destructive"
+            >
+              {isProcessing ? '刪除中...' : '確認刪除'}
             </Button>
           </DialogFooter>
         </DialogContent>

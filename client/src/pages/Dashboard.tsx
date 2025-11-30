@@ -15,7 +15,9 @@ import {
   Settings,
   CheckSquare,
   LogOut,
-  UserCog
+  UserCog,
+  Fingerprint,
+  Key
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -159,15 +161,35 @@ export default function Dashboard() {
                 {user?.name} ({user?.position || '員工'})
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              登出
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => setLocation('/attendance')}
+                className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+              >
+                <Fingerprint className="w-4 h-4" />
+                快速打卡
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation('/change-password')}
+                className="gap-2"
+              >
+                <Key className="w-4 h-4" />
+                修改密碼
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                登出
+              </Button>
+            </div>
           </div>
         </div>
       </div>
