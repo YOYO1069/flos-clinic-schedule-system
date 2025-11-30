@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { DoctorShift } from '@/types/schedule';
 import { Button } from '@/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
+import { UserRole } from '@/lib/permissions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +26,16 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
   const { addShift, updateShift, deleteShift } = useSchedule();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingShift, setEditingShift] = useState<DoctorShift | undefined>();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
   const dateStr = formatDate(date);
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setCurrentUser(JSON.parse(userStr));
+    }
+  }, []);
 
   const handleAddShift = () => {
     if (shifts.length >= 3) {
@@ -69,7 +80,7 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
           >
             {date.getDate()}
           </span>
-          {isCurrentMonth && shifts.length < 3 && (
+          {isCurrentMonth && shifts.length < 3 && permissions.canManageDoctorSchedule && (
             <Button
               variant="ghost"
               size="icon"
@@ -83,6 +94,7 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
 
         <div className="space-y-1.5">
           {shifts.map((shift) => (
+            permissions.canManageDoctorSchedule ? (
             <DropdownMenu key={shift.id}>
               <DropdownMenuTrigger asChild>
                 <button
@@ -113,6 +125,22 @@ export function CalendarDay({ date, isCurrentMonth, isToday, shifts }: CalendarD
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            ) : (
+              <div
+                key={shift.id}
+                className={cn(
+                  'text-[10px] md:text-xs p-1 md:p-1.5 rounded bg-primary/10 cursor-default w-full text-left',
+                  'border border-primary/20 min-h-[2.5rem] md:min-h-0'
+                )}
+              >
+                <div className="font-medium text-foreground truncate leading-tight">
+                  {shift.doctorName}
+                </div>
+                <div className="text-muted-foreground leading-tight mt-0.5">
+                  {shift.startTime} - {shift.endTime}
+                </div>
+              </div>
+            )
           ))}
         </div>
       </div>

@@ -107,7 +107,7 @@ export default function Dashboard() {
       icon: Users,
       color: 'from-blue-400 to-blue-600',
       bgColor: 'bg-blue-50',
-      onClick: () => setLocation('/employee-management'),
+      onClick: () => setLocation('/staff-management'),
       show: permissions.canManageStaffSchedule,
     },
     {

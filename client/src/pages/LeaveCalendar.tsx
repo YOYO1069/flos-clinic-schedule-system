@@ -164,9 +164,15 @@ export default function LeaveCalendar() {
 
   // 切換休假狀態 - 循環: 空白 → OFF → ON → 特 → 空白
   const toggleLeave = async (staffName: string, day: number) => {
-    // 權限檢查:普通員工只能點自己的
-    if (currentUser && currentUser.role === 'employee' && currentUser.name !== staffName) {
-      toast.error('您只能操作自己的排班');
+    // 權限檢查:一般員工不能操作，只能查看
+    if (currentUser && currentUser.role === 'staff') {
+      toast.error('您沒有權限操作排班，僅能查看');
+      return;
+    }
+    
+    // 主管以上可以操作所有人的排班
+    if (!permissions.canManageStaffSchedule) {
+      toast.error('您沒有權限操作排班');
       return;
     }
 
@@ -670,6 +676,7 @@ export default function LeaveCalendar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  {permissions.canManageStaffSchedule && (
                   <Dialog open={isEditingStaff} onOpenChange={setIsEditingStaff}>
                     <DialogTrigger asChild>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -750,6 +757,7 @@ export default function LeaveCalendar() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
 
                   {/* 編輯員工對話框 */}
                   <Dialog open={editingStaff !== null} onOpenChange={(open) => !open && setEditingStaff(null)}>
@@ -788,6 +796,7 @@ export default function LeaveCalendar() {
                     </DialogContent>
                   </Dialog>
 
+                  {permissions.canManageStaffSchedule && (
                   <DropdownMenuItem onClick={handleImageUpload} disabled={isProcessing}>
                     {isProcessing ? (
                       <>
@@ -801,6 +810,7 @@ export default function LeaveCalendar() {
                       </>
                     )}
                   </DropdownMenuItem>
+                  )}
 
                   <DropdownMenuSeparator />
 
@@ -819,11 +829,15 @@ export default function LeaveCalendar() {
                     儲存圖片
                   </DropdownMenuItem>
 
+                  {permissions.canManageStaffSchedule && (
+                  <>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={handleClear} className="text-red-600">
                     清除記錄
                   </DropdownMenuItem>
+                  </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

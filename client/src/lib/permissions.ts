@@ -97,8 +97,8 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
   // 👢 員工 - 打卡 + 請假申請 + 個人業績
   staff: {
     canAccessAdminPanel: false,
-    canAccessDoctorSchedule: false,
-    canAccessLeaveCalendar: false, // 員工不能查看員工休假月曆
+    canAccessDoctorSchedule: true, // 員工可以查看醫師排班
+    canAccessLeaveCalendar: true, // 員工可以查看員工休假月曆
     canAccessAttendance: true,
     canAccessLeaveManagement: true,
     canAccessLeaveApproval: false,
