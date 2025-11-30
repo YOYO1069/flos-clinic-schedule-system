@@ -39,6 +39,16 @@ export default function Dashboard() {
   const featureCards = [
     // 所有員工都可以使用的功能
     {
+      id: 'schedule-system',
+      title: '排班系統',
+      description: '醫師與員工排班管理',
+      icon: Calendar,
+      color: 'from-teal-400 to-teal-600',
+      bgColor: 'bg-teal-50',
+      onClick: () => setLocation('/schedule'),
+      show: true,
+    },
+    {
       id: 'my-attendance',
       title: '我的打卡',
       description: '查看個人打卡記錄',

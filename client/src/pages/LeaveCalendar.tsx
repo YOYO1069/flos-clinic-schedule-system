@@ -91,7 +91,7 @@ export default function LeaveCalendar() {
   
   // 當前選擇的年月
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState(11);
+  const [selectedMonth, setSelectedMonth] = useState(12);
   
   // 員工名單
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);

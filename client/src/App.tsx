@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import ScheduleHome from "./pages/ScheduleHome";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
@@ -34,7 +35,7 @@ function Router() {
       <Route path="/approval" component={LeaveApproval} />
       <Route path={"/"} component={Dashboard} />
       <Route path="/leave-calendar" component={LeaveCalendar} />
-      <Route path="/schedule" component={Home} />
+      <Route path="/schedule" component={ScheduleHome} />
       <Route path="/calendar" component={CalendarSchedule} />
       <Route path="/staff-management" component={StaffManagement} />
       <Route path="/staff-leave" component={LeaveCalendar} />
