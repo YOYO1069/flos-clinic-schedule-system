@@ -490,7 +490,7 @@ export default function Attendance() {
             <CardDescription>根據您的需求選擇不同的打卡方式</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <Button
                 variant={checkInMode === 'gps' ? 'default' : 'outline'}
                 onClick={() => setCheckInMode('gps')}
@@ -500,19 +500,9 @@ export default function Attendance() {
                 <span className="text-sm">GPS打卡</span>
               </Button>
               <Button
-                variant={checkInMode === 'manual' ? 'default' : 'outline'}
-                onClick={() => setCheckInMode('manual')}
-                className="h-20 flex flex-col items-center justify-center"
-                disabled={settings.allow_manual_location === 'false'}
-              >
-                <span className="text-2xl mb-1">✍️</span>
-                <span className="text-sm">手動輸入</span>
-              </Button>
-              <Button
                 variant={checkInMode === 'quick' ? 'default' : 'outline'}
                 onClick={() => setCheckInMode('quick')}
                 className="h-20 flex flex-col items-center justify-center"
-                disabled={settings.allow_quick_checkin === 'false'}
               >
                 <span className="text-2xl mb-1">⚡</span>
                 <span className="text-sm">快速打卡</span>
@@ -527,19 +517,7 @@ export default function Attendance() {
               </Button>
             </div>
 
-            {/* 手動輸入地點 */}
-            {checkInMode === 'manual' && (
-              <div className="mt-4">
-                <Label htmlFor="manualLocation">打卡地點</Label>
-                <Input
-                  id="manualLocation"
-                  placeholder="例如：FLOS 曜診所"
-                  value={manualLocation}
-                  onChange={(e) => setManualLocation(e.target.value)}
-                  className="mt-2"
-                />
-              </div>
-            )}
+
 
             {/* 藍牙裝置名稱 */}
             {checkInMode === 'bluetooth' && (
@@ -562,9 +540,6 @@ export default function Attendance() {
             <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-gray-700">
               {checkInMode === 'gps' && (
                 <p>📍 <strong>GPS打卡</strong>：系統將自動取得您的GPS定位資訊。如果定位失敗，{settings.require_gps === 'true' ? '將無法打卡' : '仍可正常打卡'}。</p>
-              )}
-              {checkInMode === 'manual' && (
-                <p>✍️ <strong>手動輸入</strong>：請手動輸入您的打卡地點，不需要GPS定位。</p>
               )}
               {checkInMode === 'quick' && (
                 <p>⚡ <strong>快速打卡</strong>：快速打卡不需要任何地點資訊，適合快速記錄時間。</p>
