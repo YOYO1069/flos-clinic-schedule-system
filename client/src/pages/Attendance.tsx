@@ -192,8 +192,7 @@ export default function Attendance() {
         employee_id: user.employee_id,
         employee_name: user.name,
         check_in_time: now.toISOString(),
-        work_date: today,
-        source: 'web'
+        work_date: today
       };
 
       // 根據打卡模式處理
