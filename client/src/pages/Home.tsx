@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { supabase, doctors } from "@/lib/supabase";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { APP_TITLE } from "@/const";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
-
-interface Schedule {
-  id?: number;
-  doctor_name: string;
-  date: string;
-  status: 'ON' | 'OFF';
-  created_at?: string;
-}
+import { 
+  Clock, 
+  Users, 
+  FileText, 
+  Monitor, 
+  Calendar, 
+  DollarSign, 
+  Settings,
+  CheckSquare,
+  LogOut,
+  UserCog
+} from 'lucide-react';
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -25,345 +29,240 @@ export default function Home() {
       setUser(JSON.parse(userStr));
     }
   }, []);
-  const [currentYear, setCurrentYear] = useState(2025);
-  const [currentMonth, setCurrentMonth] = useState(10);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'doctor' | 'staff'>('doctor');
 
-  // 載入排班資料
-  useEffect(() => {
-    loadSchedules();
-  }, [currentYear, currentMonth]);
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setLocation('/login');
+  };
 
-  async function loadSchedules() {
-    setLoading(true);
-    try {
-      const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
-      
-      const { data, error } = await supabase
-        .from('flos_schedules')
-        .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
+  // 功能卡片資料
+  const featureCards = [
+    // 所有員工都可以使用的功能
+    {
+      id: 'my-attendance',
+      title: '我的打卡',
+      description: '查看個人打卡記錄',
+      icon: Clock,
+      color: 'from-orange-400 to-orange-600',
+      bgColor: 'bg-orange-50',
+      onClick: () => setLocation('/attendance'),
+      show: permissions.canAccessAttendance,
+    },
+    {
+      id: 'attendance-history',
+      title: '打卡記錄',
+      description: '查詢歷史打卡明細',
+      icon: FileText,
+      color: 'from-green-400 to-green-600',
+      bgColor: 'bg-green-50',
+      onClick: () => setLocation('/attendance-history'),
+      show: permissions.canAccessAttendance,
+    },
+    {
+      id: 'leave-calendar',
+      title: '休假月曆',
+      description: '查看員工休假狀況',
+      icon: Calendar,
+      color: 'from-blue-400 to-blue-600',
+      bgColor: 'bg-blue-50',
+      onClick: () => setLocation('/leave-calendar'),
+      show: permissions.canAccessLeaveCalendar,
+    },
+    {
+      id: 'leave-request',
+      title: '請假管理',
+      description: '提交請假申請',
+      icon: CheckSquare,
+      color: 'from-purple-400 to-purple-600',
+      bgColor: 'bg-purple-50',
+      onClick: () => setLocation('/leave'),
+      show: permissions.canAccessLeaveManagement,
+    },
+    // 護理師和美容師專用
+    {
+      id: 'operation-fee',
+      title: '操作費計算',
+      description: '計算個人操作費用',
+      icon: DollarSign,
+      color: 'from-pink-400 to-pink-600',
+      bgColor: 'bg-pink-50',
+      onClick: () => setLocation('/operation-fee'),
+      show: user?.position === '美容師' || user?.position === '護理師',
+    },
+    // 主管以上權限
+    {
+      id: 'employee-management',
+      title: '員工管理',
+      description: '新增、編輯、管理員工資料',
+      icon: Users,
+      color: 'from-blue-400 to-blue-600',
+      bgColor: 'bg-blue-50',
+      onClick: () => setLocation('/employee-management'),
+      show: permissions.canManageStaffSchedule,
+    },
+    {
+      id: 'leave-approval',
+      title: '請假審核',
+      description: '審核員工請假申請',
+      icon: CheckSquare,
+      color: 'from-indigo-400 to-indigo-600',
+      bgColor: 'bg-indigo-50',
+      onClick: () => setLocation('/approval'),
+      show: permissions.canAccessLeaveApproval,
+    },
+    {
+      id: 'dashboard',
+      title: '電子看板',
+      description: '即時顯示今日打卡狀況',
+      icon: Monitor,
+      color: 'from-purple-400 to-purple-600',
+      bgColor: 'bg-purple-50',
+      onClick: () => setLocation('/attendance-dashboard'),
+      show: permissions.canAccessLeaveApproval,
+    },
+    // 管理員專用
+    {
+      id: 'attendance-settings',
+      title: '打卡設定',
+      description: '管理打卡系統設定',
+      icon: Settings,
+      color: 'from-gray-400 to-gray-600',
+      bgColor: 'bg-gray-50',
+      onClick: () => setLocation('/attendance-settings'),
+      show: user?.role === 'admin' || user?.role === 'super_admin',
+    },
+  ];
 
-      if (error) {
-        console.error('載入排班資料失敗:', error);
-      } else {
-        setSchedules(data || []);
-      }
-    } catch (err) {
-      console.error('載入排班資料錯誤:', err);
-    }
-    setLoading(false);
-  }
-
-  // 切換排班狀態
-  async function toggleSchedule(doctorName: string, date: string) {
-    const existing = schedules.find(
-      s => s.doctor_name === doctorName && s.date === date
-    );
-
-    try {
-      if (existing) {
-        // 切換狀態
-        const newStatus = existing.status === 'ON' ? 'OFF' : 'ON';
-        const { error } = await supabase
-          .from('flos_schedules')
-          .update({ status: newStatus })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-      } else {
-        // 新增排班
-        const { error } = await supabase
-          .from('flos_schedules')
-          .insert([{
-            doctor_name: doctorName,
-            date: date,
-            status: 'ON'
-          }]);
-
-        if (error) throw error;
-      }
-
-      // 重新載入
-      await loadSchedules();
-    } catch (err) {
-      console.error('更新排班失敗:', err);
-    }
-  }
-
-  // 取得該日期的排班狀態
-  function getScheduleStatus(doctorName: string, date: string): 'ON' | 'OFF' {
-    const schedule = schedules.find(
-      s => s.doctor_name === doctorName && s.date === date
-    );
-    return schedule?.status || 'OFF';
-  }
-
-  // 取得該月份的天數
-  function getDaysInMonth(year: number, month: number): number {
-    return new Date(year, month, 0).getDate();
-  }
-
-  // 取得星期幾
-  function getDayOfWeek(year: number, month: number, day: number): string {
-    const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-    const date = new Date(year, month - 1, day);
-    return days[date.getDay()];
-  }
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const dates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const visibleCards = featureCards.filter(card => card.show);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      {/* 標題區 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* 頂部導航 */}
+      <div className="bg-white/80 backdrop-blur shadow-sm border-b">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-pink-600">🏥 {APP_TITLE}</h1>
-              <p className="text-gray-600 mt-1">醫師與員工排班管理 - {currentYear}年{currentMonth}月</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                🏥 {APP_TITLE}
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                {user?.name} ({user?.position || '員工'})
+              </p>
             </div>
-            <div className="flex gap-4">
-              <select 
-                value={currentYear}
-                onChange={(e) => setCurrentYear(Number(e.target.value))}
-                className="px-4 py-2 border rounded-lg bg-white"
-              >
-                <option value={2025}>2025年</option>
-                <option value={2026}>2026年</option>
-              </select>
-              <select 
-                value={currentMonth}
-                onChange={(e) => setCurrentMonth(Number(e.target.value))}
-                className="px-4 py-2 border rounded-lg bg-white"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>{m}月</option>
-                ))}
-              </select>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              登出
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* 功能選單 */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-4 mb-6 flex-wrap">
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/')}
-          >
-            🏠 返回首頁
-          </Button>
-          
-          {permissions.canManageDoctorSchedule && (
-            <Button 
-              onClick={() => setActiveTab('doctor')}
-              variant={activeTab === 'doctor' ? 'default' : 'outline'}
-              className="flex items-center gap-2"
-            >
-              👨‍⚕️ 醫師排班
-            </Button>
-          )}
-          
-          {permissions.canManageStaffSchedule && (
-            <Button 
-              onClick={() => setActiveTab('staff')}
-              variant={activeTab === 'staff' ? 'default' : 'outline'}
-              className="flex items-center gap-2"
-            >
-              👥 員工排班
-            </Button>
-          )}
-          
-          {permissions.canAccessLeaveCalendar && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setLocation('/leave-calendar')}
-            >
-              📅 休假月曆
-            </Button>
-          )}
-          
-          {permissions.canAccessAttendance && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setLocation('/attendance')}
-            >
-              ⏰ 員工打卡
-            </Button>
-          )}
-          
-          {permissions.canAccessLeaveManagement && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setLocation('/leave')}
-            >
-              📝 請假管理
-            </Button>
-          )}
-          
-          {permissions.canAccessLeaveApproval && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setLocation('/approval')}
-            >
-              ✅ 請假審核
-            </Button>
-          )}
-          
-          {(user?.position === '美容師' || user?.position === '護理師') && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2 bg-purple-50 hover:bg-purple-100"
-              onClick={() => setLocation('/operation-fee')}
-            >
-              💰 操作費計算
-            </Button>
-          )}
-          
-          {(user?.role === 'admin' || user?.role === 'super_admin') && (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2 bg-gray-50 hover:bg-gray-100"
-              onClick={() => setLocation('/attendance-settings')}
-            >
-              ⚙️ 打卡設定
-            </Button>
-          )}
+      {/* 主要內容 */}
+      <div className="container mx-auto px-4 py-8">
+        {/* 歡迎訊息 */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            歡迎回來，{user?.name}！
+          </h2>
+          <p className="text-gray-600">
+            請選擇您需要的功能
+          </p>
         </div>
 
-        {/* 醫師陣容 */}
-        {activeTab === 'doctor' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">👨‍⚕️ 醫師陣容 (8位)</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              點擊排班狀態按鈕切換ON/OFF，系統已根據診所營業時間預設排班
-            </p>
-            <div className="grid grid-cols-4 gap-4">
-              {doctors.map(doctor => (
-                <div 
-                  key={doctor.id}
-                  className="flex items-center gap-2 p-3 rounded-lg border"
-                  style={{ borderColor: doctor.color }}
-                >
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: doctor.color }}
-                  />
-                  <span className="font-medium">{doctor.name}</span>
+        {/* 功能卡片網格 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {visibleCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Card
+                key={card.id}
+                className={`${card.bgColor} border-2 hover:shadow-xl transition-all cursor-pointer group`}
+                onClick={card.onClick}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-center mb-4">
+                    <div className={`p-4 rounded-full bg-gradient-to-br ${card.color}`}>
+                      <Icon className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <CardTitle className="text-center text-xl">
+                    {card.title}
+                  </CardTitle>
+                  <CardDescription className="text-center">
+                    {card.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button
+                    className={`w-full bg-gradient-to-r ${card.color} text-white group-hover:scale-105 transition-transform`}
+                  >
+                    進入功能
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* 使用說明 */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <Card className="bg-white/80 backdrop-blur">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCog className="w-5 h-5" />
+                使用說明
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-gray-700">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
+                  1
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 排班表 */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold mb-4">
-            📅 {currentYear}年{currentMonth}月 排班表
-          </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            點擊格子切換排班狀態：OFF → ON → OFF，不提供半天班選項
-          </p>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
-              <p className="mt-2 text-gray-600">載入中...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border p-2 text-left font-medium sticky left-0 bg-gray-50 z-10">
-                      醫師 / 日期
-                    </th>
-                    {dates.map(day => {
-                      const dayOfWeek = getDayOfWeek(currentYear, currentMonth, day);
-                      const isWeekend = dayOfWeek === '週六' || dayOfWeek === '週日';
-                      return (
-                        <th 
-                          key={day}
-                          className={`border p-2 text-center text-sm ${
-                            isWeekend ? 'bg-red-50' : ''
-                          }`}
-                        >
-                          <div>{day}</div>
-                          <div className="text-xs text-gray-500">{dayOfWeek}</div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.map(doctor => (
-                    <tr key={doctor.id}>
-                      <td className="border p-2 font-medium sticky left-0 bg-white z-10">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: doctor.color }}
-                          />
-                          {doctor.name}
-                        </div>
-                      </td>
-                      {dates.map(day => {
-                        const date = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        const status = getScheduleStatus(doctor.name, date);
-                        const dayOfWeek = getDayOfWeek(currentYear, currentMonth, day);
-                        const isSunday = dayOfWeek === '週日';
-                        
-                        return (
-                          <td 
-                            key={day}
-                            className={`border p-1 text-center ${
-                              isSunday ? 'bg-gray-100' : ''
-                            }`}
-                          >
-                            <Button
-                              size="sm"
-                              variant={status === 'ON' ? 'default' : 'outline'}
-                              className={`w-full text-xs ${
-                                status === 'ON' 
-                                  ? 'text-white' 
-                                  : 'bg-gray-200 text-gray-600'
-                              }`}
-                              style={status === 'ON' ? { backgroundColor: doctor.color } : {}}
-                              onClick={() => toggleSchedule(doctor.name, date)}
-                              disabled={isSunday}
-                            >
-                              {isSunday ? '休' : status}
-                            </Button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                <div>
+                  <strong>我的打卡：</strong>點擊「電子看板」即時查看今日打卡狀況，或在「打卡記錄」查看歷史明細
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold">
+                  2
+                </div>
+                <div>
+                  <strong>休假管理：</strong>在「休假月曆」查看所有員工休假狀況，在「請假管理」提交請假申請
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
+                  3
+                </div>
+                <div>
+                  <strong>操作費計算：</strong>護理師和美容師可使用此功能計算個人操作費用
+                </div>
+              </div>
+              {(user?.role === 'supervisor' || user?.role === 'senior_supervisor' || user?.role === 'admin' || user?.role === 'super_admin') && (
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs font-bold">
+                    4
+                  </div>
+                  <div>
+                    <strong>主管功能：</strong>您可以管理員工資料、審核請假申請，並查看電子看板
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* 頁尾 */}
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-gray-500">
           <p>FLOS 曜診所 | 診所管理系統</p>
-          <p className="mt-1">本排班表由系統自動生成 - {new Date().toLocaleDateString('zh-TW')}</p>
+          <p className="mt-1">{new Date().toLocaleDateString('zh-TW')}</p>
         </div>
       </div>
     </div>
   );
 }
-
