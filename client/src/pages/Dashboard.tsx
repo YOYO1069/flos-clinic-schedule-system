@@ -65,7 +65,7 @@ export default function Dashboard() {
       icon: FileText,
       color: 'from-green-400 to-green-600',
       bgColor: 'bg-green-50',
-      onClick: () => setLocation('/attendance-history'),
+      onClick: () => setLocation('/attendance'),
       show: permissions.canAccessAttendance,
     },
     {

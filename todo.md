@@ -333,7 +333,14 @@
 - [x] 部署到 Netlify
 
 ## 階段三十三:移除匯出 Excel 和 PDF 按鈕
-- [ ] 移除 DoctorSchedule.tsx 中的 useSchedule 相關程式碼
-- [ ] 移除 Toolbar 中的 Excel 和 PDF 按鈕
-- [ ] 測試匯出圖片功能
+- [x] 移除 DoctorSchedule.tsx 中的 useSchedule 相關程式碼
+- [x] 移除 Toolbar 中的 Excel 和 PDF 按鈕
+- [x] 測試匯出圖片功能
+- [x] 部署到 Netlify
+
+## 階段三十四:修復權限和路由問題
+- [ ] 修復排班系統的電子看板權限問題（一般員工不能進入）
+- [ ] 修復打卡記錄頁面404問題
+- [ ] 測試請假管理系統功能
+- [ ] 刪除請假系統的假資料
 - [ ] 部署到 Netlify

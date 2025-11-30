@@ -176,6 +176,7 @@ export default function ScheduleHome() {
               <Fingerprint className="h-6 w-6 mr-3" />
               員工打卡
             </Button>
+            {permissions.canAccessAttendanceDashboard && (
             <Button 
               size="lg"
               onClick={() => setLocation('/attendance-dashboard')}
@@ -184,6 +185,7 @@ export default function ScheduleHome() {
               <Monitor className="h-6 w-6 mr-3" />
               電子看板
             </Button>
+            )}
           </div>
         </div>
 
