@@ -179,8 +179,11 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      const now = new Date();
-      const today = format(now, 'yyyy-MM-dd');
+      // 取得台灣時間
+      const taiwanNow = getTaiwanNow();
+      // 轉換為 UTC 儲存到資料庫
+      const utcNow = taiwanTimeToUTC(taiwanNow);
+      const today = format(taiwanNow, 'yyyy-MM-dd');
       
       // 檢查今天是否已經上班打卡
       if (todayRecord && todayRecord.check_in_time) {
@@ -192,7 +195,7 @@ export default function Attendance() {
       const recordData: any = {
         employee_id: user.employee_id,
         employee_name: user.name,
-        check_in_time: now.toISOString(),
+        check_in_time: utcNow,
         work_date: today
       };
 
@@ -272,7 +275,10 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      const now = new Date();
+      // 取得台灣時間
+      const taiwanNow = getTaiwanNow();
+      // 轉換為 UTC 儲存到資料庫
+      const utcNow = taiwanTimeToUTC(taiwanNow);
       
       // 檢查今天是否已經上班打卡
       if (!todayRecord || !todayRecord.check_in_time) {
@@ -288,12 +294,13 @@ export default function Attendance() {
         return;
       }
 
-      // 計算工時
+      // 計算工時 (使用 UTC 時間計算)
       const checkInTime = new Date(todayRecord.check_in_time);
-      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+      const checkOutTime = new Date(utcNow);
+      const workHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
       const updateData: any = {
-        check_out_time: now.toISOString(),
+        check_out_time: utcNow,
         work_hours: Math.round(workHours * 100) / 100
       };
 
