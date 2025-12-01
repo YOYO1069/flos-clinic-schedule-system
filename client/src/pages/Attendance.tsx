@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { utcToTaiwanTime, getTaiwanNow } from '@/lib/timezone';
+import { utcToTaiwanTime, getTaiwanNow, taiwanTimeToUTC } from '@/lib/timezone';
 
 interface AttendanceRecord {
   id: number;
