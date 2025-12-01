@@ -7,9 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "sonner";
 import { supabase, tables } from "@/lib/supabase";
 import { useLocation } from "wouter";
-import { CheckCircle, XCircle, Clock, Calendar, User, FileText, ArrowLeft } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Calendar, User, FileText, ArrowLeft, Trash2 } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { utcToTaiwanTime } from '@/lib/timezone';
 
 interface LeaveRequest {
   id: number;
@@ -325,7 +326,7 @@ export default function LeaveApproval() {
                           )}
 
                           <p className="text-xs text-gray-500 mt-3">
-                            申請時間: {format(new Date(request.created_at), 'yyyy/MM/dd HH:mm', { locale: zhTW })}
+                            申請時間: {format(utcToTaiwanTime(request.created_at), 'yyyy/MM/dd HH:mm', { locale: zhTW })}
                           </p>
                         </div>
 
@@ -407,7 +408,7 @@ export default function LeaveApproval() {
                         </div>
                         <div className="text-right text-sm text-gray-500">
                           {request.approved_at && (
-                            <p>審核時間: {format(new Date(request.approved_at), 'yyyy/MM/dd HH:mm')}</p>
+                            <p>審核時間: {format(utcToTaiwanTime(request.approved_at), 'yyyy/MM/dd HH:mm')}</p>
                           )}
                         </div>
                       </div>

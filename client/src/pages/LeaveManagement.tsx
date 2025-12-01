@@ -10,6 +10,7 @@ import { Calendar, FileText, CheckCircle, XCircle, Clock, ArrowLeft } from "luci
 import { useLocation } from 'wouter';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
+import { utcToTaiwanTime } from '@/lib/timezone';
 
 interface LeaveRequest {
   id: number;
@@ -355,12 +356,12 @@ export default function LeaveManagement() {
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          申請時間: {format(new Date(request.created_at), 'yyyy/MM/dd HH:mm')}
+                          申請時間: {format(utcToTaiwanTime(request.created_at), 'yyyy/MM/dd HH:mm')}
                         </div>
                         {request.approved_at && (
                           <div className="flex items-center gap-1">
                             <CheckCircle className="w-3 h-3" />
-                            審核時間: {format(new Date(request.approved_at), 'yyyy/MM/dd HH:mm')}
+                            審核時間: {format(utcToTaiwanTime(request.approved_at), 'yyyy/MM/dd HH:mm')}
                           </div>
                         )}
                       </div>
