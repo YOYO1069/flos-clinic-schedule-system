@@ -134,6 +134,16 @@ export default function Dashboard() {
     },
     // 管理員專用
     {
+      id: 'attendance-management',
+      title: '打卡記錄管理',
+      description: '管理全體員工打卡記錄',
+      icon: FileText,
+      color: 'from-indigo-400 to-indigo-600',
+      bgColor: 'bg-indigo-50',
+      onClick: () => setLocation('/attendance-management'),
+      show: user?.role === 'admin' || user?.role === 'super_admin',
+    },
+    {
       id: 'attendance-settings',
       title: '打卡設定',
       description: '管理打卡系統設定',
