@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { DaySchedule, DoctorShift, MonthSchedule } from '@/types/schedule';
-import { doctorScheduleClient, DoctorSchedule, SCHEDULE_TABLE } from '@/lib/supabase';
+import { doctorScheduleClient, DoctorSchedule, SCHEDULE_TABLE, doctors } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface ScheduleContextType {
@@ -48,9 +48,13 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         if (!schedulesMap[dateStr]) {
           schedulesMap[dateStr] = { date: dateStr, shifts: [] };
         }
+        // 將 doctor_id 轉換為醫師名稱
+        const doctor = doctors.find(d => d.id === schedule.doctor_id);
+        const doctorName = doctor ? doctor.name : '未知醫師';
+        
         schedulesMap[dateStr].shifts.push({
           id: schedule.id,
-          doctorName: schedule.doctor_name,
+          doctorName: doctorName,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
         });
@@ -86,11 +90,18 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // 將醫師名稱轉換為 doctor_id
+      const doctor = doctors.find(d => d.name === shift.doctorName);
+      if (!doctor) {
+        toast.error('找不到醫師資料');
+        return;
+      }
+      
       const { data, error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .insert({
           date: date,
-          doctor_name: shift.doctorName,
+          doctor_id: doctor.id,
           start_time: shift.startTime,
           end_time: shift.endTime,
         })
@@ -104,7 +115,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         const daySchedule = prev[date] || { date, shifts: [] };
         const newShift: DoctorShift = {
           id: data.id,
-          doctorName: data.doctor_name,
+          doctorName: shift.doctorName,
           startTime: data.start_time,
           endTime: data.end_time,
         };
@@ -128,10 +139,17 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const updateShift = async (date: string, shiftId: string, shift: Omit<DoctorShift, 'id'>) => {
     try {
+      // 將醫師名稱轉換為 doctor_id
+      const doctor = doctors.find(d => d.name === shift.doctorName);
+      if (!doctor) {
+        toast.error('找不到醫師資料');
+        return;
+      }
+      
       const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .update({
-          doctor_name: shift.doctorName,
+          doctor_id: doctor.id,
           start_time: shift.startTime,
           end_time: shift.endTime,
           updated_at: new Date().toISOString(),

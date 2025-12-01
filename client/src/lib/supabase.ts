@@ -24,6 +24,18 @@ export const doctors = [
   { id: 6, name: '藍子軒', color: '#06b6d4' },
   { id: 7, name: '何逸群', color: '#ef4444' },
   { id: 8, name: '郭昌浩', color: '#14b8a6' },
+  { id: 9, name: '宋昀翰', color: '#a855f7' },
+  { id: 10, name: '龍勤莉', color: '#ec4899' },
+  { id: 11, name: '郭昌濬', color: '#14b8a6' },
+  { id: 12, name: '蔡秉遑', color: '#f59e0b' },
+  { id: 13, name: '陳宥嘉', color: '#10b981' },
+  { id: 14, name: '林醫師', color: '#10b981' },
+  { id: 15, name: '王醫師', color: '#f59e0b' },
+  { id: 16, name: '張醫師', color: '#06b6d4' },
+  { id: 17, name: '李洋', color: '#3b82f6' },
+  { id: 18, name: '黃醫師', color: '#8b5cf6' },
+  { id: 19, name: '劉佑澤', color: '#ef4444' },
+  { id: 20, name: '楊鈞賢', color: '#a855f7' },
 ]
 
 // 諮詢師資料
