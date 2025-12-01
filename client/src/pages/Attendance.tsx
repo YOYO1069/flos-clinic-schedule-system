@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { utcToTaiwanTime, getTaiwanNow } from '@/lib/timezone';
 
 interface AttendanceRecord {
   id: number;
@@ -411,8 +412,8 @@ export default function Attendance() {
     // 準備匯出資料
     const exportData = historyRecords.map(record => ({
       '日期': record.work_date,
-      '上班時間': record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm:ss') : '-',
-      '下班時間': record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm:ss') : '-',
+      '上班時間': record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm:ss') : '-',
+      '下班時間': record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm:ss') : '-',
       '工時': record.work_hours ? `${record.work_hours.toFixed(2)}` : '-',
       '上班地點': record.check_in_address || '-',
       '下班地點': record.check_out_address || '-',
@@ -587,13 +588,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(utcToTaiwanTime(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(utcToTaiwanTime(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -704,13 +705,13 @@ export default function Attendance() {
                         <div>
                           <span className="text-gray-600">上班:</span>
                           <div className="font-medium mt-1">
-                            {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm:ss') : '-'}
+                            {record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm:ss') : '-'}
                           </div>
                         </div>
                         <div>
                           <span className="text-gray-600">下班:</span>
                           <div className="font-medium mt-1">
-                            {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm:ss') : '-'}
+                            {record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm:ss') : '-'}
                           </div>
                         </div>
                         <div>
@@ -772,13 +773,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                          {record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                          {record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>

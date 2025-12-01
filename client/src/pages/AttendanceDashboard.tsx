@@ -7,6 +7,7 @@ import { ArrowLeft, RefreshCw, Users, CheckCircle, XCircle, Clock } from 'lucide
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { utcToTaiwanTime } from '@/lib/timezone';
 
 interface AttendanceRecord {
   id: number;
@@ -123,14 +124,14 @@ export default function AttendanceDashboard() {
           icon: <CheckCircle className="w-5 h-5 text-green-500" />,
           text: '已上班',
           color: 'bg-green-50 border-green-200',
-          time: status.check_in_time ? format(new Date(status.check_in_time), 'HH:mm:ss') : ''
+          time: status.check_in_time ? format(utcToTaiwanTime(status.check_in_time), 'HH:mm:ss') : ''
         };
       case 'checked_out':
         return {
           icon: <CheckCircle className="w-5 h-5 text-blue-500" />,
           text: '已下班',
           color: 'bg-blue-50 border-blue-200',
-          time: status.check_out_time ? format(new Date(status.check_out_time), 'HH:mm:ss') : ''
+          time: status.check_out_time ? format(utcToTaiwanTime(status.check_out_time), 'HH:mm:ss') : ''
         };
       default:
         return {
