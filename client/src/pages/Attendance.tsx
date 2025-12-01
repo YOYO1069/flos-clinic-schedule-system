@@ -301,7 +301,7 @@ export default function Attendance() {
 
       const updateData: any = {
         check_out_time: utcNow,
-        work_hours: Math.round(workHours * 100) / 100
+        total_hours: Math.round(workHours * 100) / 100
       };
 
       // 根據打卡模式處理
