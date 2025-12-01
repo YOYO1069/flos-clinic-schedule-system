@@ -10,15 +10,8 @@
  */
 export function utcToTaiwanTime(utcTimeString: string): Date {
   const utcDate = new Date(utcTimeString);
-  // 台灣時區是 UTC+8
-  const taiwanOffset = 8 * 60; // 8小時 = 480分鐘
-  const localOffset = utcDate.getTimezoneOffset(); // 本地時區偏移(分鐘)
-  
-  // 計算需要調整的時間差
-  const offsetDiff = taiwanOffset + localOffset;
-  
-  // 返回調整後的時間
-  return new Date(utcDate.getTime() + offsetDiff * 60 * 1000);
+  // 台灣時區是 UTC+8，直接加上 8 小時
+  return new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
 }
 
 /**
@@ -27,14 +20,9 @@ export function utcToTaiwanTime(utcTimeString: string): Date {
  */
 export function getTaiwanNow(): Date {
   const now = new Date();
-  const taiwanOffset = 8 * 60; // 8小時 = 480分鐘
-  const localOffset = now.getTimezoneOffset(); // 本地時區偏移(分鐘)
-  
-  // 計算需要調整的時間差
-  const offsetDiff = taiwanOffset + localOffset;
-  
-  // 返回調整後的時間
-  return new Date(now.getTime() + offsetDiff * 60 * 1000);
+  // 取得當前 UTC 時間，然後加上 8 小時
+  const utcTime = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  return new Date(utcTime + 8 * 60 * 60 * 1000);
 }
 
 /**
@@ -43,14 +31,8 @@ export function getTaiwanNow(): Date {
  * @returns UTC 時間字串 (ISO 8601 格式)
  */
 export function taiwanTimeToUTC(taiwanTime: Date): string {
-  const taiwanOffset = 8 * 60; // 8小時 = 480分鐘
-  const localOffset = taiwanTime.getTimezoneOffset(); // 本地時區偏移(分鐘)
-  
-  // 計算需要調整的時間差
-  const offsetDiff = taiwanOffset + localOffset;
-  
-  // 返回調整為 UTC 的時間字串
-  const utcTime = new Date(taiwanTime.getTime() - offsetDiff * 60 * 1000);
+  // 台灣時間減去 8 小時得到 UTC 時間
+  const utcTime = new Date(taiwanTime.getTime() - 8 * 60 * 60 * 1000);
   return utcTime.toISOString();
 }
 
