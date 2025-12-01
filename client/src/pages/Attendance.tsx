@@ -221,13 +221,8 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        let successMsg = `✅ 上班打卡成功!\n⏰ 時間: ${format(taiwanNow, 'HH:mm')}`;
-        if (recordData.check_in_address) {
-          successMsg += `\n📍 地點: ${recordData.check_in_address}`;
-        }
+        const successMsg = `✅ 上班打卡成功!\n⏰ 時間: ${format(taiwanNow, 'HH:mm')}`;
         toast.success(successMsg);
-        setManualLocation(''); // 清空手動輸入
-        setBluetoothDeviceName(''); // 清空藍牙裝置
         await loadRecentRecords();
       }
     } catch (err) {
@@ -295,13 +290,8 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        let successMsg = `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
-        if (updateData.check_out_address) {
-          successMsg += `\n📍 地點: ${updateData.check_out_address}`;
-        }
+        const successMsg = `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
         toast.success(successMsg);
-        setManualLocation(''); // 清空手動輸入
-        setBluetoothDeviceName(''); // 清空藍牙裝置
         await loadRecentRecords();
       }
     } catch (err) {
