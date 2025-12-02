@@ -118,12 +118,15 @@ export default function Attendance() {
         return;
       }
 
+      // 轉換為台灣時區 (UTC+8)
+      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+      
       const { data, error } = await supabase
         .from('attendance_records')
         .insert({
           employee_id: user.employee_id,
           employee_name: user.name,
-          check_in_time: now.toISOString(),
+          check_in_time: taiwanTime.toISOString().replace('Z', ''),
           attendance_date: today,
           source: 'web'
         })
@@ -172,10 +175,13 @@ export default function Attendance() {
       const checkInTime = new Date(todayRecord.check_in_time);
       const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
+      // 轉換為台灣時區 (UTC+8)
+      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+      
       const { data, error } = await supabase
         .from('attendance_records')
         .update({
-          check_out_time: now.toISOString(),
+          check_out_time: taiwanTime.toISOString().replace('Z', ''),
           work_hours: Math.round(workHours * 100) / 100
         })
         .eq('id', todayRecord.id)
