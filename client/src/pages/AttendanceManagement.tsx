@@ -31,30 +31,27 @@ interface AttendanceRecord {
   created_at: string;
 }
 
-// 轉換 UTC 時間為台灣時間 (UTC+8)
-function convertToTaiwanTime(utcTimeStr: string | null): Date | null {
-  if (!utcTimeStr) return null;
-  const utcDate = new Date(utcTimeStr);
-  return new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
-}
-
-// 轉換台灣時間為 UTC 時間
-function convertToUTC(taiwanTimeStr: string | null): string | null {
-  if (!taiwanTimeStr) return null;
-  const taiwanDate = new Date(taiwanTimeStr);
-  const utcDate = new Date(taiwanDate.getTime() - (8 * 60 * 60 * 1000));
-  return utcDate.toISOString().replace('Z', '');
-}
-
 // 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
-function formatForInput(dateTime: Date | null): string {
-  if (!dateTime) return '';
-  const year = dateTime.getFullYear();
-  const month = String(dateTime.getMonth() + 1).padStart(2, '0');
-  const day = String(dateTime.getDate()).padStart(2, '0');
-  const hours = String(dateTime.getHours()).padStart(2, '0');
-  const minutes = String(dateTime.getMinutes()).padStart(2, '0');
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
+function formatForInput(timeStr: string | null): string {
+  if (!timeStr) return '';
+  try {
+    const date = new Date(timeStr);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  } catch {
+    return '';
+  }
+}
+
+// 將 datetime-local 格式轉換為 timestamp 格式
+function formatForDatabase(datetimeLocalStr: string): string {
+  if (!datetimeLocalStr) return '';
+  const date = new Date(datetimeLocalStr);
+  return format(date, 'yyyy-MM-dd HH:mm:ss');
 }
 
 export default function AttendanceManagement() {
@@ -118,9 +115,8 @@ export default function AttendanceManagement() {
   function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
     try {
-      const taiwanTime = convertToTaiwanTime(timeStr);
-      if (!taiwanTime) return '-';
-      return format(taiwanTime, 'HH:mm:ss');
+      const date = new Date(timeStr);
+      return format(date, 'HH:mm:ss');
     } catch {
       return '-';
     }
@@ -128,13 +124,8 @@ export default function AttendanceManagement() {
 
   function openEditDialog(record: AttendanceRecord) {
     setEditingRecord(record);
-    
-    // 轉換為台灣時間並格式化為 input 格式
-    const checkInTaiwan = convertToTaiwanTime(record.check_in_time);
-    const checkOutTaiwan = convertToTaiwanTime(record.check_out_time);
-    
-    setEditCheckInTime(formatForInput(checkInTaiwan));
-    setEditCheckOutTime(formatForInput(checkOutTaiwan));
+    setEditCheckInTime(formatForInput(record.check_in_time));
+    setEditCheckOutTime(formatForInput(record.check_out_time));
     setEditDialogOpen(true);
   }
 
@@ -150,15 +141,15 @@ export default function AttendanceManagement() {
         workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
       }
 
-      // 轉換台灣時間為 UTC 時間後儲存
-      const utcCheckInTime = convertToUTC(editCheckInTime);
-      const utcCheckOutTime = editCheckOutTime ? convertToUTC(editCheckOutTime) : null;
+      // 格式化為資料庫格式
+      const checkInTimeStr = formatForDatabase(editCheckInTime);
+      const checkOutTimeStr = editCheckOutTime ? formatForDatabase(editCheckOutTime) : null;
 
       const { error } = await supabase
         .from('attendance_records')
         .update({
-          check_in_time: utcCheckInTime,
-          check_out_time: utcCheckOutTime,
+          check_in_time: checkInTimeStr,
+          check_out_time: checkOutTimeStr,
           total_hours: workHours
         })
         .eq('id', editingRecord.id);
@@ -470,7 +461,7 @@ export default function AttendanceManagement() {
 
             <div className="bg-blue-50 border border-blue-200 rounded p-3">
               <p className="text-sm text-blue-800">
-                <strong>注意：</strong>請輸入台灣時間，系統會自動轉換為 UTC 時間儲存。
+                <strong>注意：</strong>請輸入台灣時間，系統會直接儲存您輸入的時間。
               </p>
             </div>
           </div>

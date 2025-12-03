@@ -26,14 +26,6 @@ interface User {
   role: string;
 }
 
-// 轉換 UTC 時間為台灣時間 (UTC+8)
-function convertToTaiwanTime(utcTimeStr: string | null): Date | null {
-  if (!utcTimeStr) return null;
-  const utcDate = new Date(utcTimeStr);
-  // 加上 8 小時
-  return new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
-}
-
 export default function AttendanceDashboard() {
   const [, setLocation] = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -102,9 +94,8 @@ export default function AttendanceDashboard() {
   function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
     try {
-      const taiwanTime = convertToTaiwanTime(timeStr);
-      if (!taiwanTime) return '-';
-      return format(taiwanTime, 'HH:mm:ss');
+      const date = new Date(timeStr);
+      return format(date, 'HH:mm:ss');
     } catch {
       return '-';
     }

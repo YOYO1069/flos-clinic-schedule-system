@@ -20,14 +20,6 @@ interface AttendanceRecord {
   created_at: string;
 }
 
-// 轉換 UTC 時間為台灣時間 (UTC+8)
-function convertToTaiwanTime(utcTimeStr: string | null): Date | null {
-  if (!utcTimeStr) return null;
-  const utcDate = new Date(utcTimeStr);
-  // 加上 8 小時
-  return new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
-}
-
 export default function Attendance() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
@@ -67,10 +59,7 @@ export default function Attendance() {
     if (!user) return;
     
     try {
-      // 使用台灣時間取得今天日期
-      const now = new Date();
-      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-      const today = format(taiwanTime, 'yyyy-MM-dd');
+      const today = format(new Date(), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
@@ -151,7 +140,7 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        toast.success(`✅ 上班打卡成功!\n⏰ 時間: ${format(taiwanTime, 'HH:mm')}`);
+        toast.success(`✅ 上班打卡成功! 時間: ${format(taiwanTime, 'HH:mm')}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -186,13 +175,13 @@ export default function Attendance() {
         return;
       }
 
-      // 計算工時 - 使用台灣時間
+      // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
       const workHours = (taiwanTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
       // 格式化為 timestamp without timezone 格式
       const checkOutTimeStr = format(taiwanTime, 'yyyy-MM-dd HH:mm:ss');
-      
+
       const { data, error } = await supabase
         .from('attendance_records')
         .update({
@@ -210,7 +199,7 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        toast.success(`✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`);
+        toast.success(`✅ 下班打卡成功! 工時: ${hours} 小時 ${minutes} 分鐘`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -259,13 +248,13 @@ export default function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-center text-indigo-600">
-              {format(new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })), 'HH:mm:ss')}
+              {format(currentTime, 'HH:mm:ss')}
             </div>
             <div className="text-center text-gray-600 mt-2">
-              {format(new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })), 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
+              {format(currentTime, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
             </div>
             <div className="text-center text-sm text-gray-500 mt-1">
-              員工:{user.name} ({user.employee_id})
+              員工: {user.name} ({user.employee_id})
             </div>
           </CardContent>
         </Card>
@@ -306,13 +295,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(convertToTaiwanTime(todayRecord.check_in_time)!, 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(convertToTaiwanTime(todayRecord.check_out_time)!, 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -359,13 +348,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(convertToTaiwanTime(record.check_in_time)!, 'HH:mm') : '-'}
+                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(convertToTaiwanTime(record.check_out_time)!, 'HH:mm') : '-'}
+                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
