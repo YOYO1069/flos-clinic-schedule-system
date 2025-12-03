@@ -124,25 +124,27 @@ export default function AttendanceManagement() {
 
     setLoading(true);
     try {
-      // 解析台灣時間並轉換為 UTC
-      const checkInDate = new Date(editForm.check_in_time);
-      const checkOutDate = editForm.check_out_time ? new Date(editForm.check_out_time) : null;
+      // 直接使用輸入的台灣時間，不做時區轉換
+      const checkInTime = editForm.check_in_time;
+      const checkOutTime = editForm.check_out_time || null;
 
       // 計算工時
       let totalHours = null;
-      if (checkOutDate) {
+      if (checkOutTime) {
+        const checkInDate = new Date(checkInTime);
+        const checkOutDate = new Date(checkOutTime);
         totalHours = (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60);
         totalHours = Math.round(totalHours * 100) / 100;
       }
 
       const updateData: any = {
-        check_in_time: checkInDate.toISOString(),
+        check_in_time: checkInTime,
         check_in_address: editForm.check_in_address || null,
         notes: editForm.notes || null
       };
 
       if (editForm.check_out_time) {
-        updateData.check_out_time = checkOutDate?.toISOString();
+        updateData.check_out_time = checkOutTime;
         updateData.check_out_address = editForm.check_out_address || null;
         updateData.total_hours = totalHours;
       }
