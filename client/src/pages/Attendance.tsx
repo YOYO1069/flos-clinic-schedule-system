@@ -295,13 +295,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(new Date(new Date(todayRecord.check_in_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(new Date(new Date(todayRecord.check_out_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -348,13 +348,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                          {record.check_in_time ? format(new Date(new Date(record.check_in_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                          {record.check_out_time ? format(new Date(new Date(record.check_out_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>

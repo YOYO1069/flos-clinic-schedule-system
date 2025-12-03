@@ -32,15 +32,18 @@ interface AttendanceRecord {
 }
 
 // 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
+// 顯示時加上 8 小時轉換為台灣時間
 function formatForInput(timeStr: string | null): string {
   if (!timeStr) return '';
   try {
     const date = new Date(timeStr);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
+    // 加上 8 小時轉換為台灣時間
+    const taiwanTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+    const year = taiwanTime.getFullYear();
+    const month = String(taiwanTime.getMonth() + 1).padStart(2, '0');
+    const day = String(taiwanTime.getDate()).padStart(2, '0');
+    const hours = String(taiwanTime.getHours()).padStart(2, '0');
+    const minutes = String(taiwanTime.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   } catch {
     return '';
@@ -48,10 +51,11 @@ function formatForInput(timeStr: string | null): string {
 }
 
 // 將 datetime-local 格式轉換為 timestamp 格式
+// 直接使用輸入的時間，不做時區轉換
 function formatForDatabase(datetimeLocalStr: string): string {
   if (!datetimeLocalStr) return '';
-  const date = new Date(datetimeLocalStr);
-  return format(date, 'yyyy-MM-dd HH:mm:ss');
+  // 直接格式化為 yyyy-MM-dd HH:mm:ss
+  return datetimeLocalStr.replace('T', ' ') + ':00';
 }
 
 export default function AttendanceManagement() {
@@ -116,7 +120,9 @@ export default function AttendanceManagement() {
     if (!timeStr) return '-';
     try {
       const date = new Date(timeStr);
-      return format(date, 'HH:mm:ss');
+      // 加上 8 小時轉換為台灣時間
+      const taiwanTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+      return format(taiwanTime, 'HH:mm:ss');
     } catch {
       return '-';
     }
