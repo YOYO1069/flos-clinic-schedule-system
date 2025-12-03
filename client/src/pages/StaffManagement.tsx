@@ -32,6 +32,10 @@ export default function StaffManagement() {
   const [editPhone, setEditPhone] = useState("");
   const [editEmploymentStatus, setEditEmploymentStatus] = useState("在職");
   const [editResignationDate, setEditResignationDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("全部");
+  const [filterRole, setFilterRole] = useState("全部");
+  const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
     loadStaff();
@@ -42,7 +46,6 @@ export default function StaffManagement() {
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("role", "staff")
         .order("name");
 
       if (error) throw error;
@@ -134,6 +137,54 @@ export default function StaffManagement() {
     }
   };
 
+  // 篩選和排序員工
+  const filteredAndSortedStaff = staff
+    .filter(s => {
+      // 搜尋篩選
+      const matchSearch = searchTerm === "" || 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.employee_id.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // 在職狀態篩選
+      const matchStatus = filterStatus === "全部" || 
+        (filterStatus === "未設定" && !s.employment_status) ||
+        s.employment_status === filterStatus;
+      
+      // 角色篩選
+      const matchRole = filterRole === "全部" || s.role === filterRole;
+      
+      return matchSearch && matchStatus && matchRole;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name, 'zh-TW');
+        case "employee_id":
+          return a.employee_id.localeCompare(b.employee_id);
+        case "created_at":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "employment_status":
+          return (a.employment_status || "").localeCompare(b.employment_status || "");
+        default:
+          return 0;
+      }
+    });
+
+  // 統計資訊
+  const stats = {
+    total: staff.length,
+    active: staff.filter(s => s.employment_status === "在職" || !s.employment_status).length,
+    trial: staff.filter(s => s.employment_status === "試用期").length,
+    leave: staff.filter(s => s.employment_status === "留職停薪").length,
+    resigned: staff.filter(s => s.employment_status === "離職").length,
+    byRole: {
+      admin: staff.filter(s => s.role === "admin").length,
+      senior_supervisor: staff.filter(s => s.role === "senior_supervisor").length,
+      supervisor: staff.filter(s => s.role === "supervisor").length,
+      staff: staff.filter(s => s.role === "staff").length,
+    }
+  };
+
   const handleDeleteStaff = async (staffId: number, staffName: string) => {
     if (!confirm(`確定要刪除員工 ${staffName} 嗎?`)) return;
 
@@ -174,9 +225,88 @@ export default function StaffManagement() {
           </Button>
         </div>
 
+        {/* 統計資訊 */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+          <Card className="p-4">
+            <div className="text-sm text-gray-500">總人數</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-gray-500">在職</div>
+            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-gray-500">試用期</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.trial}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-gray-500">留職停薪</div>
+            <div className="text-2xl font-bold text-yellow-600">{stats.leave}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-gray-500">離職</div>
+            <div className="text-2xl font-bold text-red-600">{stats.resigned}</div>
+          </Card>
+        </div>
+
+        {/* 搜尋和篩選 */}
+        <Card className="p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Input
+                placeholder="搜尋姓名或編號..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="全部">全部狀態</option>
+                <option value="在職">在職</option>
+                <option value="試用期">試用期</option>
+                <option value="留職停薪">留職停薪</option>
+                <option value="離職">離職</option>
+                <option value="未設定">未設定</option>
+              </select>
+            </div>
+            <div>
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="全部">全部角色</option>
+                <option value="admin">管理員</option>
+                <option value="senior_supervisor">高階主管</option>
+                <option value="supervisor">一般主管</option>
+                <option value="staff">員工</option>
+              </select>
+            </div>
+            <div>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="name">按姓名排序</option>
+                <option value="employee_id">按編號排序</option>
+                <option value="created_at">按加入時間排序</option>
+                <option value="employment_status">按在職狀態排序</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 text-sm text-gray-500">
+            顯示 {filteredAndSortedStaff.length} / {stats.total} 位員工
+          </div>
+        </Card>
+
         <Card className="p-6">
           <div className="space-y-3">
-            {staff.map((s) => (
+            {filteredAndSortedStaff.map((s) => (
               <div
                 key={s.id}
                 className="flex items-center justify-between p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
@@ -186,6 +316,17 @@ export default function StaffManagement() {
                     <div className="font-medium text-lg">{s.name}</div>
                     <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {s.employee_id}
+                    </div>
+                    <div className={`text-xs px-2 py-1 rounded ${
+                      s.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                      s.role === 'senior_supervisor' ? 'bg-orange-100 text-orange-700' :
+                      s.role === 'supervisor' ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {s.role === 'admin' ? '🔑 管理員' :
+                       s.role === 'senior_supervisor' ? '🌟 高階主管' :
+                       s.role === 'supervisor' ? '👥 一般主管' :
+                       '👤 員工'}
                     </div>
                     {s.employment_status && (
                       <div className={`text-xs px-2 py-1 rounded ${
@@ -237,9 +378,9 @@ export default function StaffManagement() {
             ))}
           </div>
 
-          {staff.length === 0 && (
+          {filteredAndSortedStaff.length === 0 && (
             <div className="text-center text-gray-500 py-8">
-              目前沒有員工
+              {staff.length === 0 ? "目前沒有員工" : "沒有符合篩選條件的員工"}
             </div>
           )}
         </Card>
