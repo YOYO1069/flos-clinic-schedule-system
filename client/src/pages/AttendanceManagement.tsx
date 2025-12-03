@@ -2,12 +2,21 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Calendar, Download, Search } from "lucide-react";
+import { ArrowLeft, Download, Search, Edit, Trash2, X } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface AttendanceRecord {
   id: number;
@@ -26,8 +35,26 @@ interface AttendanceRecord {
 function convertToTaiwanTime(utcTimeStr: string | null): Date | null {
   if (!utcTimeStr) return null;
   const utcDate = new Date(utcTimeStr);
-  // 加上 8 小時
   return new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
+}
+
+// 轉換台灣時間為 UTC 時間
+function convertToUTC(taiwanTimeStr: string | null): string | null {
+  if (!taiwanTimeStr) return null;
+  const taiwanDate = new Date(taiwanTimeStr);
+  const utcDate = new Date(taiwanDate.getTime() - (8 * 60 * 60 * 1000));
+  return utcDate.toISOString().replace('Z', '');
+}
+
+// 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
+function formatForInput(dateTime: Date | null): string {
+  if (!dateTime) return '';
+  const year = dateTime.getFullYear();
+  const month = String(dateTime.getMonth() + 1).padStart(2, '0');
+  const day = String(dateTime.getDate()).padStart(2, '0');
+  const hours = String(dateTime.getHours()).padStart(2, '0');
+  const minutes = String(dateTime.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export default function AttendanceManagement() {
@@ -38,22 +65,25 @@ export default function AttendanceManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  // 編輯對話框狀態
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
+  const [editCheckInTime, setEditCheckInTime] = useState("");
+  const [editCheckOutTime, setEditCheckOutTime] = useState("");
 
   useEffect(() => {
-    // 檢查登入狀態
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
       return;
     }
-
     const user = JSON.parse(userStr);
     setCurrentUser(user);
     loadRecords();
   }, [selectedDate]);
 
   useEffect(() => {
-    // 過濾記錄
     if (searchTerm) {
       const filtered = records.filter(record =>
         record.employee_name.includes(searchTerm) ||
@@ -75,7 +105,6 @@ export default function AttendanceManagement() {
         .order('check_in_time', { ascending: true });
 
       if (error) throw error;
-
       setRecords(data || []);
       setFilteredRecords(data || []);
     } catch (error) {
@@ -94,6 +123,73 @@ export default function AttendanceManagement() {
       return format(taiwanTime, 'HH:mm:ss');
     } catch {
       return '-';
+    }
+  }
+
+  function openEditDialog(record: AttendanceRecord) {
+    setEditingRecord(record);
+    
+    // 轉換為台灣時間並格式化為 input 格式
+    const checkInTaiwan = convertToTaiwanTime(record.check_in_time);
+    const checkOutTaiwan = convertToTaiwanTime(record.check_out_time);
+    
+    setEditCheckInTime(formatForInput(checkInTaiwan));
+    setEditCheckOutTime(formatForInput(checkOutTaiwan));
+    setEditDialogOpen(true);
+  }
+
+  async function handleSaveEdit() {
+    if (!editingRecord) return;
+
+    try {
+      // 計算工時
+      let workHours = null;
+      if (editCheckInTime && editCheckOutTime) {
+        const checkIn = new Date(editCheckInTime);
+        const checkOut = new Date(editCheckOutTime);
+        workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
+      }
+
+      // 轉換台灣時間為 UTC 時間後儲存
+      const utcCheckInTime = convertToUTC(editCheckInTime);
+      const utcCheckOutTime = editCheckOutTime ? convertToUTC(editCheckOutTime) : null;
+
+      const { error } = await supabase
+        .from('attendance_records')
+        .update({
+          check_in_time: utcCheckInTime,
+          check_out_time: utcCheckOutTime,
+          total_hours: workHours
+        })
+        .eq('id', editingRecord.id);
+
+      if (error) throw error;
+
+      toast.success("打卡記錄已更新");
+      setEditDialogOpen(false);
+      loadRecords();
+    } catch (error) {
+      console.error('更新打卡記錄失敗:', error);
+      toast.error("更新打卡記錄失敗");
+    }
+  }
+
+  async function handleDeleteRecord(recordId: number) {
+    if (!confirm('確定要刪除這筆打卡記錄嗎？')) return;
+
+    try {
+      const { error } = await supabase
+        .from('attendance_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast.success("打卡記錄已刪除");
+      loadRecords();
+    } catch (error) {
+      console.error('刪除打卡記錄失敗:', error);
+      toast.error("刪除打卡記錄失敗");
     }
   }
 
@@ -276,8 +372,8 @@ export default function AttendanceManagement() {
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">上班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">下班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">工作時數</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">打卡方式</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">狀態</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">操作</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -291,11 +387,6 @@ export default function AttendanceManagement() {
                           {record.total_hours ? `${record.total_hours.toFixed(2)}h` : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {record.check_in_method === 'gps' && '📍 GPS'}
-                          {record.check_in_method === 'bluetooth' && '📶 藍牙'}
-                          {record.check_in_method === 'quick' && '⚡ 快速'}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
                           {record.check_out_time ? (
                             <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
                               已下班
@@ -305,6 +396,24 @@ export default function AttendanceManagement() {
                               上班中
                             </span>
                           )}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openEditDialog(record)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRecord(record.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -319,6 +428,63 @@ export default function AttendanceManagement() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 編輯對話框 */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯打卡記錄</DialogTitle>
+            <DialogDescription>
+              員工: {editingRecord?.employee_name} ({editingRecord?.employee_id})
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="check-in-time">上班時間 (台灣時間)</Label>
+              <Input
+                id="check-in-time"
+                type="datetime-local"
+                value={editCheckInTime}
+                onChange={(e) => setEditCheckInTime(e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {editCheckInTime && `顯示: ${format(new Date(editCheckInTime), 'yyyy-MM-dd HH:mm:ss')}`}
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="check-out-time">下班時間 (台灣時間)</Label>
+              <Input
+                id="check-out-time"
+                type="datetime-local"
+                value={editCheckOutTime}
+                onChange={(e) => setEditCheckOutTime(e.target.value)}
+                className="mt-2"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                {editCheckOutTime && `顯示: ${format(new Date(editCheckOutTime), 'yyyy-MM-dd HH:mm:ss')}`}
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <p className="text-sm text-blue-800">
+                <strong>注意：</strong>請輸入台灣時間，系統會自動轉換為 UTC 時間儲存。
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              儲存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
