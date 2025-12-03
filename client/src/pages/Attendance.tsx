@@ -20,6 +20,14 @@ interface AttendanceRecord {
   created_at: string;
 }
 
+// 轉換 UTC 時間為台灣時間 (UTC+8)
+function convertToTaiwanTime(utcTimeStr: string | null): Date | null {
+  if (!utcTimeStr) return null;
+  const utcDate = new Date(utcTimeStr);
+  // 加上 8 小時
+  return new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
+}
+
 export default function Attendance() {
   const [, setLocation] = useLocation();
   const [loading, setLoading] = useState(false);
@@ -298,13 +306,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(convertToTaiwanTime(todayRecord.check_in_time)!, 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(convertToTaiwanTime(todayRecord.check_out_time)!, 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -351,13 +359,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                          {record.check_in_time ? format(convertToTaiwanTime(record.check_in_time)!, 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                          {record.check_out_time ? format(convertToTaiwanTime(record.check_out_time)!, 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>

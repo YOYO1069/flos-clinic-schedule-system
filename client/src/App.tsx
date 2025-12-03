@@ -14,6 +14,7 @@ import LeaveApproval from "./pages/LeaveApproval";
 import TestEnv from "./pages/TestEnv";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
+import AttendanceManagement from "./pages/AttendanceManagement";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/test-env" component={TestEnv} />
       <Route path="/login" component={Login} />
       <Route path="/attendance-dashboard" component={AttendanceDashboard} />
+      <Route path="/attendance-management" component={AttendanceManagement} />
       <Route path="/doctor-schedule" component={DoctorSchedule} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/approval" component={LeaveApproval} />
