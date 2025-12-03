@@ -124,8 +124,13 @@ export default function StaffManagement() {
                 className="flex items-center justify-between p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
               >
                 <div>
-                  <div className="font-medium text-lg">{s.name}</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium text-lg">{s.name}</div>
+                    <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      帳號: {s.employee_id}
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
                     加入時間: {new Date(s.created_at).toLocaleDateString("zh-TW")}
                   </div>
                 </div>
