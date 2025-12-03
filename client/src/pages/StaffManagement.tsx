@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Users } from "lucide-react";
+import { Trash2, UserPlus, Users, Edit } from "lucide-react";
 
 interface Staff {
   id: number;
@@ -20,7 +20,10 @@ export default function StaffManagement() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
+  const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
+  const [editStaffName, setEditStaffName] = useState("");
 
   useEffect(() => {
     loadStaff();
@@ -73,6 +76,37 @@ export default function StaffManagement() {
       loadStaff();
     } catch (error: any) {
       toast.error("新增員工失敗: " + error.message);
+    }
+  };
+
+  const handleEditStaff = (staff: Staff) => {
+    setEditingStaff(staff);
+    setEditStaffName(staff.name);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingStaff) return;
+    if (!editStaffName.trim()) {
+      toast.error("請輸入員工姓名");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("users")
+        .update({ name: editStaffName.trim() })
+        .eq("id", editingStaff.id);
+
+      if (error) throw error;
+
+      toast.success(`員工資料已更新`);
+      setShowEditDialog(false);
+      setEditingStaff(null);
+      setEditStaffName("");
+      loadStaff();
+    } catch (error: any) {
+      toast.error("更新員工失敗: " + error.message);
     }
   };
 
@@ -134,13 +168,22 @@ export default function StaffManagement() {
                     加入時間: {new Date(s.created_at).toLocaleDateString("zh-TW")}
                   </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeleteStaff(s.id, s.name)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditStaff(s)}
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteStaff(s.id, s.name)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -180,6 +223,49 @@ export default function StaffManagement() {
                 onClick={() => {
                   setShowAddDialog(false);
                   setNewStaffName("");
+                }}
+                className="flex-1"
+              >
+                取消
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>編輯員工資料</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <Label>員工編號</Label>
+              <Input
+                value={editingStaff?.employee_id || ""}
+                disabled
+                className="bg-gray-100"
+              />
+            </div>
+            <div>
+              <Label>員工姓名</Label>
+              <Input
+                value={editStaffName}
+                onChange={(e) => setEditStaffName(e.target.value)}
+                placeholder="請輸入員工姓名"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveEdit} className="flex-1">
+                確認修改
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowEditDialog(false);
+                  setEditingStaff(null);
+                  setEditStaffName("");
                 }}
                 className="flex-1"
               >
