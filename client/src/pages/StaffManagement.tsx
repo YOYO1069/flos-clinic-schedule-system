@@ -26,6 +26,10 @@ export default function StaffManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
+  const [newPosition, setNewPosition] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newRole, setNewRole] = useState("staff");
+  const [newPassword, setNewPassword] = useState("Staff@2025");
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [editStaffName, setEditStaffName] = useState("");
   const [editPosition, setEditPosition] = useState("");
@@ -77,14 +81,21 @@ export default function StaffManagement() {
         .insert({
           employee_id: newEmployeeId,
           name: newStaffName.trim(),
-          password: "Staff@2025",
-          role: "staff"
+          password: newPassword,
+          role: newRole,
+          position: newPosition.trim() || null,
+          phone: newPhone.trim() || null,
+          employment_status: "在職"
         });
 
       if (error) throw error;
 
-      toast.success(`員工 ${newStaffName} 新增成功!`);
+      toast.success(`員工 ${newStaffName} 新增成功！初始密碼：${newPassword}`);
       setNewStaffName("");
+      setNewPosition("");
+      setNewPhone("");
+      setNewRole("staff");
+      setNewPassword("Staff@2025");
       setShowAddDialog(false);
       loadStaff();
     } catch (error: any) {
@@ -400,16 +411,50 @@ export default function StaffManagement() {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
-              <Label>員工姓名</Label>
+              <Label>員工姓名 *</Label>
               <Input
                 value={newStaffName}
                 onChange={(e) => setNewStaffName(e.target.value)}
                 placeholder="請輸入員工姓名"
-                onKeyDown={(e) => e.key === "Enter" && handleAddStaff()}
               />
             </div>
-            <div className="text-sm text-gray-500">
-              * 預設密碼為 Staff@2025
+            <div>
+              <Label>職位</Label>
+              <Input
+                value={newPosition}
+                onChange={(e) => setNewPosition(e.target.value)}
+                placeholder="例：護理師、美容師、櫃檯人員"
+              />
+            </div>
+            <div>
+              <Label>聯絡電話</Label>
+              <Input
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                placeholder="0912-345-678"
+              />
+            </div>
+            <div>
+              <Label>角色權限</Label>
+              <select
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="staff">👤 員工</option>
+                <option value="supervisor">👥 一般主管</option>
+                <option value="senior_supervisor">🌟 高階主管</option>
+                <option value="admin">🔑 管理員</option>
+              </select>
+            </div>
+            <div>
+              <Label>初始密碼</Label>
+              <Input
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="請輸入初始密碼"
+              />
+              <p className="text-xs text-gray-500 mt-1">預設為 Staff@2025，可自行修改</p>
             </div>
             <div className="flex gap-2">
               <Button onClick={handleAddStaff} className="flex-1">
@@ -420,6 +465,10 @@ export default function StaffManagement() {
                 onClick={() => {
                   setShowAddDialog(false);
                   setNewStaffName("");
+                  setNewPosition("");
+                  setNewPhone("");
+                  setNewRole("staff");
+                  setNewPassword("Staff@2025");
                 }}
                 className="flex-1"
               >
