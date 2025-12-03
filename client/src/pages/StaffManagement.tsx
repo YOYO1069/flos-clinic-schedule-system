@@ -13,6 +13,10 @@ interface Staff {
   employee_id: string;
   name: string;
   role: string;
+  position?: string;
+  phone?: string;
+  employment_status?: string;
+  resignation_date?: string;
   created_at: string;
 }
 
@@ -24,6 +28,10 @@ export default function StaffManagement() {
   const [newStaffName, setNewStaffName] = useState("");
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [editStaffName, setEditStaffName] = useState("");
+  const [editPosition, setEditPosition] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmploymentStatus, setEditEmploymentStatus] = useState("在職");
+  const [editResignationDate, setEditResignationDate] = useState("");
 
   useEffect(() => {
     loadStaff();
@@ -82,6 +90,10 @@ export default function StaffManagement() {
   const handleEditStaff = (staff: Staff) => {
     setEditingStaff(staff);
     setEditStaffName(staff.name);
+    setEditPosition(staff.position || "");
+    setEditPhone(staff.phone || "");
+    setEditEmploymentStatus(staff.employment_status || "在職");
+    setEditResignationDate(staff.resignation_date || "");
     setShowEditDialog(true);
   };
 
@@ -93,9 +105,17 @@ export default function StaffManagement() {
     }
 
     try {
+      const updateData: any = {
+        name: editStaffName.trim(),
+        position: editPosition.trim() || null,
+        phone: editPhone.trim() || null,
+        employment_status: editEmploymentStatus,
+        resignation_date: editResignationDate || null
+      };
+
       const { error } = await supabase
         .from("users")
-        .update({ name: editStaffName.trim() })
+        .update(updateData)
         .eq("id", editingStaff.id);
 
       if (error) throw error;
@@ -104,6 +124,10 @@ export default function StaffManagement() {
       setShowEditDialog(false);
       setEditingStaff(null);
       setEditStaffName("");
+      setEditPosition("");
+      setEditPhone("");
+      setEditEmploymentStatus("在職");
+      setEditResignationDate("");
       loadStaff();
     } catch (error: any) {
       toast.error("更新員工失敗: " + error.message);
@@ -157,15 +181,40 @@ export default function StaffManagement() {
                 key={s.id}
                 className="flex items-center justify-between p-4 bg-white border rounded-lg hover:shadow-md transition-shadow"
               >
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
                     <div className="font-medium text-lg">{s.name}</div>
                     <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      帳號: {s.employee_id}
+                      {s.employee_id}
                     </div>
+                    {s.employment_status && (
+                      <div className={`text-xs px-2 py-1 rounded ${
+                        s.employment_status === '在職' ? 'bg-green-100 text-green-700' :
+                        s.employment_status === '試用期' ? 'bg-blue-100 text-blue-700' :
+                        s.employment_status === '留職停薪' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-red-100 text-red-700'
+                      }`}>
+                        {s.employment_status}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    加入時間: {new Date(s.created_at).toLocaleDateString("zh-TW")}
+                  <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                    {s.position && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">💼</span>
+                        <span>{s.position}</span>
+                      </div>
+                    )}
+                    {s.phone && (
+                      <div className="flex items-center gap-1">
+                        <span className="text-gray-500">📞</span>
+                        <span>{s.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <span className="text-gray-500">📅</span>
+                      <span>加入: {new Date(s.created_at).toLocaleDateString("zh-TW")}</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -253,9 +302,47 @@ export default function StaffManagement() {
                 value={editStaffName}
                 onChange={(e) => setEditStaffName(e.target.value)}
                 placeholder="請輸入員工姓名"
-                onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
               />
             </div>
+            <div>
+              <Label>職位</Label>
+              <Input
+                value={editPosition}
+                onChange={(e) => setEditPosition(e.target.value)}
+                placeholder="例：護理師、美容師、櫃檯人員"
+              />
+            </div>
+            <div>
+              <Label>聯絡電話</Label>
+              <Input
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="0912-345-678"
+              />
+            </div>
+            <div>
+              <Label>在職狀態</Label>
+              <select
+                value={editEmploymentStatus}
+                onChange={(e) => setEditEmploymentStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="在職">在職</option>
+                <option value="試用期">試用期</option>
+                <option value="留職停薪">留職停薪</option>
+                <option value="離職">離職</option>
+              </select>
+            </div>
+            {editEmploymentStatus === "離職" && (
+              <div>
+                <Label>離職日期</Label>
+                <Input
+                  type="date"
+                  value={editResignationDate}
+                  onChange={(e) => setEditResignationDate(e.target.value)}
+                />
+              </div>
+            )}
             <div className="flex gap-2">
               <Button onClick={handleSaveEdit} className="flex-1">
                 確認修改
@@ -266,6 +353,10 @@ export default function StaffManagement() {
                   setShowEditDialog(false);
                   setEditingStaff(null);
                   setEditStaffName("");
+                  setEditPosition("");
+                  setEditPhone("");
+                  setEditEmploymentStatus("在職");
+                  setEditResignationDate("");
                 }}
                 className="flex-1"
               >
