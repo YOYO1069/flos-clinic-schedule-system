@@ -59,7 +59,10 @@ export default function Attendance() {
     if (!user) return;
     
     try {
-      const today = format(new Date(), 'yyyy-MM-dd');
+      // 使用台灣時間取得今天日期
+      const now = new Date();
+      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const today = format(taiwanTime, 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
@@ -108,8 +111,10 @@ export default function Attendance() {
     
     setLoading(true);
     try {
+      // 取得台灣當前時間
       const now = new Date();
-      const today = format(now, 'yyyy-MM-dd');
+      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const today = format(taiwanTime, 'yyyy-MM-dd');
       
       // 檢查今天是否已經上班打卡
       if (todayRecord && todayRecord.check_in_time) {
@@ -118,15 +123,15 @@ export default function Attendance() {
         return;
       }
 
-      // 轉換為台灣時區 (UTC+8)
-      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+      // 格式化為 timestamp without timezone 格式
+      const checkInTimeStr = format(taiwanTime, 'yyyy-MM-dd HH:mm:ss');
       
       const { data, error } = await supabase
         .from('attendance_records')
         .insert({
           employee_id: user.employee_id,
           employee_name: user.name,
-          check_in_time: taiwanTime.toISOString().replace('Z', ''),
+          check_in_time: checkInTimeStr,
           attendance_date: today,
           source: 'web'
         })
@@ -138,7 +143,7 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        toast.success(`✅ 上班打卡成功!時間:${format(now, 'HH:mm')}`);
+        toast.success(`✅ 上班打卡成功!\n⏰ 時間: ${format(taiwanTime, 'HH:mm')}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -155,7 +160,9 @@ export default function Attendance() {
     
     setLoading(true);
     try {
+      // 取得台灣當前時間
       const now = new Date();
+      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
       
       // 檢查今天是否已經上班打卡
       if (!todayRecord || !todayRecord.check_in_time) {
@@ -171,17 +178,17 @@ export default function Attendance() {
         return;
       }
 
-      // 計算工時
+      // 計算工時 - 使用台灣時間
       const checkInTime = new Date(todayRecord.check_in_time);
-      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+      const workHours = (taiwanTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
-      // 轉換為台灣時區 (UTC+8)
-      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+      // 格式化為 timestamp without timezone 格式
+      const checkOutTimeStr = format(taiwanTime, 'yyyy-MM-dd HH:mm:ss');
       
       const { data, error } = await supabase
         .from('attendance_records')
         .update({
-          check_out_time: taiwanTime.toISOString().replace('Z', ''),
+          check_out_time: checkOutTimeStr,
           work_hours: Math.round(workHours * 100) / 100
         })
         .eq('id', todayRecord.id)
@@ -195,7 +202,7 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        toast.success(`✅ 下班打卡成功!工時:${hours} 小時 ${minutes} 分鐘`);
+        toast.success(`✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -244,10 +251,10 @@ export default function Attendance() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-center text-indigo-600">
-              {format(currentTime, 'HH:mm:ss')}
+              {format(new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })), 'HH:mm:ss')}
             </div>
             <div className="text-center text-gray-600 mt-2">
-              {format(currentTime, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
+              {format(new Date(currentTime.toLocaleString('en-US', { timeZone: 'Asia/Taipei' })), 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
             </div>
             <div className="text-center text-sm text-gray-500 mt-1">
               員工:{user.name} ({user.employee_id})
