@@ -90,14 +90,12 @@ export default function AttendanceDashboard() {
     return todayRecords.find(r => r.employee_id === employeeId) || null;
   }
 
-  // 格式化時間顯示 (轉換為台灣時間 UTC+8)
+  // 格式化時間顯示
   function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
     try {
       const date = new Date(timeStr);
-      // 加上 8 小時轉換為台灣時間
-      const taiwanTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-      return format(taiwanTime, 'HH:mm:ss');
+      return format(date, 'HH:mm:ss');
     } catch {
       return '-';
     }

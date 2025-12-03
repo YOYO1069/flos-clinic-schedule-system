@@ -108,10 +108,9 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣當前時間 (UTC+8)
+      // 直接使用當前台灣時間
       const now = new Date();
-      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
-      const today = format(taiwanTime, 'yyyy-MM-dd');
+      const today = format(now, 'yyyy-MM-dd');
       
       // 檢查今天是否已經上班打卡
       if (todayRecord && todayRecord.check_in_time) {
@@ -120,8 +119,8 @@ export default function Attendance() {
         return;
       }
 
-      // 格式化為 timestamp without timezone 格式
-      const checkInTimeStr = format(taiwanTime, 'yyyy-MM-dd HH:mm:ss');
+      // 格式化為 timestamp 格式（台灣時間）
+      const checkInTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
       
       const { data, error } = await supabase
         .from('attendance_records')
@@ -140,7 +139,7 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        toast.success(`✅ 上班打卡成功! 時間: ${format(taiwanTime, 'HH:mm')}`);
+        toast.success(`✅ 上班打卡成功! 時間: ${format(now, 'HH:mm')}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -157,9 +156,8 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣當前時間 (UTC+8)
+      // 直接使用當前台灣時間
       const now = new Date();
-      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
       
       // 檢查今天是否已經上班打卡
       if (!todayRecord || !todayRecord.check_in_time) {
@@ -177,10 +175,10 @@ export default function Attendance() {
 
       // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
-      const workHours = (taiwanTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
-      // 格式化為 timestamp without timezone 格式
-      const checkOutTimeStr = format(taiwanTime, 'yyyy-MM-dd HH:mm:ss');
+      // 格式化為 timestamp 格式（台灣時間）
+      const checkOutTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
 
       const { data, error } = await supabase
         .from('attendance_records')
@@ -295,13 +293,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(new Date(new Date(todayRecord.check_in_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(new Date(new Date(todayRecord.check_out_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -348,13 +346,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(new Date(new Date(record.check_in_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm') : '-'}
+                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(new Date(new Date(record.check_out_time).getTime() + (8 * 60 * 60 * 1000)), 'HH:mm') : '-'}
+                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>

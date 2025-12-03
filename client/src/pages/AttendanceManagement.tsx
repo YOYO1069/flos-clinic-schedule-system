@@ -32,18 +32,15 @@ interface AttendanceRecord {
 }
 
 // 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
-// 顯示時加上 8 小時轉換為台灣時間
 function formatForInput(timeStr: string | null): string {
   if (!timeStr) return '';
   try {
     const date = new Date(timeStr);
-    // 加上 8 小時轉換為台灣時間
-    const taiwanTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-    const year = taiwanTime.getFullYear();
-    const month = String(taiwanTime.getMonth() + 1).padStart(2, '0');
-    const day = String(taiwanTime.getDate()).padStart(2, '0');
-    const hours = String(taiwanTime.getHours()).padStart(2, '0');
-    const minutes = String(taiwanTime.getMinutes()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   } catch {
     return '';
@@ -51,7 +48,6 @@ function formatForInput(timeStr: string | null): string {
 }
 
 // 將 datetime-local 格式轉換為 timestamp 格式
-// 直接使用輸入的時間，不做時區轉換
 function formatForDatabase(datetimeLocalStr: string): string {
   if (!datetimeLocalStr) return '';
   // 直接格式化為 yyyy-MM-dd HH:mm:ss
@@ -120,9 +116,7 @@ export default function AttendanceManagement() {
     if (!timeStr) return '-';
     try {
       const date = new Date(timeStr);
-      // 加上 8 小時轉換為台灣時間
-      const taiwanTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-      return format(taiwanTime, 'HH:mm:ss');
+      return format(date, 'HH:mm:ss');
     } catch {
       return '-';
     }
@@ -467,7 +461,7 @@ export default function AttendanceManagement() {
 
             <div className="bg-blue-50 border border-blue-200 rounded p-3">
               <p className="text-sm text-blue-800">
-                <strong>注意：</strong>請輸入台灣時間，系統會直接儲存您輸入的時間。
+                <strong>提示：</strong>所有時間都是台灣時間，直接輸入您想要的時間即可。
               </p>
             </div>
           </div>
