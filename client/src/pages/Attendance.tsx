@@ -108,9 +108,9 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣當前時間
+      // 取得台灣當前時間 (UTC+8)
       const now = new Date();
-      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
       const today = format(taiwanTime, 'yyyy-MM-dd');
       
       // 檢查今天是否已經上班打卡
@@ -157,9 +157,9 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣當前時間
+      // 取得台灣當前時間 (UTC+8)
       const now = new Date();
-      const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
       
       // 檢查今天是否已經上班打卡
       if (!todayRecord || !todayRecord.check_in_time) {
