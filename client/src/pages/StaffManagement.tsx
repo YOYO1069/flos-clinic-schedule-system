@@ -32,6 +32,8 @@ export default function StaffManagement() {
   const [editPhone, setEditPhone] = useState("");
   const [editEmploymentStatus, setEditEmploymentStatus] = useState("在職");
   const [editResignationDate, setEditResignationDate] = useState("");
+  const [editRole, setEditRole] = useState("staff");
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("全部");
   const [filterRole, setFilterRole] = useState("全部");
@@ -97,6 +99,7 @@ export default function StaffManagement() {
     setEditPhone(staff.phone || "");
     setEditEmploymentStatus(staff.employment_status || "在職");
     setEditResignationDate(staff.resignation_date || "");
+    setEditRole(staff.role || "staff");
     setShowEditDialog(true);
   };
 
@@ -113,7 +116,10 @@ export default function StaffManagement() {
         position: editPosition.trim() || null,
         phone: editPhone.trim() || null,
         employment_status: editEmploymentStatus,
-        resignation_date: editResignationDate || null
+        resignation_date: editEmploymentStatus === "離職" && editResignationDate 
+          ? editResignationDate 
+          : null,
+        role: editRole
       };
 
       const { error } = await supabase
@@ -131,6 +137,7 @@ export default function StaffManagement() {
       setEditPhone("");
       setEditEmploymentStatus("在職");
       setEditResignationDate("");
+      setEditRole("staff");
       loadStaff();
     } catch (error: any) {
       toast.error("更新員工失敗: " + error.message);
@@ -462,6 +469,22 @@ export default function StaffManagement() {
               />
             </div>
             <div>
+              <Label>角色權限</Label>
+              <select
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="staff">👤 員工</option>
+                <option value="supervisor">👥 一般主管</option>
+                <option value="senior_supervisor">🌟 高階主管</option>
+                <option value="admin">🔑 管理員</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                員工：基本權限 | 主管：可查看報表 | 高階主管：可管理排班 | 管理員：完整權限
+              </p>
+            </div>
+            <div>
               <Label>在職狀態</Label>
               <select
                 value={editEmploymentStatus}
@@ -484,6 +507,30 @@ export default function StaffManagement() {
                 />
               </div>
             )}
+            <div className="border-t pt-4 mt-4">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!editingStaff) return;
+                  if (!confirm(`確定要重設 ${editingStaff.name} 的密碼嗎？新密碼將設定為 Staff@2025`)) return;
+                  
+                  try {
+                    const { error } = await supabase
+                      .from("users")
+                      .update({ password: "Staff@2025" })
+                      .eq("id", editingStaff.id);
+                    
+                    if (error) throw error;
+                    toast.success(`密碼已重設為 Staff@2025`);
+                  } catch (error: any) {
+                    toast.error("重設密碼失敗: " + error.message);
+                  }
+                }}
+                className="w-full mb-3"
+              >
+                🔑 重設密碼為 Staff@2025
+              </Button>
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSaveEdit} className="flex-1">
                 確認修改
@@ -498,6 +545,7 @@ export default function StaffManagement() {
                   setEditPhone("");
                   setEditEmploymentStatus("在職");
                   setEditResignationDate("");
+                  setEditRole("staff");
                 }}
                 className="flex-1"
               >
