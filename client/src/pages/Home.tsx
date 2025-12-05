@@ -117,7 +117,7 @@ export default function Home() {
       icon: FileText,
       color: 'from-teal-400 to-teal-600',
       bgColor: 'bg-teal-50',
-      onClick: () => setLocation('/attendance-management'),
+      onClick: () => setLocation('/simple-attendance'),
       show: permissions.canAccessLeaveApproval,
     },
     {

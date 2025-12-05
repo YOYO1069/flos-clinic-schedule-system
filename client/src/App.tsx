@@ -23,6 +23,7 @@ import OperationFee from "./pages/OperationFee";
 import AttendanceSettings from "./pages/AttendanceSettings";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import SimpleAttendanceManagement from "./pages/SimpleAttendanceManagement";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/attendance-settings" component={AttendanceSettings} />
       <Route path="/attendance-dashboard" component={AttendanceDashboard} />
       <Route path="/attendance-management" component={AttendanceManagement} />
+      <Route path="/simple-attendance" component={SimpleAttendanceManagement} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
