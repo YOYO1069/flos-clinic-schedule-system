@@ -442,10 +442,10 @@ export default function StaffManagement() {
                 onChange={(e) => setNewRole(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="staff">👤 員工</option>
-                <option value="supervisor">👥 一般主管</option>
-                <option value="senior_supervisor">🌟 高階主管</option>
-                <option value="admin">🔑 管理員</option>
+                <option value="staff">員工</option>
+                <option value="supervisor">一般主管</option>
+                <option value="senior_supervisor">高階主管</option>
+                <option value="admin">管理員</option>
               </select>
             </div>
             <div>
@@ -526,10 +526,10 @@ export default function StaffManagement() {
                   onChange={(e) => setEditRole(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="staff">👤 員工</option>
-                  <option value="supervisor">👥 一般主管</option>
-                  <option value="senior_supervisor">🌟 高階主管</option>
-                  <option value="admin">🔑 管理員</option>
+                  <option value="staff">員工</option>
+                  <option value="supervisor">一般主管</option>
+                  <option value="senior_supervisor">高階主管</option>
+                  <option value="admin">管理員</option>
                 </select>
 
               </div>
