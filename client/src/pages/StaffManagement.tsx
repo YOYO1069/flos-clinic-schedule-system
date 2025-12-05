@@ -21,6 +21,7 @@ interface Staff {
 }
 
 export default function StaffManagement() {
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -44,6 +45,12 @@ export default function StaffManagement() {
   const [sortBy, setSortBy] = useState("name");
 
   useEffect(() => {
+    // 檢查登入狀態
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
+    }
     loadStaff();
   }, []);
 
@@ -122,16 +129,20 @@ export default function StaffManagement() {
     }
 
     try {
-      const updateData: any = {
+           const updateData: any = {
         name: editStaffName.trim(),
         position: editPosition.trim() || null,
         phone: editPhone.trim() || null,
         employment_status: editEmploymentStatus,
         resignation_date: editEmploymentStatus === "離職" && editResignationDate 
           ? editResignationDate 
-          : null,
-        role: editRole
+          : null
       };
+      
+      // 只有管理員可以修改角色
+      if (currentUser?.role === 'admin') {
+        updateData.role = editRole;
+      }
 
       const { error } = await supabase
         .from("users")
@@ -517,22 +528,24 @@ export default function StaffManagement() {
                 placeholder="0912-345-678"
               />
             </div>
-            <div>
-              <Label>角色權限</Label>
-              <select
-                value={editRole}
-                onChange={(e) => setEditRole(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="staff">👤 員工</option>
-                <option value="supervisor">👥 一般主管</option>
-                <option value="senior_supervisor">🌟 高階主管</option>
-                <option value="admin">🔑 管理員</option>
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                員工：基本權限 | 主管：可查看報表 | 高階主管：可管理排班 | 管理員：完整權限
-              </p>
-            </div>
+            {currentUser?.role === 'admin' && (
+              <div>
+                <Label>角色權限</Label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="staff">👤 員工</option>
+                  <option value="supervisor">👥 一般主管</option>
+                  <option value="senior_supervisor">🌟 高階主管</option>
+                  <option value="admin">🔑 管理員</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  員工：基本權限 | 主管：可查看報表 | 高階主管：可管理排班 | 管理員：完整權限
+                </p>
+              </div>
+            )}
             <div>
               <Label>在職狀態</Label>
               <select

@@ -52,6 +52,8 @@ const leaveTypes = [
 ];
 
 export default function LeaveManagement() {
+  const [, setLocation] = useLocation();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -63,20 +65,31 @@ export default function LeaveManagement() {
   const [reason, setReason] = useState('');
   const [noDeductAttendance, setNoDeductAttendance] = useState(true);
 
-  // 模擬員工 ID
-  const employeeId = 1;
+  // 檢查登入狀態
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+  }, []);
 
   useEffect(() => {
-    loadRequests();
-  }, []);
+    if (currentUser) {
+      loadRequests();
+    }
+  }, [currentUser]);
 
   // 載入請假記錄
   async function loadRequests() {
+    if (!currentUser) return;
     try {
       const { data, error } = await supabase
         .from(tables.leaveRequests)
         .select('*')
-        .eq('employee_id', employeeId)
+        .eq('employee_id', currentUser.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -119,7 +132,7 @@ export default function LeaveManagement() {
       const { error } = await supabase
         .from(tables.leaveRequests)
         .insert([{
-          employee_id: employeeId,
+          employee_id: currentUser.id,
           leave_type: leaveType,
           start_date: startDate,
           end_date: endDate,

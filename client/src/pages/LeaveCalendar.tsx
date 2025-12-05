@@ -25,7 +25,7 @@ interface LeaveRecord {
   month: number;
   staff_name: string;
   day: number;
-  leave_type?: string; // 'OFF', 'ON', '特'
+  leave_type?: string; // 'OFF', 'ON', '晚', '特'
   operator_id?: number;
   operator_name?: string;
   created_at?: string;
@@ -179,13 +179,15 @@ export default function LeaveCalendar() {
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
     const currentType = leaveStatus.get(key);
     
-    // 定義循環順序: 無 → OFF → ON → 特 → 無
+    // 定義循環順序: 無 → OFF → ON → 晚 → 特 → 無
     let nextType: string | null = null;
     if (!currentType) {
       nextType = 'OFF';
     } else if (currentType === 'OFF') {
       nextType = 'ON';
     } else if (currentType === 'ON') {
+      nextType = '晚';
+    } else if (currentType === '晚') {
       nextType = '特';
     } else {
       nextType = null; // 刪除
@@ -931,6 +933,7 @@ export default function LeaveCalendar() {
                           const colorClass = 
                             leaveType === 'OFF' ? 'text-red-600' :
                             leaveType === 'ON' ? 'text-green-600' :
+                            leaveType === '晚' ? 'text-purple-600' :
                             'text-blue-600'; // 特
                           
                           return (
@@ -950,7 +953,7 @@ export default function LeaveCalendar() {
 
         {/* 說明文字 */}
         <div className="mt-4 text-sm text-gray-600 print:hidden">
-          <p>• 點擊格子可以標記/取消 OFF (休假)</p>
+          <p>• 點擊格子切換狀態：空白 → OFF(紅) → ON(綠) → 晚(紫) → 特(藍) → 空白</p>
           <p>• 深色背景為週末日期</p>
           <p>• 其他功能(編輯員工、匯入圖片、匯出等)請點擊右上角選單</p>
           <p>• 資料已永久儲存到雲端資料庫,可跨裝置存取</p>
