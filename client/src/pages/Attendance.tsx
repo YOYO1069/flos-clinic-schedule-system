@@ -177,11 +177,9 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣時間
-      const taiwanNow = getTaiwanNow();
-      // 轉換為 UTC 儲存到資料庫
-      const utcNow = taiwanTimeToUTC(taiwanNow);
-      const today = format(taiwanNow, 'yyyy-MM-dd');
+      // 直接使用當前台灣時間
+      const now = new Date();
+      const today = format(now, 'yyyy-MM-dd');
       
       // 檢查今天是否已經上班打卡
       if (todayRecord && todayRecord.check_in_time) {
@@ -190,29 +188,18 @@ export default function Attendance() {
         return;
       }
 
-      const recordData: any = {
-        employee_id: user.employee_id,
-        employee_name: user.name,
-        check_in_time: utcNow,
-        work_date: today
-      };
-
-      // 嘗試取得GPS定位，失敗也繼續打卡
-      recordData.check_in_method = 'gps';
-      const location = await getLocation();
-      if (location) {
-        recordData.check_in_latitude = location.latitude;
-        recordData.check_in_longitude = location.longitude;
-        recordData.check_in_address = location.address || '已記錄GPS座標';
-      } else {
-        // GPS失敗，但仍然允許打卡
-        console.log('GPS定位失敗，使用快速打卡模式');
-        recordData.check_in_method = 'quick';
-      }
-
+      // 格式化為 timestamp 格式（台灣時間）
+      const checkInTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
+      
       const { data, error } = await supabase
         .from('attendance_records')
-        .insert(recordData)
+        .insert({
+          employee_id: user.employee_id,
+          employee_name: user.name,
+          check_in_time: checkInTimeStr,
+          attendance_date: today,
+          source: 'web'
+        })
         .select()
         .single();
 
@@ -221,8 +208,7 @@ export default function Attendance() {
         toast.error('上班打卡失敗');
       } else {
         setTodayRecord(data);
-        const successMsg = `✅ 上班打卡成功!\n⏰ 時間: ${format(taiwanNow, 'HH:mm')}`;
-        toast.success(successMsg);
+        toast.success(`✅ 上班打卡成功! 時間: ${format(now, 'HH:mm')}`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -239,10 +225,8 @@ export default function Attendance() {
     
     setLoading(true);
     try {
-      // 取得台灣時間
-      const taiwanNow = getTaiwanNow();
-      // 轉換為 UTC 儲存到資料庫
-      const utcNow = taiwanTimeToUTC(taiwanNow);
+      // 直接使用當前台灣時間
+      const now = new Date();
       
       // 檢查今天是否已經上班打卡
       if (!todayRecord || !todayRecord.check_in_time) {
@@ -276,9 +260,15 @@ export default function Attendance() {
         updateData.check_out_address = location.address || '已記錄GPS座標';
       }
 
+      // 格式化為 timestamp 格式（台灣時間）
+      const checkOutTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .update(updateData)
+        .update({
+          check_out_time: checkOutTimeStr,
+          work_hours: Math.round(workHours * 100) / 100
+        })
         .eq('id', todayRecord.id)
         .select()
         .single();
@@ -290,8 +280,7 @@ export default function Attendance() {
         setTodayRecord(data);
         const hours = Math.floor(workHours);
         const minutes = Math.round((workHours - hours) * 60);
-        const successMsg = `✅ 下班打卡成功!\n⏱️ 工時: ${hours} 小時 ${minutes} 分鐘`;
-        toast.success(successMsg);
+        toast.success(`✅ 下班打卡成功! 工時: ${hours} 小時 ${minutes} 分鐘`);
         await loadRecentRecords();
       }
     } catch (err) {
@@ -421,7 +410,7 @@ export default function Attendance() {
               {format(currentTime, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
             </div>
             <div className="text-center text-sm text-gray-500 mt-1">
-              員工:{user.name} ({user.employee_id})
+              員工: {user.name} ({user.employee_id})
             </div>
           </CardContent>
         </Card>

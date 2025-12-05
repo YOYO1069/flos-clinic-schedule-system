@@ -215,7 +215,7 @@ export default function AdminPanel() {
                               {ROLE_LABELS[user.role]?.label}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">加入時間: {new Date(user.created_at).toLocaleDateString('zh-TW')}</p>
+                          <p className="text-sm text-gray-600 mt-1">員工編號: {user.employee_id} | 帳號: {user.employee_id}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Dialog open={resetPasswordUserId === user.id} onOpenChange={(open) => {

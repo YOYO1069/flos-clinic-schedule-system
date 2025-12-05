@@ -1,13 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { supabase } from '../lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { ArrowLeft, RefreshCw, Users, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/lib/supabase";
+import { Clock, CheckCircle, XCircle, Users, ArrowLeft } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
-import { toast } from 'sonner';
-import { utcToTaiwanTime } from '@/lib/timezone';
+import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 
 interface AttendanceRecord {
   id: number;
@@ -16,188 +14,156 @@ interface AttendanceRecord {
   check_in_time: string | null;
   check_out_time: string | null;
   work_date: string;
-  check_in_method?: string;
+  total_hours: number | null;
+  status: string;
+  check_in_method: string;
 }
 
-interface EmployeeStatus {
+interface User {
+  id: number;
   employee_id: string;
-  employee_name: string;
-  position: string;
-  status: 'checked_in' | 'checked_out' | 'not_checked_in';
-  check_in_time: string | null;
-  check_out_time: string | null;
-  check_in_method?: string;
+  name: string;
+  role: string;
 }
 
 export default function AttendanceDashboard() {
-  const [, navigate] = useLocation();
-  const [employeeStatuses, setEmployeeStatuses] = useState<EmployeeStatus[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLocation] = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // 更新當前時間
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // 載入員工打卡狀況
-  const loadAttendanceStatus = async () => {
+  // 載入資料
+  useEffect(() => {
+    loadData();
+    // 每30秒自動重新載入
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadData() {
     try {
-      setLoading(true);
       const today = format(new Date(), 'yyyy-MM-dd');
 
-      // 1. 獲取所有員工
-      const { data: employees, error: employeesError } = await supabase
+      // 載入所有員工
+      const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('employee_id, name, position')
-        .in('role', ['staff', 'supervisor', 'senior_supervisor'])
-        .order('name');
+        .select('*')
+        .eq('role', 'staff')
+        .order('name', { ascending: true });
 
-      if (employeesError) throw employeesError;
+      if (usersError) throw usersError;
 
-      // 2. 獲取今日打卡記錄
-      const { data: records, error: recordsError } = await supabase
+      // 載入今日打卡記錄
+      const { data: recordsData, error: recordsError } = await supabase
         .from('attendance_records')
         .select('*')
         .eq('work_date', today);
 
       if (recordsError) throw recordsError;
 
-      // 3. 合併資料
-      const statuses: EmployeeStatus[] = (employees || []).map(emp => {
-        const record = (records || []).find((r: AttendanceRecord) => r.employee_id === emp.employee_id);
-        
-        let status: 'checked_in' | 'checked_out' | 'not_checked_in' = 'not_checked_in';
-        if (record) {
-          if (record.check_out_time) {
-            status = 'checked_out';
-          } else if (record.check_in_time) {
-            status = 'checked_in';
-          }
-        }
-
-        return {
-          employee_id: emp.employee_id,
-          employee_name: emp.name,
-          position: emp.position || '員工',
-          status,
-          check_in_time: record?.check_in_time || null,
-          check_out_time: record?.check_out_time || null,
-          check_in_method: record?.check_in_method
-        };
-      });
-
-      setEmployeeStatuses(statuses);
-    } catch (error: any) {
-      console.error('載入打卡狀況失敗:', error);
-      toast.error('載入打卡狀況失敗');
+      setAllUsers(usersData || []);
+      setTodayRecords(recordsData || []);
+    } catch (error) {
+      console.error('載入資料失敗:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadAttendanceStatus();
-
-    // 每30秒自動刷新
-    const interval = setInterval(loadAttendanceStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  }
 
   // 統計資料
-  const stats = {
-    total: employeeStatuses.length,
-    checkedIn: employeeStatuses.filter(e => e.status === 'checked_in').length,
-    checkedOut: employeeStatuses.filter(e => e.status === 'checked_out').length,
-    notCheckedIn: employeeStatuses.filter(e => e.status === 'not_checked_in').length
-  };
+  const totalStaff = allUsers.length;
+  const checkedIn = todayRecords.filter(r => r.check_in_time && !r.check_out_time).length;
+  const checkedOut = todayRecords.filter(r => r.check_out_time).length;
+  const notCheckedIn = totalStaff - todayRecords.length;
 
-  // 取得狀態顯示
-  const getStatusDisplay = (status: EmployeeStatus) => {
-    switch (status.status) {
-      case 'checked_in':
-        return {
-          icon: <CheckCircle className="w-5 h-5 text-green-500" />,
-          text: '已上班',
-          color: 'bg-green-50 border-green-200',
-          time: status.check_in_time ? format(utcToTaiwanTime(status.check_in_time), 'HH:mm:ss') : ''
-        };
-      case 'checked_out':
-        return {
-          icon: <CheckCircle className="w-5 h-5 text-blue-500" />,
-          text: '已下班',
-          color: 'bg-blue-50 border-blue-200',
-          time: status.check_out_time ? format(utcToTaiwanTime(status.check_out_time), 'HH:mm:ss') : ''
-        };
-      default:
-        return {
-          icon: <XCircle className="w-5 h-5 text-gray-400" />,
-          text: '未打卡',
-          color: 'bg-gray-50 border-gray-200',
-          time: ''
-        };
-    }
-  };
+  // 取得員工的打卡記錄
+  function getEmployeeRecord(employeeId: string): AttendanceRecord | null {
+    return todayRecords.find(r => r.employee_id === employeeId) || null;
+  }
 
-  // 取得打卡方式顯示
-  const getMethodDisplay = (method?: string) => {
-    switch (method) {
-      case 'gps':
-        return '📍 GPS';
-      case 'manual':
-        return '✍️ 手動';
-      case 'quick':
-        return '⚡ 快速';
-      case 'bluetooth':
-        return '🔵 藍牙';
-      default:
-        return '';
+  // 格式化時間顯示
+  function formatTime(timeStr: string | null): string {
+    if (!timeStr) return '-';
+    try {
+      const date = new Date(timeStr);
+      return format(date, 'HH:mm:ss');
+    } catch {
+      return '-';
     }
-  };
+  }
+
+  // 取得狀態樣式
+  function getStatusStyle(record: AttendanceRecord | null) {
+    if (!record || !record.check_in_time) {
+      return 'bg-gray-100 border-gray-300';
+    }
+    if (record.check_out_time) {
+      return 'bg-blue-50 border-blue-300';
+    }
+    return 'bg-green-50 border-green-300';
+  }
+
+  // 取得狀態圖示
+  function getStatusIcon(record: AttendanceRecord | null) {
+    if (!record || !record.check_in_time) {
+      return <XCircle className="w-5 h-5 text-gray-500" />;
+    }
+    if (record.check_out_time) {
+      return <CheckCircle className="w-5 h-5 text-blue-500" />;
+    }
+    return <CheckCircle className="w-5 h-5 text-green-500" />;
+  }
+
+  // 取得狀態文字
+  function getStatusText(record: AttendanceRecord | null) {
+    if (!record || !record.check_in_time) {
+      return '未打卡';
+    }
+    if (record.check_out_time) {
+      return '已下班';
+    }
+    return '已上班';
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <p className="text-xl">載入中...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 標題列 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
+            <Button variant="ghost" onClick={() => setLocation('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
               返回首頁
             </Button>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              電子看板
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-800">電子看板</h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadAttendanceStatus}
-            disabled={loading}
-            className="gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            刷新
-          </Button>
         </div>
 
-        {/* 當前時間 */}
-        <Card className="mb-6 bg-white/80 backdrop-blur">
-          <CardContent className="pt-6">
+        {/* 當前時間卡片 */}
+        <Card className="mb-6 bg-white/90 backdrop-blur shadow-lg">
+          <CardContent className="py-8">
             <div className="text-center">
-              <div className="text-5xl font-bold text-indigo-600 mb-2">
+              <div className="text-6xl font-bold text-indigo-600 mb-2">
                 {format(currentTime, 'HH:mm:ss')}
               </div>
-              <div className="text-lg text-gray-600">
+              <div className="text-2xl text-gray-700">
                 {format(currentTime, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
               </div>
             </div>
@@ -205,8 +171,8 @@ export default function AttendanceDashboard() {
         </Card>
 
         {/* 統計卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white/80 backdrop-blur">
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <Card className="bg-white/90 backdrop-blur">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -214,11 +180,11 @@ export default function AttendanceDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-3xl font-bold text-gray-900">{totalStaff}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-green-50/80 backdrop-blur border-green-200">
+          <Card className="bg-green-50 border-green-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
@@ -226,11 +192,11 @@ export default function AttendanceDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{stats.checkedIn}</div>
+              <div className="text-3xl font-bold text-green-700">{checkedIn}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50/80 backdrop-blur border-blue-200">
+          <Card className="bg-blue-50 border-blue-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
                 <CheckCircle className="w-4 h-4" />
@@ -238,71 +204,78 @@ export default function AttendanceDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">{stats.checkedOut}</div>
+              <div className="text-3xl font-bold text-blue-700">{checkedOut}</div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-50/80 backdrop-blur border-gray-200">
+          <Card className="bg-gray-50 border-gray-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
+                <XCircle className="w-4 h-4" />
                 未打卡
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-600">{stats.notCheckedIn}</div>
+              <div className="text-3xl font-bold text-gray-700">{notCheckedIn}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 員工打卡狀況列表 */}
-        <Card className="bg-white/80 backdrop-blur">
+        {/* 今日卡班狀況 */}
+        <Card className="bg-white/90 backdrop-blur shadow-lg">
           <CardHeader>
-            <CardTitle>今日打卡狀況</CardTitle>
+            <CardTitle className="text-2xl">今日卡班狀況</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {employeeStatuses.map((emp) => {
-                const display = getStatusDisplay(emp);
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allUsers.map((user) => {
+                const record = getEmployeeRecord(user.employee_id);
                 return (
                   <div
-                    key={emp.employee_id}
-                    className={`p-4 rounded-lg border-2 ${display.color} transition-all hover:shadow-md`}
+                    key={user.id}
+                    className={`p-4 rounded-lg border-2 ${getStatusStyle(record)}`}
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{emp.employee_name}</div>
-                        <div className="text-sm text-gray-500">{emp.position}</div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(record)}
+                        <div>
+                          <div className="font-semibold text-lg">{user.name}</div>
+                          <div className="text-xs text-gray-600">{user.employee_id}</div>
+                        </div>
                       </div>
-                      {display.icon}
+                      <div className="text-sm font-medium">
+                        {getStatusText(record)}
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">{display.text}</span>
-                      {display.time && (
-                        <span className="text-sm text-gray-600">{display.time}</span>
+
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">上班:</span>
+                        <span className="font-medium">
+                          {formatTime(record?.check_in_time || null)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">下班:</span>
+                        <span className="font-medium">
+                          {formatTime(record?.check_out_time || null)}
+                        </span>
+                      </div>
+                      {record?.check_in_method && (
+                        <div className="flex justify-between items-center pt-1 border-t border-gray-200">
+                          <span className="text-gray-600">打卡方式:</span>
+                          <span className="text-xs px-2 py-1 bg-white rounded">
+                            {record.check_in_method === 'gps' && '📍 GPS'}
+                            {record.check_in_method === 'bluetooth' && '📶 藍牙'}
+                            {record.check_in_method === 'quick' && '⚡ 快速'}
+                          </span>
+                        </div>
                       )}
                     </div>
-                    {emp.check_in_method && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        {getMethodDisplay(emp.check_in_method)}
-                      </div>
-                    )}
                   </div>
                 );
               })}
             </div>
-
-            {loading && (
-              <div className="text-center py-8 text-gray-500">
-                載入中...
-              </div>
-            )}
-
-            {!loading && employeeStatuses.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                暫無員工資料
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
