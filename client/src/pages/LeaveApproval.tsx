@@ -281,7 +281,8 @@ export default function LeaveApproval() {
             ) : (
               <div className="space-y-4">
                 {pendingRequests.map((request) => {
-                  const StatusIcon = STATUS_CONFIG[request.status].icon;
+                  const statusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG['pending'];
+                  const StatusIcon = statusConfig.icon;
                   return (
                     <div
                       key={request.id}
@@ -292,9 +293,9 @@ export default function LeaveApproval() {
                           <div className="flex items-center gap-3 mb-2">
                             <User className="w-5 h-5 text-gray-400" />
                             <span className="font-semibold text-lg">{request.employee_name}</span>
-                            <Badge className={STATUS_CONFIG[request.status].color}>
+                            <Badge className={statusConfig.color}>
                               <StatusIcon className="w-3 h-3 mr-1" />
-                              {STATUS_CONFIG[request.status].label}
+                              {statusConfig.label}
                             </Badge>
                           </div>
 
@@ -381,7 +382,8 @@ export default function LeaveApproval() {
             ) : (
               <div className="space-y-3">
                 {processedRequests.map((request) => {
-                  const StatusIcon = STATUS_CONFIG[request.status].icon;
+                  const statusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG['pending'];
+                  const StatusIcon = statusConfig.icon;
                   return (
                     <div
                       key={request.id}
@@ -391,9 +393,9 @@ export default function LeaveApproval() {
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <span className="font-medium">{request.employee_name}</span>
-                            <Badge className={STATUS_CONFIG[request.status].color}>
+                            <Badge className={statusConfig.color}>
                               <StatusIcon className="w-3 h-3 mr-1" />
-                              {STATUS_CONFIG[request.status].label}
+                              {statusConfig.label}
                             </Badge>
                             <span className="text-sm text-gray-600">
                               {LEAVE_TYPE_LABELS[request.leave_type]} · {request.days}天
