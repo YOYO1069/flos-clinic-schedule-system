@@ -141,7 +141,7 @@ export default function Dashboard() {
       color: 'from-indigo-400 to-indigo-600',
       bgColor: 'bg-indigo-50',
       onClick: () => setLocation('/attendance-management'),
-      show: user?.role === 'admin' || user?.role === 'super_admin',
+      show: ['admin', 'super_admin', 'senior_supervisor', 'supervisor'].includes(user?.role),
     },
     {
       id: 'attendance-settings',

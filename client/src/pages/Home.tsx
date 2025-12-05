@@ -111,6 +111,16 @@ export default function Home() {
       show: permissions.canAccessLeaveApproval,
     },
     {
+      id: 'attendance-management',
+      title: '打卡記錄管理',
+      description: '管理全體員工打卡記錄',
+      icon: FileText,
+      color: 'from-teal-400 to-teal-600',
+      bgColor: 'bg-teal-50',
+      onClick: () => setLocation('/attendance-management'),
+      show: permissions.canAccessLeaveApproval,
+    },
+    {
       id: 'dashboard',
       title: '電子看板',
       description: '即時顯示今日打卡狀況',
