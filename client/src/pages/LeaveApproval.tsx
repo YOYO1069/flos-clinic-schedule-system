@@ -398,7 +398,7 @@ export default function LeaveApproval() {
                               {statusConfig.label}
                             </Badge>
                             <span className="text-sm text-gray-600">
-                              {LEAVE_TYPE_LABELS[request.leave_type]} · {request.days}天
+                              {LEAVE_TYPE_LABELS[request.leave_type] || request.leave_type || '未知'} · {request.days}天
                             </span>
                           </div>
                           <p className="text-sm text-gray-600">
@@ -434,7 +434,7 @@ export default function LeaveApproval() {
               {selectedRequest && (
                 <>
                   員工: {selectedRequest.employee_name} | 
-                  假別: {LEAVE_TYPE_LABELS[selectedRequest.leave_type]} | 
+                  假別: {LEAVE_TYPE_LABELS[selectedRequest.leave_type] || selectedRequest.leave_type || '未知'} | 
                   天數: {selectedRequest.days}天
                 </>
               )}
@@ -484,7 +484,7 @@ export default function LeaveApproval() {
               {requestToDelete && (
                 <>
                   員工: {requestToDelete.employee_name} | 
-                  假別: {LEAVE_TYPE_LABELS[requestToDelete.leave_type]} | 
+                  假別: {LEAVE_TYPE_LABELS[requestToDelete.leave_type] || requestToDelete.leave_type || '未知'} | 
                   天數: {requestToDelete.days}天
                 </>
               )}
