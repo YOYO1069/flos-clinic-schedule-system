@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Attendance from "./pages/Attendance";
@@ -17,21 +18,41 @@ import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  // All routes except /login require authentication
   return (
     <Switch>
-      <Route path="/test-env" component={TestEnv} />
       <Route path="/login" component={Login} />
-      <Route path="/attendance-dashboard" component={AttendanceDashboard} />
-      <Route path="/attendance-management" component={AttendanceManagement} />
-      <Route path="/doctor-schedule" component={DoctorSchedule} />
-      <Route path="/admin" component={AdminPanel} />
-      <Route path="/approval" component={LeaveApproval} />
-      <Route path={"/"} component={LeaveCalendar} />
-      <Route path="/schedule" component={Home} />
-      <Route path="/attendance" component={Attendance} />
-      <Route path="/leave" component={LeaveManagement} />
-      <Route path={"/404"} component={NotFound} />
+      <Route path="/test-env">
+        <ProtectedRoute><TestEnv /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-dashboard">
+        <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-management">
+        <ProtectedRoute><AttendanceManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/doctor-schedule">
+        <ProtectedRoute><DoctorSchedule /></ProtectedRoute>
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute><AdminPanel /></ProtectedRoute>
+      </Route>
+      <Route path="/approval">
+        <ProtectedRoute><LeaveApproval /></ProtectedRoute>
+      </Route>
+      <Route path="/">
+        <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
+      </Route>
+      <Route path="/schedule">
+        <ProtectedRoute><Home /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance">
+        <ProtectedRoute><Attendance /></ProtectedRoute>
+      </Route>
+      <Route path="/leave">
+        <ProtectedRoute><LeaveManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
