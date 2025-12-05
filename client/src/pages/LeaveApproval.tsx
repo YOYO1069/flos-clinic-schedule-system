@@ -70,6 +70,15 @@ export default function LeaveApproval() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [requestToDelete, setRequestToDelete] = useState<LeaveRequest | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(null);
+  const [editForm, setEditForm] = useState({
+    leave_type: '',
+    start_date: '',
+    end_date: '',
+    days: 0,
+    reason: ''
+  });
 
   useEffect(() => {
     // 檢查登入狀態和權限
@@ -177,7 +186,53 @@ export default function LeaveApproval() {
     }
   };
 
+  const handleEditClick = (request: LeaveRequest) => {
+    setEditingRequest(request);
+    setEditForm({
+      leave_type: request.leave_type,
+      start_date: request.start_date,
+      end_date: request.end_date,
+      days: request.days,
+      reason: request.reason || ''
+    });
+    setShowEditDialog(true);
+  };
 
+  const handleEditSubmit = async () => {
+    if (!editingRequest) return;
+    
+    // 驗證日期
+    if (new Date(editForm.end_date) < new Date(editForm.start_date)) {
+      toast.error("結束日期不能早於開始日期");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from(tables.leaveRequests)
+        .update({
+          leave_type: editForm.leave_type,
+          start_date: editForm.start_date,
+          end_date: editForm.end_date,
+          days: editForm.days,
+          reason: editForm.reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingRequest.id);
+      
+      if (error) throw error;
+      
+      toast.success("已更新請假記錄");
+      setShowEditDialog(false);
+      loadLeaveRequests(currentUser);
+    } catch (error) {
+      console.error('更新失敗:', error);
+      toast.error("更新失敗,請重試");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleApprovalSubmit = async () => {
     if (!selectedRequest || !currentUser) return;
@@ -352,6 +407,15 @@ export default function LeaveApproval() {
                           <Button
                             size="sm"
                             variant="outline"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                            onClick={() => handleEditClick(request)}
+                          >
+                            <FileText className="w-4 h-4 mr-1" />
+                            編輯
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
                             className="border-gray-300 text-gray-700 hover:bg-gray-100"
                             onClick={() => handleDeleteClick(request)}
                           >
@@ -476,6 +540,92 @@ export default function LeaveApproval() {
       </Dialog>
 
       {/* 刪除對話框 */}
+      {/* 編輯請假對話框 */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>編輯請假記錄</DialogTitle>
+            <DialogDescription>
+              {editingRequest && (
+                <>
+                  員工: {editingRequest.employee_name}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">請假類型</label>
+              <select
+                className="w-full mt-1 p-2 border rounded-md"
+                value={editForm.leave_type}
+                onChange={(e) => setEditForm({...editForm, leave_type: e.target.value})}
+              >
+                <option value="special">特休假</option>
+                <option value="sick">病假</option>
+                <option value="personal">事假</option>
+                <option value="marriage">婚假</option>
+                <option value="bereavement">喪假</option>
+                <option value="maternity">產假</option>
+                <option value="compensatory">補休</option>
+                <option value="menstrual">生理假</option>
+                <option value="family_care">家庭照顧假</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">開始日期</label>
+              <Input
+                type="date"
+                value={editForm.start_date}
+                onChange={(e) => setEditForm({...editForm, start_date: e.target.value})}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">結束日期</label>
+              <Input
+                type="date"
+                value={editForm.end_date}
+                onChange={(e) => setEditForm({...editForm, end_date: e.target.value})}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">請假天數</label>
+              <Input
+                type="number"
+                min="1"
+                value={editForm.days}
+                onChange={(e) => setEditForm({...editForm, days: parseInt(e.target.value) || 0})}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">請假原因</label>
+              <Textarea
+                value={editForm.reason}
+                onChange={(e) => setEditForm({...editForm, reason: e.target.value})}
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)} disabled={isProcessing}>
+              取消
+            </Button>
+            <Button
+              onClick={handleEditSubmit}
+              disabled={isProcessing}
+            >
+              {isProcessing ? '更新中...' : '確認更新'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 刪除請假對話框 */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
