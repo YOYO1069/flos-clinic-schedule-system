@@ -541,9 +541,7 @@ export default function StaffManagement() {
                   <option value="senior_supervisor">🌟 高階主管</option>
                   <option value="admin">🔑 管理員</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  員工：基本權限 | 主管：可查看報表 | 高階主管：可管理排班 | 管理員：完整權限
-                </p>
+
               </div>
             )}
             <div>
