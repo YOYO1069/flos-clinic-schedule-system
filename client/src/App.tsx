@@ -13,7 +13,7 @@ import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
-import TestEnv from "./pages/TestEnv";
+// import TestEnv from "./pages/TestEnv"; // Temporarily disabled
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
@@ -41,9 +41,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      <Route path="/test-env">
+      {/* <Route path="/test-env">
         <ProtectedRoute><TestEnv /></ProtectedRoute>
-      </Route>
+      </Route> */}
       <Route path="/attendance-dashboard">
         <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
       </Route>
