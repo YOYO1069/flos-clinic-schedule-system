@@ -47,7 +47,7 @@ export default function SimpleAttendanceManagement() {
 
     const user = JSON.parse(userStr);
     
-    // 只有一般主管和高階主管才能存取（簡化版）
+    // 只有一般主管和高階主管才能存取
     if (!['senior_supervisor', 'supervisor'].includes(user.role)) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
@@ -152,8 +152,8 @@ export default function SimpleAttendanceManagement() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             返回首頁
           </Button>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">打卡記錄查詢</h1>
-          <p className="text-gray-600">查看和修改員工打卡記錄（簡化版）</p>
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">打卡記錄管理</h1>
+          <p className="text-gray-600">查看和修改員工打卡記錄</p>
         </div>
 
         {/* 篩選區域 */}

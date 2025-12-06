@@ -77,7 +77,7 @@ export default function AttendanceManagement() {
     }
     const user = JSON.parse(userStr);
     
-    // 只有管理員才能存取（完整版）
+    // 只有管理員才能存取
     if (user.role !== 'admin') {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
