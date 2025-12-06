@@ -87,7 +87,7 @@ export default function Login() {
                 <Input
                   id="employeeId"
                   type="text"
-                  placeholder="例如: ADMIN-HBH012"
+                  placeholder="例如: flosHBH012"
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
                   className="pl-10"
