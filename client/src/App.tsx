@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -16,9 +17,27 @@ import TestEnv from "./pages/TestEnv";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import { useAuth } from "./_core/hooks/useAuth";
+import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
 function Router() {
   // All routes except /login require authentication
+  const [location] = useLocation();
+  const { user } = useAuth();
+  const { logVisit } = useVisitorLog();
+
+  // 記錄頁面訪問
+  useEffect(() => {
+    // 將 user 轉換為 visitor log 所需的格式
+    if (user) {
+      // 如果 user 有 employee_id 屬性，直接使用
+      const userData = 'employee_id' in user ? user as any : undefined;
+      logVisit(userData);
+    } else {
+      logVisit(undefined);
+    }
+  }, [location, user]);
+
   return (
     <Switch>
       <Route path="/login" component={Login} />

@@ -201,7 +201,7 @@ export default function LeaveApproval() {
               <div>
                 <h1 className="text-xl font-bold text-gray-900">請假審核</h1>
                 <p className="text-sm text-gray-600">
-                  {currentUser?.name} ({currentUser?.role === 'admin' ? '管理者' : currentUser?.role === 'senior_supervisor' ? '高階主管' : '一般主管'})
+                  {currentUser?.name}
                 </p>
               </div>
             </div>
