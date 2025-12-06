@@ -121,12 +121,12 @@ export default function LeaveApproval() {
       // 載入所有使用者資料
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id, name, role');
+        .select('id, employee_id, name, role');
 
       if (userError) throw userError;
 
-      // 建立使用者 ID 到資料的對應
-      const userMap = new Map(userData?.map(u => [u.id, u]) || []);
+      // 建立使用者 employee_id 到資料的對應（使用 employee_id 而不是 id）
+      const userMap = new Map(userData?.map(u => [u.employee_id, u]) || []);
 
       // 合併請假申請和員工資料
       let filteredRequests = leaveData.map(req => ({
