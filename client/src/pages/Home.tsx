@@ -113,11 +113,17 @@ export default function Home() {
     {
       id: 'attendance-management',
       title: '打卡記錄管理',
-      description: '管理全體員工打卡記錄',
+      description: user?.role === 'admin' ? '管理全體員工打卡記錄（完整版）' : '查看員工打卡記錄（簡化版）',
       icon: FileText,
       color: 'from-teal-400 to-teal-600',
       bgColor: 'bg-teal-50',
-      onClick: () => setLocation('/simple-attendance'),
+      onClick: () => {
+        if (user?.role === 'admin') {
+          setLocation('/attendance-management');
+        } else {
+          setLocation('/simple-attendance');
+        }
+      },
       show: permissions.canAccessLeaveApproval,
     },
     {

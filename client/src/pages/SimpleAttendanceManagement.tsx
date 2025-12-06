@@ -47,8 +47,8 @@ export default function SimpleAttendanceManagement() {
 
     const user = JSON.parse(userStr);
     
-    // 只有主管以上才能存取
-    if (!['admin', 'senior_supervisor', 'supervisor'].includes(user.role)) {
+    // 只有一般主管和高階主管才能存取（簡化版）
+    if (!['senior_supervisor', 'supervisor'].includes(user.role)) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
