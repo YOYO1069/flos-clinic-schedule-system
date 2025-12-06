@@ -84,7 +84,7 @@ function Router() {
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>
       </Route>
       <Route path="/">
-        <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
+        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
       </Route>
       <Route path="/schedule">
         <ProtectedRoute><Home /></ProtectedRoute>
