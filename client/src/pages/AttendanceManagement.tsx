@@ -69,37 +69,6 @@ export default function AttendanceManagement() {
   const [editCheckInTime, setEditCheckInTime] = useState("");
   const [editCheckOutTime, setEditCheckOutTime] = useState("");
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      setLocation('/login');
-      return;
-    }
-    const user = JSON.parse(userStr);
-    
-    // 只有管理員才能存取
-    if (user.role !== 'admin') {
-      toast.error("您沒有權限存取此頁面");
-      setLocation('/');
-      return;
-    }
-    
-    setCurrentUser(user);
-    loadRecords();
-  }, [selectedDate, setLocation]);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = records.filter(record =>
-        record.employee_name.includes(searchTerm) ||
-        record.employee_id.includes(searchTerm)
-      );
-      setFilteredRecords(filtered);
-    } else {
-      setFilteredRecords(records);
-    }
-  }, [searchTerm, records]);
-
   async function loadRecords() {
     setLoading(true);
     console.log('🔍 載入打卡記錄，日期:', selectedDate);
@@ -126,8 +95,40 @@ export default function AttendanceManagement() {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    
+    // 只有管理員才能存取
+    if (user.role !== 'admin') {
+      toast.error("您沒有權限存取此頁面");
+      setLocation('/');
+      return;
+    }
+    
+    setCurrentUser(user);
+    loadRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, setLocation]);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = records.filter(record =>
+        record.employee_name.includes(searchTerm) ||
+        record.employee_id.includes(searchTerm)
+      );
+      setFilteredRecords(filtered);
+    } else {
+      setFilteredRecords(records);
+    }
+  }, [searchTerm, records]);
   
-  function formatTime(timeStr: string | null): string {
+  function formatTime(timeStr: string | null): string{
     if (!timeStr) return '-';
     try {
       const date = new Date(timeStr);
