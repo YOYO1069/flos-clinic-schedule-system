@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -86,7 +86,7 @@ export default function AttendanceManagement() {
     
     setCurrentUser(user);
     loadRecords();
-  }, [selectedDate, setLocation]);
+  }, [selectedDate, setLocation, loadRecords]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -100,7 +100,7 @@ export default function AttendanceManagement() {
     }
   }, [searchTerm, records]);
 
-  async function loadRecords() {
+  const loadRecords = useCallback(async () => {
     setLoading(true);
     console.log('🔍 載入打卡記錄，日期:', selectedDate);
     try {
@@ -125,7 +125,7 @@ export default function AttendanceManagement() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [selectedDate]);
 
   function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
