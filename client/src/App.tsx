@@ -89,9 +89,7 @@ function Router() {
       <Route path="/schedule">
         <ProtectedRoute><Home /></ProtectedRoute>
       </Route>
-      <Route path="/attendance">
-        <ProtectedRoute><Attendance /></ProtectedRoute>
-      </Route>
+      <Route path="/attendance" component={Attendance} />
       <Route path="/leave">
         <ProtectedRoute><LeaveManagement /></ProtectedRoute>
       </Route>
