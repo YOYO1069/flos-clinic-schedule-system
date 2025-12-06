@@ -473,10 +473,32 @@ export default function LeaveApproval() {
                             <p className="text-sm text-red-600 mt-2">拒絕原因: {request.rejection_reason}</p>
                           )}
                         </div>
-                        <div className="text-right text-sm text-gray-500">
-                          {request.approved_at && (
-                            <p>審核時間: {format(utcToTaiwanTime(request.approved_at), 'yyyy/MM/dd HH:mm')}</p>
-                          )}
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-sm text-gray-500">
+                            {request.approved_at && (
+                              <p>審核時間: {format(utcToTaiwanTime(request.approved_at), 'yyyy/MM/dd HH:mm')}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleEditClick(request)}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              編輯
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-300 text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteClick(request)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              刪除
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>

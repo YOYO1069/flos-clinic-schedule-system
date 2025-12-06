@@ -19,6 +19,10 @@ import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import AttendanceSettings from "./pages/AttendanceSettings";
+import SimpleAttendanceManagement from "./pages/SimpleAttendanceManagement";
+import StaffManagement from "./pages/StaffManagement";
+import OperationFee from "./pages/OperationFee";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -51,6 +55,24 @@ function Router() {
       </Route>
       <Route path="/attendance-management">
         <ProtectedRoute><AttendanceManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/simple-attendance">
+        <ProtectedRoute><SimpleAttendanceManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-settings">
+        <ProtectedRoute><AttendanceSettings /></ProtectedRoute>
+      </Route>
+      <Route path="/employee-management">
+        <ProtectedRoute><StaffManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/operation-fee">
+        <ProtectedRoute><OperationFee /></ProtectedRoute>
+      </Route>
+      <Route path="/leave-calendar">
+        <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-history">
+        <ProtectedRoute><Attendance /></ProtectedRoute>
       </Route>
       <Route path="/doctor-schedule">
         <ProtectedRoute><DoctorSchedule /></ProtectedRoute>
