@@ -102,14 +102,21 @@ export default function AttendanceManagement() {
 
   async function loadRecords() {
     setLoading(true);
+    console.log('🔍 載入打卡記錄，日期:', selectedDate);
     try {
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
         .eq('work_date', selectedDate)
         .order('check_in_time', { ascending: true });
+      
+      console.log('📊 查詢結果:', { 記錄數: data?.length, 錯誤: error });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ 查詢錯誤:', error);
+        throw error;
+      }
+      console.log('✅ 成功載入', data?.length, '筆記錄');
       setRecords(data || []);
       setFilteredRecords(data || []);
     } catch (error) {
