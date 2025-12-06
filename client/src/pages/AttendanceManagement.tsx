@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -91,7 +91,8 @@ export default function AttendanceManagement() {
     if (currentUser) {
       loadRecords();
     }
-  }, [selectedDate, currentUser, loadRecords]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, currentUser]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -105,7 +106,7 @@ export default function AttendanceManagement() {
     }
   }, [searchTerm, records]);
 
-  const loadRecords = useCallback(async () => {
+  async function loadRecords() {
     setLoading(true);
     console.log('🔍 載入打卡記錄，日期:', selectedDate);
     try {
@@ -130,8 +131,8 @@ export default function AttendanceManagement() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
-
+  }
+  
   function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
     try {
