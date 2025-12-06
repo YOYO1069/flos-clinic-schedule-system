@@ -364,7 +364,9 @@ export default function AttendanceManagement() {
           <CardHeader>
             <CardTitle>打卡記錄</CardTitle>
             <CardDescription>
-              {format(new Date(selectedDate), 'yyyy年MM月dd日 EEEE', { locale: zhTW })} 的打卡記錄
+              {selectedDate && !isNaN(new Date(selectedDate).getTime()) 
+                ? `${format(new Date(selectedDate), 'yyyy年MM月dd日 EEEE', { locale: zhTW })} 的打卡記錄`
+                : '請選擇日期'}
             </CardDescription>
           </CardHeader>
           <CardContent>
