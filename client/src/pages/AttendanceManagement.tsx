@@ -85,14 +85,8 @@ export default function AttendanceManagement() {
     }
     
     setCurrentUser(user);
-  }, [setLocation]);
-  
-  useEffect(() => {
-    if (currentUser) {
-      loadRecords();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, currentUser]);
+    loadRecords();
+  }, [selectedDate, setLocation]);
 
   useEffect(() => {
     if (searchTerm) {
