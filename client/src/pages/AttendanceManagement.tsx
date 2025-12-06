@@ -85,8 +85,13 @@ export default function AttendanceManagement() {
     }
     
     setCurrentUser(user);
-    loadRecords();
-  }, [selectedDate, setLocation, loadRecords]);
+  }, [setLocation]);
+  
+  useEffect(() => {
+    if (currentUser) {
+      loadRecords();
+    }
+  }, [selectedDate, currentUser, loadRecords]);
 
   useEffect(() => {
     if (searchTerm) {
