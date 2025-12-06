@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLS 政策測試工具 - FLOS 診所系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        
+        button:hover {
+            background: #5568d3;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .test-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .test-status.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .test-status.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .test-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .test-list li {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔒 RLS 政策測試工具</h1>
+        <p class="subtitle">FLOS 診所管理系統 - visitor_logs 表權限驗證</p>
+        
+        <!-- 配置區 -->
+        <div class="section">
+            <h2>📋 Supabase 配置</h2>
+            <div class="input-group">
+                <label for="supabaseUrl">Supabase URL</label>
+                <input type="text" id="supabaseUrl" value="https://pizzpwesrbulfjylejlu.supabase.co" placeholder="https://your-project.supabase.co">
+            </div>
+            <div class="input-group">
+                <label for="supabaseKey">Supabase Anon Key</label>
+                <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+            </div>
+            <button onclick="initSupabase()">初始化連線</button>
+            <div id="initResult"></div>
+        </div>
+        
+        <!-- 測試 1: 未登入插入 -->
+        <div class="section">
+            <h2>測試 1: 未登入使用者插入記錄</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                驗證 RLS INSERT 政策是否允許未登入使用者插入記錄
+            </p>
+            <button onclick="testUnauthorizedInsert()">執行測試</button>
+            <div id="test1Result"></div>
+        </div>
+        
+        <!-- 測試 2: 登入後插入 -->
+        <div class="section">
+            <h2>測試 2: 已登入使用者插入記錄</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                驗證已登入使用者是否可以插入記錄
+            </p>
+            <div class="input-group">
+                <label for="loginEmail">員工編號（用於登入）</label>
+                <input type="text" id="loginEmail" placeholder="flosHBH012">
+            </div>
+            <div class="input-group">
+                <label for="loginPassword">密碼</label>
+                <input type="password" id="loginPassword" placeholder="輸入密碼">
+            </div>
+            <button onclick="testAuthorizedInsert()">登入並測試插入</button>
+            <div id="test2Result"></div>
+        </div>
+        
+        <!-- 測試 3: 管理員查看 -->
+        <div class="section">
+            <h2>測試 3: 管理員查看所有記錄</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                驗證 RLS SELECT 政策是否允許管理員查看所有記錄
+            </p>
+            <div class="input-group">
+                <label for="adminEmail">管理員帳號</label>
+                <input type="text" id="adminEmail" placeholder="flosHBH012">
+            </div>
+            <div class="input-group">
+                <label for="adminPassword">管理員密碼</label>
+                <input type="password" id="adminPassword" placeholder="輸入密碼">
+            </div>
+            <button onclick="testAdminSelect()">登入並查看記錄</button>
+            <div id="test3Result"></div>
+        </div>
+        
+        <!-- 測試 4: 非管理員查看 -->
+        <div class="section">
+            <h2>測試 4: 非管理員嘗試查看記錄</h2>
+            <p style="color: #666; font-size: 13px; margin-bottom: 15px;">
+                驗證 RLS SELECT 政策是否阻止非管理員查看記錄
+            </p>
+            <div class="input-group">
+                <label for="staffEmail">員工帳號（非管理員）</label>
+                <input type="text" id="staffEmail" placeholder="flosLDX011">
+            </div>
+            <div class="input-group">
+                <label for="staffPassword">員工密碼</label>
+                <input type="password" id="staffPassword" placeholder="輸入密碼">
+            </div>
+            <button onclick="testStaffSelect()">登入並嘗試查看</button>
+            <div id="test4Result"></div>
+        </div>
+        
+        <!-- 測試摘要 -->
+        <div class="section">
+            <h2>📊 測試摘要</h2>
+            <ul class="test-list" id="testSummary">
+                <li>尚未執行測試</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        let supabase = null;
+        const testResults = {
+            test1: null,
+            test2: null,
+            test3: null,
+            test4: null
+        };
+        
+        function initSupabase() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            const resultDiv = document.getElementById('initResult');
+            
+            if (!url || !key) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請輸入 Supabase URL 和 Anon Key</div>';
+                return;
+            }
+            
+            try {
+                supabase = window.supabase.createClient(url, key);
+                resultDiv.innerHTML = '<div class="result success">✅ Supabase 連線已初始化</div>';
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 初始化失敗: ${error.message}</div>`;
+            }
+        }
+        
+        async function testUnauthorizedInsert() {
+            const resultDiv = document.getElementById('test1Result');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            if (!supabase) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請先初始化 Supabase 連線</div>';
+                return;
+            }
+            
+            try {
+                // 確保未登入
+                await supabase.auth.signOut();
+                
+                // 嘗試插入記錄
+                const { data, error } = await supabase
+                    .from('visitor_logs')
+                    .insert({
+                        ip_address: '127.0.0.1',
+                        user_agent: 'Test Browser',
+                        page_url: 'https://test.com/test',
+                        referrer: '',
+                        screen_resolution: '1920x1080',
+                        language: 'zh-TW',
+                        platform: 'Test Platform',
+                        access_time: new Date().toISOString(),
+                        is_authorized: false,
+                        employee_id: null,
+                        employee_name: null,
+                        employee_role: null
+                    })
+                    .select();
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 插入失敗: ${error.message}</div>`;
+                    testResults.test1 = false;
+                } else {
+                    resultDiv.innerHTML = `<div class="result success">✅ 插入成功！未登入使用者可以插入記錄。\n\n插入的記錄:\n${JSON.stringify(data, null, 2)}</div>`;
+                    testResults.test1 = true;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 測試失敗: ${error.message}</div>`;
+                testResults.test1 = false;
+            }
+            
+            updateSummary();
+        }
+        
+        async function testAuthorizedInsert() {
+            const resultDiv = document.getElementById('test2Result');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            if (!supabase) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請先初始化 Supabase 連線</div>';
+                return;
+            }
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請輸入員工編號和密碼</div>';
+                return;
+            }
+            
+            try {
+                // 登入
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 登入失敗: ${authError.message}\n\n注意: 此測試需要使用 email/password 登入方式。如果系統使用其他登入方式，請調整測試代碼。</div>`;
+                    testResults.test2 = false;
+                    updateSummary();
+                    return;
+                }
+                
+                // 嘗試插入記錄
+                const { data, error } = await supabase
+                    .from('visitor_logs')
+                    .insert({
+                        ip_address: '127.0.0.1',
+                        user_agent: 'Test Browser (Authorized)',
+                        page_url: 'https://test.com/authorized-test',
+                        referrer: '',
+                        screen_resolution: '1920x1080',
+                        language: 'zh-TW',
+                        platform: 'Test Platform',
+                        access_time: new Date().toISOString(),
+                        is_authorized: true,
+                        employee_id: email,
+                        employee_name: 'Test User',
+                        employee_role: 'staff'
+                    })
+                    .select();
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 插入失敗: ${error.message}</div>`;
+                    testResults.test2 = false;
+                } else {
+                    resultDiv.innerHTML = `<div class="result success">✅ 插入成功！已登入使用者可以插入記錄。\n\n插入的記錄:\n${JSON.stringify(data, null, 2)}</div>`;
+                    testResults.test2 = true;
+                }
+                
+                // 登出
+                await supabase.auth.signOut();
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 測試失敗: ${error.message}</div>`;
+                testResults.test2 = false;
+            }
+            
+            updateSummary();
+        }
+        
+        async function testAdminSelect() {
+            const resultDiv = document.getElementById('test3Result');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            if (!supabase) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請先初始化 Supabase 連線</div>';
+                return;
+            }
+            
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            if (!email || !password) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請輸入管理員帳號和密碼</div>';
+                return;
+            }
+            
+            try {
+                // 登入
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 登入失敗: ${authError.message}\n\n注意: 此測試需要使用 email/password 登入方式。</div>`;
+                    testResults.test3 = false;
+                    updateSummary();
+                    return;
+                }
+                
+                // 嘗試查詢記錄
+                const { data, error, count } = await supabase
+                    .from('visitor_logs')
+                    .select('*', { count: 'exact' })
+                    .limit(5);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 查詢失敗: ${error.message}</div>`;
+                    testResults.test3 = false;
+                } else if (data && data.length > 0) {
+                    resultDiv.innerHTML = `<div class="result success">✅ 查詢成功！管理員可以查看記錄。\n\n總記錄數: ${count}\n顯示前 5 筆:\n${JSON.stringify(data, null, 2)}</div>`;
+                    testResults.test3 = true;
+                } else {
+                    resultDiv.innerHTML = `<div class="result info">⚠️ 查詢成功但沒有記錄。請先執行測試 1 或 2 產生一些記錄。</div>`;
+                    testResults.test3 = null;
+                }
+                
+                // 登出
+                await supabase.auth.signOut();
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 測試失敗: ${error.message}</div>`;
+                testResults.test3 = false;
+            }
+            
+            updateSummary();
+        }
+        
+        async function testStaffSelect() {
+            const resultDiv = document.getElementById('test4Result');
+            resultDiv.innerHTML = '<div class="loading"></div>';
+            
+            if (!supabase) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請先初始化 Supabase 連線</div>';
+                return;
+            }
+            
+            const email = document.getElementById('staffEmail').value;
+            const password = document.getElementById('staffPassword').value;
+            
+            if (!email || !password) {
+                resultDiv.innerHTML = '<div class="result error">❌ 請輸入員工帳號和密碼</div>';
+                return;
+            }
+            
+            try {
+                // 登入
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (authError) {
+                    resultDiv.innerHTML = `<div class="result error">❌ 登入失敗: ${authError.message}\n\n注意: 此測試需要使用 email/password 登入方式。</div>`;
+                    testResults.test4 = false;
+                    updateSummary();
+                    return;
+                }
+                
+                // 嘗試查詢記錄
+                const { data, error } = await supabase
+                    .from('visitor_logs')
+                    .select('*')
+                    .limit(5);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="result success">✅ RLS 政策正常運作！非管理員無法查看記錄。\n\n錯誤訊息: ${error.message}</div>`;
+                    testResults.test4 = true;
+                } else if (data && data.length === 0) {
+                    resultDiv.innerHTML = `<div class="result success">✅ RLS 政策正常運作！查詢返回空結果（非管理員無法查看記錄）。</div>`;
+                    testResults.test4 = true;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ RLS 政策可能有問題！非管理員不應該能查看記錄。\n\n查詢結果:\n${JSON.stringify(data, null, 2)}</div>`;
+                    testResults.test4 = false;
+                }
+                
+                // 登出
+                await supabase.auth.signOut();
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ 測試失敗: ${error.message}</div>`;
+                testResults.test4 = false;
+            }
+            
+            updateSummary();
+        }
+        
+        function updateSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const tests = [
+                { name: '測試 1: 未登入插入', result: testResults.test1 },
+                { name: '測試 2: 已登入插入', result: testResults.test2 },
+                { name: '測試 3: 管理員查看', result: testResults.test3 },
+                { name: '測試 4: 非管理員查看', result: testResults.test4 }
+            ];
+            
+            let html = '';
+            let passCount = 0;
+            let failCount = 0;
+            let pendingCount = 0;
+            
+            tests.forEach(test => {
+                let status = '';
+                if (test.result === true) {
+                    status = '<span class="test-status pass">✅ PASS</span>';
+                    passCount++;
+                } else if (test.result === false) {
+                    status = '<span class="test-status fail">❌ FAIL</span>';
+                    failCount++;
+                } else {
+                    status = '<span class="test-status" style="background: #e0e0e0; color: #666;">⏳ 待測試</span>';
+                    pendingCount++;
+                }
+                html += `<li>${test.name} ${status}</li>`;
+            });
+            
+            html += `<li style="margin-top: 15px; border-top: 2px solid #e0e0e0; padding-top: 15px; font-weight: 600;">
+                總計: ${passCount} 通過, ${failCount} 失敗, ${pendingCount} 待測試
+            </li>`;
+            
+            summaryDiv.innerHTML = html;
+        }
+        
+        // 初始化摘要
+        updateSummary();
+    </script>
+</body>
+</html>

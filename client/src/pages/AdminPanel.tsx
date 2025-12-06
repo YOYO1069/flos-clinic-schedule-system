@@ -211,9 +211,6 @@ export default function AdminPanel() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-gray-900">{user.name}</p>
-                            <span className={`px-2 py-1 text-xs rounded-full ${ROLE_LABELS[user.role]?.color}`}>
-                              {ROLE_LABELS[user.role]?.label}
-                            </span>
                           </div>
                           <p className="text-sm text-gray-600 mt-1">員工編號: {user.employee_id} | 帳號: {user.employee_id}</p>
                         </div>
@@ -285,65 +282,7 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
 
-        {/* 權限說明 */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>權限說明</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-red-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🔴</span>
-                  <h4 className="font-semibold">管理者</h4>
-                </div>
-                <ul className="text-sm text-gray-700 space-y-1 ml-8">
-                  <li>• 管理所有主管和員工</li>
-                  <li>• 審核所有請假</li>
-                  <li>• 查看所有人密碼</li>
-                  <li>• 完整系統管理權限</li>
-                </ul>
-              </div>
 
-              <div className="p-4 bg-orange-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🟠</span>
-                  <h4 className="font-semibold">高階主管</h4>
-                </div>
-                <ul className="text-sm text-gray-700 space-y-1 ml-8">
-                  <li>• 完整系統管理</li>
-                  <li>• 審核出勤和請假</li>
-                  <li>• 匯出報表</li>
-                </ul>
-              </div>
-
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🟡</span>
-                  <h4 className="font-semibold">一般主管</h4>
-                </div>
-                <ul className="text-sm text-gray-700 space-y-1 ml-8">
-                  <li>• 審核出勤和請假</li>
-                  <li>• 匯出報表</li>
-                  <li>• 低於高階主管權限</li>
-                </ul>
-              </div>
-
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🟢</span>
-                  <h4 className="font-semibold">員工</h4>
-                </div>
-                <ul className="text-sm text-gray-700 space-y-1 ml-8">
-                  <li>• 上班/下班打卡</li>
-                  <li>• 查看自己的出勤記錄</li>
-                  <li>• 請假申請</li>
-                  <li>• 查看自己的排班</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
