@@ -6,6 +6,8 @@ import { ArrowLeft, Eye, EyeOff, Search, Download } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface UserAccount {
   employee_id: string;
@@ -32,15 +34,15 @@ export default function AccountManagement() {
       return;
     }
     const user = JSON.parse(userStr);
+    setCurrentUser(user);
     
-    // 只有管理員才能存取
-    if (user.role !== 'admin') {
+    // 使用 permissions.ts 檢查權限
+    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    if (!userPermissions.canAccessAccountManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
     }
-    
-    setCurrentUser(user);
     loadAccounts();
   }, [setLocation]);
 

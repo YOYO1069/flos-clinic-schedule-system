@@ -6,7 +6,8 @@ import { ArrowLeft, Shield, Search, Save } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ROLE_LABELS, ROLE_COLORS } from "@/lib/permissions";
+import { ROLE_LABELS, ROLE_COLORS, UserRole } from "@/lib/permissions";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface UserPermission {
   id: number;
@@ -33,15 +34,15 @@ export default function PermissionManagement() {
       return;
     }
     const user = JSON.parse(userStr);
+    setCurrentUser(user);
     
-    // 只有管理員才能存取
-    if (user.role !== 'admin') {
+    // 使用 permissions.ts 檢查權限
+    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    if (!userPermissions.canAccessPermissionManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
     }
-    
-    setCurrentUser(user);
     loadUsers();
   }, [setLocation]);
 

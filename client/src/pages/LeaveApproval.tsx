@@ -12,6 +12,8 @@ import { CheckCircle, XCircle, Clock, Calendar, User, FileText, ArrowLeft, Trash
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { utcToTaiwanTime } from '@/lib/timezone';
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface LeaveRequest {
   id: number;
@@ -91,8 +93,9 @@ export default function LeaveApproval() {
 
     const user = JSON.parse(userStr);
     
-    // 只有主管以上才能存取
-    if (!['admin', 'senior_supervisor', 'supervisor'].includes(user.role)) {
+    // 使用 permissions.ts 檢查權限
+    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    if (!userPermissions.canAccessLeaveApproval) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;

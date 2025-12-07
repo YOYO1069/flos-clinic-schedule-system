@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 import { LogOut, Users, Calendar, Clock, FileText, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -44,7 +46,10 @@ export default function AdminPanel() {
     }
 
     const user = JSON.parse(userStr);
-    if (user.role !== 'admin') {
+    
+    // 使用 permissions.ts 檢查權限
+    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    if (!userPermissions.canAccessAccountManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;

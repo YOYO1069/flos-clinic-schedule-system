@@ -8,6 +8,8 @@ import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 import {
   Dialog,
   DialogContent,
@@ -75,6 +77,7 @@ export default function AttendanceManagement() {
   const [addEmployeeId, setAddEmployeeId] = useState("");
   const [addCheckInTime, setAddCheckInTime] = useState("");
   const [addCheckOutTime, setAddCheckOutTime] = useState("");
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
 
   async function loadRecords(date: string) {
     setLoading(true);
@@ -110,15 +113,15 @@ export default function AttendanceManagement() {
       return;
     }
     const user = JSON.parse(userStr);
+    setCurrentUser(user);
     
-    // 只有管理員才能存取
-    if (user.role !== 'admin') {
+    // 使用 permissions.ts 檢查權限
+    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    if (!userPermissions.canAccessAttendanceManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
     }
-    
-    setCurrentUser(user);
     loadRecords(selectedDate);
     loadEmployees();
   }, [selectedDate, setLocation]);
