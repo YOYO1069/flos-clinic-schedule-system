@@ -53,11 +53,10 @@ export default function AttendanceDashboard() {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
 
-      // 載入所有員工
+      // 載入所有員工（不限角色）
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
-        .eq('role', 'staff')
         .order('name', { ascending: true });
 
       if (usersError) throw usersError;
@@ -83,7 +82,7 @@ export default function AttendanceDashboard() {
   const totalStaff = allUsers.length;
   const checkedIn = todayRecords.filter(r => r.check_in_time && !r.check_out_time).length;
   const checkedOut = todayRecords.filter(r => r.check_out_time).length;
-  const notCheckedIn = totalStaff - todayRecords.length;
+  const notCheckedIn = allUsers.filter(u => !todayRecords.find(r => r.employee_id === u.employee_id)).length;
 
   // 取得員工的打卡記錄
   function getEmployeeRecord(employeeId: string): AttendanceRecord | null {

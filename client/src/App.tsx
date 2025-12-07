@@ -52,6 +52,9 @@ function Router() {
       <Route path="/attendance-dashboard">
         <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
       </Route>
+      <Route path="/security">
+        <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
+      </Route>
       <Route path="/attendance-management">
         <ProtectedRoute><AttendanceManagement /></ProtectedRoute>
       </Route>
