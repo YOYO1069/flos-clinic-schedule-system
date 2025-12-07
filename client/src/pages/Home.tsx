@@ -78,7 +78,10 @@ export default function Home() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="min-h-screen bg-gray-100" style={{
+      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)',
+      backgroundSize: '40px 40px'
+    }}>
       {/* 頂部導航 - 典雅設計 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
@@ -205,13 +208,15 @@ export default function Home() {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-3 mx-auto border border-gray-100`} style={{
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
-                  }}>
-                    <Icon className={`w-6 h-6 ${item.color}`} />
+                  <div className="flex flex-col items-center">
+                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <Icon className={`w-6 h-6 ${item.color}`} />
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center w-full">{item.label}</h3>
+                    <p className="text-xs text-gray-500 leading-tight text-center w-full">{item.description}</p>
                   </div>
-                  <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center">{item.label}</h3>
-                  <p className="text-xs text-gray-500 leading-tight text-center">{item.description}</p>
                 </button>
               );
             })}
@@ -242,15 +247,17 @@ export default function Home() {
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
                   }}
                 >
-                  <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-3 mx-auto border border-gray-100 opacity-70`} style={{
-                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
-                  }}>
-                    <Icon className={`w-6 h-6 ${item.color}`} />
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-600 mb-0.5 text-center">{item.label}</h3>
-                  <p className="text-xs text-gray-400 leading-tight text-center">{item.description}</p>
-                  <div className="mt-2 text-center">
-                    <span className="text-xs text-amber-600 font-bold">開發中</span>
+                  <div className="flex flex-col items-center">
+                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
+                    }}>
+                      <Icon className={`w-6 h-6 ${item.color}`} />
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-600 mb-0.5 text-center w-full">{item.label}</h3>
+                    <p className="text-xs text-gray-400 leading-tight text-center w-full">{item.description}</p>
+                    <div className="mt-2 text-center w-full">
+                      <span className="text-xs text-amber-600 font-bold">開發中</span>
+                    </div>
                   </div>
                 </button>
               );
