@@ -14,7 +14,7 @@ import {
   FileText, 
   Monitor, 
   Calendar, 
-  DollarSign, 
+ 
   Settings,
   CheckSquare,
   LogOut,
@@ -157,14 +157,7 @@ export default function Home() {
       path: '/leave-calendar',
       show: permissions.canAccessLeaveCalendar
     },
-    {
-      icon: DollarSign,
-      label: '薪資管理',
-      description: '薪資計算',
-      color: 'from-green-500 to-emerald-600',
-      path: '/salary',
-      show: permissions.canAccessSalary
-    },
+
     {
       icon: Shield,
       label: '管理者面板',

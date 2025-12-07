@@ -83,7 +83,7 @@ function Router() {
       <Route path="/leave-calendar">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
       </Route>
-      <Route path="/attendance-history">
+      <Route path="/attendance">
         <ProtectedRoute><Attendance /></ProtectedRoute>
       </Route>
       <Route path="/doctor-schedule">
@@ -92,7 +92,7 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute><AdminPanel /></ProtectedRoute>
       </Route>
-      <Route path="/approval">
+      <Route path="/leave-approval">
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>
       </Route>
       <Route path="/">
@@ -101,8 +101,8 @@ function Router() {
       <Route path="/schedule">
         <ProtectedRoute><Home /></ProtectedRoute>
       </Route>
-      <Route path="/attendance" component={Attendance} />
-      <Route path="/leave">
+
+      <Route path="/leave-management">
         <ProtectedRoute><LeaveManagement /></ProtectedRoute>
       </Route>
       <Route path="/404" component={NotFound} />
