@@ -11,7 +11,6 @@ import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
-import FirstLogin from "./pages/FirstLogin";
 import DoctorPortal from "./pages/DoctorPortal";
 import NurseSOP from "./pages/NurseSOP";
 import BeauticianSOP from "./pages/BeauticianSOP";
@@ -46,7 +45,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
-      <Route path="/first-login" component={FirstLogin} />
       {/* <Route path="/test-env">
         <ProtectedRoute><TestEnv /></ProtectedRoute>
       </Route> */}

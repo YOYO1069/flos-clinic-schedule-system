@@ -53,13 +53,6 @@ export default function Login() {
         role: data.role
       }));
 
-      // 檢查是否首次登入
-      if (data.password_changed === false) {
-        toast.info(`歡迎,${data.name}! 請設定您的新密碼`);
-        setLocation('/first-login');
-        return;
-      }
-
       toast.success(`歡迎回來,${data.name}!`);
       
       // 根據角色導向不同頁面
