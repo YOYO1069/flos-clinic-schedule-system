@@ -69,14 +69,14 @@ export default function AttendanceManagement() {
   const [editCheckInTime, setEditCheckInTime] = useState("");
   const [editCheckOutTime, setEditCheckOutTime] = useState("");
 
-  async function loadRecords() {
+  async function loadRecords(date: string) {
     setLoading(true);
-    console.log('🔍 載入打卡記錄，日期:', selectedDate);
+    console.log('🔍 載入打卡記錄，日期:', date);
     try {
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
-        .eq('work_date', selectedDate)
+        .eq('work_date', date)
         .order('check_in_time', { ascending: true });
       
       console.log('📊 查詢結果:', { 記錄數: data?.length, 錯誤: error });
@@ -112,8 +112,7 @@ export default function AttendanceManagement() {
     }
     
     setCurrentUser(user);
-    loadRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadRecords(selectedDate);
   }, [selectedDate, setLocation]);
 
   useEffect(() => {
@@ -174,7 +173,7 @@ export default function AttendanceManagement() {
 
       toast.success("打卡記錄已更新");
       setEditDialogOpen(false);
-      loadRecords();
+      loadRecords(selectedDate);
     } catch (error) {
       console.error('更新打卡記錄失敗:', error);
       toast.error("更新打卡記錄失敗");
@@ -193,7 +192,7 @@ export default function AttendanceManagement() {
       if (error) throw error;
 
       toast.success("打卡記錄已刪除");
-      loadRecords();
+      loadRecords(selectedDate);
     } catch (error) {
       console.error('刪除打卡記錄失敗:', error);
       toast.error("刪除打卡記錄失敗");
