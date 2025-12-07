@@ -8,7 +8,7 @@ import {
   Activity, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { doctorScheduleClient, SCHEDULE_TABLE } from "@/lib/supabase";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -28,16 +28,28 @@ export default function Home() {
 
   const loadDoctorSchedules = async () => {
     try {
-      const { data, error } = await supabase
-        .from('schedules')
+      const today = new Date().toISOString().split('T')[0];
+      const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const { data, error } = await doctorScheduleClient
+        .from(SCHEDULE_TABLE)
         .select('*')
-        .eq('role', 'doctor')
-        .gte('date', new Date().toISOString().split('T')[0])
-        .lte('date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('date');
+        .gte('date', today)
+        .lte('date', weekLater)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setDoctorSchedules(data || []);
+      
+      // 轉換資料格式
+      const formattedData = (data || []).map(schedule => ({
+        employee_name: schedule.doctor_name,
+        date: schedule.date,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time
+      }));
+      
+      setDoctorSchedules(formattedData);
     } catch (error: any) {
       console.error('載入醫師排班失敗:', error);
     }
@@ -56,11 +68,11 @@ export default function Home() {
     { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: '/leave-approval', color: 'text-green-600', bgColor: 'bg-green-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
     { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: '/leave-calendar', color: 'text-pink-600', bgColor: 'bg-pink-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
     { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: '/attendance-management', color: 'text-purple-600', bgColor: 'bg-purple-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/staff-management', color: 'text-orange-600', bgColor: 'bg-orange-50', roles: ['admin', 'senior_supervisor'] },
-    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security-dashboard', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/employee-management', color: 'text-orange-600', bgColor: 'bg-orange-50', roles: ['admin', 'senior_supervisor'] },
+    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
     { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: '/attendance-settings', color: 'text-slate-600', bgColor: 'bg-slate-50', roles: ['admin'] },
-    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin-panel', color: 'text-indigo-600', bgColor: 'bg-indigo-50', roles: ['admin'] },
-    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin-panel', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
+    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin', color: 'text-indigo-600', bgColor: 'bg-indigo-50', roles: ['admin'] },
+    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
   ];
 
   // 職能專區功能
