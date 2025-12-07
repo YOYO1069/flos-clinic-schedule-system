@@ -189,32 +189,51 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 本週醫師排班 - 密集小卡片 */}
-        {doctorSchedules.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-1 h-5 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
-              <h2 className="text-base font-bold text-gray-900">本週醫師排班</h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-              {doctorSchedules.map((schedule, index) => (
-                <div key={index} className="bg-white rounded-lg p-2 border border-gray-200" style={{
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-                }}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-purple-600 truncate">{schedule.employee_name}</span>
-                    <span className="text-xs text-gray-400 font-medium ml-1">
-                      {new Date(schedule.date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
-                    </span>
+        {/* 本週醫師排班 - 按日期分組 */}
+        {doctorSchedules.length > 0 && (() => {
+          // 按日期分組
+          const schedulesByDate = doctorSchedules.reduce((acc: any, schedule: any) => {
+            const date = schedule.date;
+            if (!acc[date]) {
+              acc[date] = [];
+            }
+            acc[date].push(schedule);
+            return acc;
+          }, {});
+          
+          return (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-5 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+                <h2 className="text-base font-bold text-gray-900">本週醫師排班</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                {Object.entries(schedulesByDate).map(([date, schedules]: [string, any]) => (
+                  <div key={date} className="bg-white rounded-lg p-3 border border-gray-200" style={{
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                  }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                      <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {new Date(date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {schedules.map((schedule: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-purple-600 truncate flex-1">{schedule.employee_name}</span>
+                          <span className="text-gray-500 ml-2 flex-shrink-0">
+                            {schedule.start_time.substring(0, 5)}-{schedule.end_time.substring(0, 5)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* 職能專區 - 根據角色顯示 */}
         {professionalPortalFeatures.length > 0 && (
