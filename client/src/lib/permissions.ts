@@ -56,17 +56,17 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
     canViewOwnPerformance: true,
   },
   
-  // 🟠 高階主管 - 大部分功能 + 業績查看
+  // 🟠 高階主管 - 大部分功能 + 業績查看 + 員工管理 + 帳號管理
   senior_supervisor: {
     canAccessAttendance: true,
     canAccessAttendanceManagement: true,
     canAccessLeaveCalendar: true,
     canAccessLeaveManagement: true,
-    canAccessEmployeeManagement: false,
+    canAccessEmployeeManagement: true,  // 開放員工管理
     canAccessLeaveApproval: true,
     canAccessAttendanceDashboard: true,
-    canAccessAccountManagement: false,
-    canAccessPermissionManagement: false,
+    canAccessAccountManagement: true,  // 開放帳號密碼管理
+    canAccessPermissionManagement: false,  // 不能修改權限
     canAccessAttendanceSettings: false,
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: true,
@@ -81,17 +81,17 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
     canViewOwnPerformance: true,
   },
   
-  // 🟡 一般主管 - 審核 + 排班管理
+  // 🟡 一般主管 - 審核 + 排班管理 + 員工管理
   supervisor: {
     canAccessAttendance: true,
     canAccessAttendanceManagement: true,
     canAccessLeaveCalendar: true,
     canAccessLeaveManagement: true,
-    canAccessEmployeeManagement: false,
+    canAccessEmployeeManagement: true,  // 開放員工管理
     canAccessLeaveApproval: true,
     canAccessAttendanceDashboard: true,
-    canAccessAccountManagement: false,
-    canAccessPermissionManagement: false,
+    canAccessAccountManagement: false,  // 不開放帳號密碼管理
+    canAccessPermissionManagement: false,  // 不能修改權限
     canAccessAttendanceSettings: false,
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: true,

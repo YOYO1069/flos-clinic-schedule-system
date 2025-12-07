@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Trash2, UserPlus, Users, Edit, ArrowLeft } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
+import { canModifyUser, filterManageableUsers } from "@/lib/roleHierarchy";
 
 interface Staff {
   id: number;
@@ -185,6 +186,13 @@ export default function StaffManagement() {
   // 篩選和排序員工
   const filteredAndSortedStaff = staff
     .filter(s => {
+      // 角色層級篩選 - 只顯示可管理的員工
+      if (currentUser && currentUser.role !== 'admin') {
+        if (!canModifyUser(currentUser.role as UserRole, s.role as UserRole)) {
+          return false;
+        }
+      }
+      
       // 搜尋篩選
       const matchSearch = searchTerm === "" || 
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

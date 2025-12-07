@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
+import { canModifyUser } from "@/lib/roleHierarchy";
 
 interface UserAccount {
   employee_id: string;
@@ -26,6 +27,7 @@ export default function AccountManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -35,29 +37,41 @@ export default function AccountManagement() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
+  }, [setLocation]);
+
+  useEffect(() => {
+    if (!currentUser) return;
     
     // 使用 permissions.ts 檢查權限
-    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
-    if (!userPermissions.canAccessAccountManagement) {
+    if (!permissions.canAccessAccountManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
     }
     loadAccounts();
-  }, [setLocation]);
+  }, [currentUser, permissions.canAccessAccountManagement, setLocation]);
 
   useEffect(() => {
+    let filtered = accounts;
+    
+    // 角色層級篩選 - 只顯示可管理的員工
+    if (currentUser && currentUser.role !== 'admin') {
+      filtered = filtered.filter(account => 
+        canModifyUser(currentUser.role as UserRole, account.role as UserRole)
+      );
+    }
+    
+    // 搜尋篩選
     if (searchTerm) {
-      const filtered = accounts.filter(account =>
+      filtered = filtered.filter(account =>
         account.name.includes(searchTerm) ||
         account.employee_id.includes(searchTerm) ||
         account.position.includes(searchTerm)
       );
-      setFilteredAccounts(filtered);
-    } else {
-      setFilteredAccounts(accounts);
     }
-  }, [searchTerm, accounts]);
+    
+    setFilteredAccounts(filtered);
+  }, [searchTerm, accounts, currentUser]);
 
   async function loadAccounts() {
     setLoading(true);
