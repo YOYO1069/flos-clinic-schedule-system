@@ -89,7 +89,7 @@ export default function LeaveManagement() {
       const { data, error } = await supabase
         .from(tables.leaveRequests)
         .select('*')
-        .eq('employee_id', currentUser.id)
+        .eq('employee_id', currentUser.employee_id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -132,7 +132,7 @@ export default function LeaveManagement() {
       const { error } = await supabase
         .from(tables.leaveRequests)
         .insert([{
-          employee_id: currentUser.id,
+          employee_id: currentUser.employee_id,
           leave_type: leaveType,
           start_date: startDate,
           end_date: endDate,
