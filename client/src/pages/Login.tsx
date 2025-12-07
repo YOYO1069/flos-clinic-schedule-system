@@ -50,8 +50,16 @@ export default function Login() {
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
-        role: data.role
+        role: data.role,
+        password_changed: data.password_changed
       }));
+
+      // 檢查是否為首次登入（密碼未修改）
+      if (data.password_changed === false) {
+        toast.info('首次登入，請修改密碼');
+        setLocation('/change-password?first=true');
+        return;
+      }
 
       toast.success(`歡迎回來,${data.name}!`);
       

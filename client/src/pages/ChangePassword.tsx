@@ -18,15 +18,21 @@ export default function ChangePassword() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isFirstLogin, setIsFirstLogin] = useState(false);
 
-  // 檢查登入狀態
+  // 檢查登入狀態和首次登入
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
       return;
     }
-    setUser(JSON.parse(userStr));
+    const userData = JSON.parse(userStr);
+    setUser(userData);
+    
+    // 檢查是否為首次登入
+    const params = new URLSearchParams(window.location.search);
+    setIsFirstLogin(params.get('first') === 'true');
   }, []);
 
   const handleChangePassword = async () => {
@@ -74,25 +80,39 @@ export default function ChangePassword() {
         return;
       }
 
-      // 更新密碼
+      // 更新密碼和 password_changed 標記
       const { error: updateError } = await supabase
         .from('users')
-        .update({ password: newPassword })
+        .update({ 
+          password: newPassword,
+          password_changed: true
+        })
         .eq('employee_id', user.employee_id);
 
       if (updateError) throw updateError;
 
       // 更新 localStorage 中的用戶資料
-      const updatedUser = { ...user, password: newPassword };
+      const updatedUser = { ...user, password: newPassword, password_changed: true };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
 
       toast.success("密碼修改成功!");
       
-      // 清空輸入框
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      // 如果是首次登入，導向主頁面
+      if (isFirstLogin) {
+        setTimeout(() => {
+          if (user.role === 'admin') {
+            setLocation('/admin');
+          } else {
+            setLocation('/');
+          }
+        }, 1000);
+      } else {
+        // 清空輸入框
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
 
     } catch (error) {
       console.error('修改密碼失敗:', error);
@@ -105,24 +125,27 @@ export default function ChangePassword() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="max-w-2xl mx-auto pt-8">
-        {/* 返回按鈕 */}
-        <Button
-          variant="ghost"
-          onClick={() => setLocation('/')}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          返回首頁
-        </Button>
+        {/* 返回按鈕（首次登入時不顯示） */}
+        {!isFirstLogin && (
+          <Button
+            variant="ghost"
+            onClick={() => setLocation('/')}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            返回首頁
+          </Button>
+        )}
 
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lock className="h-6 w-6 text-primary" />
-              <CardTitle>修改密碼</CardTitle>
+              <CardTitle>{isFirstLogin ? "首次登入 - 修改密碼" : "修改密碼"}</CardTitle>
             </div>
             <CardDescription>
               {user && `${user.name} (${user.employee_id})`}
+              {isFirstLogin && " - 為了您的帳號安全，請設定新密碼"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -234,13 +257,15 @@ export default function ChangePassword() {
               >
                 {loading ? "處理中..." : "確認修改"}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setLocation('/')}
-                disabled={loading}
-              >
-                取消
-              </Button>
+              {!isFirstLogin && (
+                <Button
+                  variant="outline"
+                  onClick={() => setLocation('/')}
+                  disabled={loading}
+                >
+                  取消
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
