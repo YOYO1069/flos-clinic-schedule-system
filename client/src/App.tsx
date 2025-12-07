@@ -23,6 +23,8 @@ import AttendanceSettings from "./pages/AttendanceSettings";
 import SimpleAttendanceManagement from "./pages/SimpleAttendanceManagement";
 import StaffManagement from "./pages/StaffManagement";
 import OperationFee from "./pages/OperationFee";
+import AccountManagement from "./pages/AccountManagement";
+import PermissionManagement from "./pages/PermissionManagement";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -64,6 +66,12 @@ function Router() {
       </Route>
       <Route path="/employee-management">
         <ProtectedRoute><StaffManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/account-management">
+        <ProtectedRoute><AccountManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/permission-management">
+        <ProtectedRoute><PermissionManagement /></ProtectedRoute>
       </Route>
       <Route path="/operation-fee">
         <ProtectedRoute><OperationFee /></ProtectedRoute>

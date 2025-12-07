@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, ArrowLeft } from "lucide-react";
 import domtoimage from 'dom-to-image-more';
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
@@ -630,7 +630,13 @@ export default function LeaveCalendar() {
         {/* 標題和操作按鈕 */}
         <div className="mb-4 space-y-3 print:hidden">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={() => setLocation('/')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                返回首頁
+              </Button>
+              <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
+            </div>
             <div className="flex gap-2">
               {/* 導航按鈕 */}
               <Button variant="default" size="sm" onClick={() => setLocation('/doctor-schedule')} className="bg-teal-600 hover:bg-teal-700">

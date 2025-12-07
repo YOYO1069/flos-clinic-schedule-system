@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Users, Edit } from "lucide-react";
+import { Trash2, UserPlus, Users, Edit, ArrowLeft } from "lucide-react";
 
 interface Staff {
   id: number;
@@ -21,6 +22,7 @@ interface Staff {
 }
 
 export default function StaffManagement() {
+  const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,6 +247,10 @@ export default function StaffManagement() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={() => setLocation('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回首頁
+            </Button>
             <Users className="w-8 h-8 text-blue-600" />
             <h1 className="text-2xl font-bold">員工管理</h1>
           </div>

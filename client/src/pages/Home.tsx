@@ -15,7 +15,9 @@ import {
   Settings,
   CheckSquare,
   LogOut,
-  UserCog
+  UserCog,
+  Key,
+  Shield
 } from 'lucide-react';
 
 export default function Home() {
@@ -137,6 +139,26 @@ export default function Home() {
       show: permissions.canAccessLeaveApproval,
     },
     // 管理員專用
+    {
+      id: 'account-management',
+      title: '帳號密碼管理',
+      description: '查看所有員工帳號密碼',
+      icon: Key,
+      color: 'from-red-400 to-red-600',
+      bgColor: 'bg-red-50',
+      onClick: () => setLocation('/account-management'),
+      show: user?.role === 'admin',
+    },
+    {
+      id: 'permission-management',
+      title: '權限分配',
+      description: '管理員工權限等級',
+      icon: Shield,
+      color: 'from-purple-400 to-purple-600',
+      bgColor: 'bg-purple-50',
+      onClick: () => setLocation('/permission-management'),
+      show: user?.role === 'admin',
+    },
     {
       id: 'attendance-settings',
       title: '打卡設定',
