@@ -37,18 +37,19 @@ export default function AdminPanel() {
   const [newPassword, setNewPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
 
+  // 在組件頂層調用 usePermissions Hook
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  const { permissions: userPermissions } = usePermissions(user?.role as UserRole);
+
   useEffect(() => {
     // 檢查登入狀態
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
+    if (!userStr || !user) {
       setLocation('/login');
       return;
     }
-
-    const user = JSON.parse(userStr);
     
-    // 使用 permissions.ts 檢查權限
-    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
+    // 檢查權限
     if (!userPermissions.canAccessAccountManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
