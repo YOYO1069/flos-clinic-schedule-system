@@ -31,7 +31,7 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
         .gte('date', startDateStr)
         .lte('date', endDateStr)
         .order('date', { ascending: true })
-        .order('start_time', { ascending: true });
+        .order('start_time', { ascending: true});
 
       if (error) {
         console.error('載入排班失敗:', error);
@@ -67,7 +67,7 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
 
   return (
     <ModernCard hover={false}>
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center space-x-4">
             <div className="p-4 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-xl">
@@ -77,7 +77,7 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
               <CardTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
                 本週醫師排班
               </CardTitle>
-              <CardDescription className="text-slate-600 font-medium text-base">
+              <CardDescription className="text-slate-600 font-medium text-base mt-1">
                 快速查看本週排班狀況
               </CardDescription>
             </div>
@@ -92,7 +92,7 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
           </ModernButton>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-2">
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
@@ -104,25 +104,27 @@ function WeeklyScheduleCard({ setLocation }: { setLocation: (path: string) => vo
             <p className="text-slate-600 text-lg font-medium">本週無排班資料</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {Object.entries(schedulesByDate).map(([date, schedules]) => (
               <div 
                 key={date} 
-                className="p-5 bg-gradient-to-r from-teal-50 via-cyan-50 to-blue-50 rounded-xl border-2 border-teal-100/50 shadow-sm hover:shadow-md transition-shadow"
+                className="p-4 bg-gradient-to-r from-teal-50 via-cyan-50 to-blue-50 rounded-xl border-2 border-teal-100/50 shadow-sm hover:shadow-md transition-all duration-300"
               >
-                <div className="font-bold text-teal-900 mb-3 text-lg flex items-center gap-2">
-                  <div className="w-1.5 h-6 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
+                <div className="font-bold text-teal-900 mb-3 text-base md:text-lg flex items-center gap-2">
+                  <div className="w-1 h-5 bg-gradient-to-b from-teal-500 to-cyan-500 rounded-full"></div>
                   {formatDate(date)}
                 </div>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {schedules.map((schedule, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center gap-3 p-3 bg-white/80 rounded-lg hover:bg-white transition-colors"
+                      className="flex items-center justify-between gap-3 p-3 bg-white/90 rounded-lg hover:bg-white hover:shadow-sm transition-all duration-200"
                     >
-                      <div className="w-2.5 h-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full shadow-sm"></div>
-                      <span className="font-semibold text-slate-800">{schedule.doctor_name}</span>
-                      <span className="text-slate-500 font-medium ml-auto">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <div className="w-2 h-2 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-full shadow-sm flex-shrink-0"></div>
+                        <span className="font-semibold text-slate-800 truncate">{schedule.doctor_name}</span>
+                      </div>
+                      <span className="text-slate-500 font-medium text-sm whitespace-nowrap">
                         {schedule.start_time.slice(0, 5)} - {schedule.end_time.slice(0, 5)}
                       </span>
                     </div>
@@ -157,15 +159,15 @@ export default function ScheduleHome() {
       onBack={() => window.location.href = 'https://classy-biscotti-42a418.netlify.app/'}
     >
       {/* 主要操作按鈕區域 */}
-      <div className="flex flex-wrap justify-center gap-6 py-4">
+      <div className="flex flex-wrap justify-center gap-4 md:gap-6 py-2">
         <ModernButton 
           variant="success"
           size="lg"
           onClick={() => setLocation('/attendance')}
-          className="min-w-[200px]"
+          className="min-w-[180px] md:min-w-[220px]"
         >
-          <Fingerprint className="h-7 w-7 mr-3" />
-          員工打卡
+          <Fingerprint className="h-6 w-6 md:h-7 md:w-7 mr-2 md:mr-3" />
+          <span className="text-base md:text-lg">員工打卡</span>
         </ModernButton>
         
         {permissions.canAccessAttendanceDashboard && (
@@ -173,42 +175,42 @@ export default function ScheduleHome() {
             variant="primary"
             size="lg"
             onClick={() => setLocation('/attendance-dashboard')}
-            className="min-w-[200px]"
+            className="min-w-[180px] md:min-w-[220px]"
           >
-            <Monitor className="h-7 w-7 mr-3" />
-            電子看板
+            <Monitor className="h-6 w-6 md:h-7 md:w-7 mr-2 md:mr-3" />
+            <span className="text-base md:text-lg">電子看板</span>
           </ModernButton>
         )}
       </div>
 
       {/* 功能卡片區域 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-6 md:mt-8">
         {/* 醫師排班卡片 */}
         <ModernCard>
-          <CardHeader>
-            <div className="flex items-center space-x-4">
-              <div className="p-5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-xl group-hover:shadow-teal-500/50 group-hover:scale-110 transition-all duration-300">
-                <Calendar className="h-9 w-9 text-white" />
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="p-4 md:p-5 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl shadow-xl group-hover:shadow-teal-500/50 group-hover:scale-110 transition-all duration-300">
+                <Calendar className="h-7 w-7 md:h-9 md:w-9 text-white" />
               </div>
-              <div>
-                <CardTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent truncate">
                   醫師排班
                 </CardTitle>
-                <CardDescription className="text-slate-600 font-medium text-base mt-1">
+                <CardDescription className="text-slate-600 font-medium text-sm md:text-base mt-1">
                   管理醫師值班時間
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             <ModernButton 
               variant="secondary"
               size="lg"
               onClick={() => setLocation('/doctor-schedule')}
               className="w-full"
             >
-              進入醫師排班管理
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <span className="text-base md:text-lg">進入醫師排班管理</span>
+              <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-1 transition-transform" />
             </ModernButton>
           </CardContent>
         </ModernCard>
@@ -216,30 +218,30 @@ export default function ScheduleHome() {
         {/* 員工排班卡片 */}
         {permissions.canAccessLeaveCalendar && (
           <ModernCard>
-            <CardHeader>
-              <div className="flex items-center space-x-4">
-                <div className="p-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:shadow-blue-500/50 group-hover:scale-110 transition-all duration-300">
-                  <Users className="h-9 w-9 text-white" />
+            <CardHeader className="pb-4">
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <div className="p-4 md:p-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-xl group-hover:shadow-blue-500/50 group-hover:scale-110 transition-all duration-300">
+                  <Users className="h-7 w-7 md:h-9 md:w-9 text-white" />
                 </div>
-                <div>
-                  <CardTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent truncate">
                     員工排班
                   </CardTitle>
-                  <CardDescription className="text-slate-600 font-medium text-base mt-1">
+                  <CardDescription className="text-slate-600 font-medium text-sm md:text-base mt-1">
                     管理員工請假與排班
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <ModernButton 
                 variant="primary"
                 size="lg"
                 onClick={() => setLocation('/leave-calendar')}
                 className="w-full"
               >
-                進入員工排班管理
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <span className="text-base md:text-lg">進入員工排班管理</span>
+                <ArrowRight className="ml-2 h-4 w-4 md:h-5 md:w-5 group-hover:translate-x-1 transition-transform" />
               </ModernButton>
             </CardContent>
           </ModernCard>
@@ -247,7 +249,7 @@ export default function ScheduleHome() {
       </div>
 
       {/* 本週排班預覽 */}
-      <div className="mt-8">
+      <div className="mt-6 md:mt-8">
         <WeeklyScheduleCard setLocation={setLocation} />
       </div>
     </ModernPageLayout>
