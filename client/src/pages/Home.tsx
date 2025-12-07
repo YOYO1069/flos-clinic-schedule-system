@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -173,7 +173,8 @@ export default function Home() {
   };
 
   // 彩色圓角方塊風格功能選單
-  const menuItems = [
+  const menuItems = useMemo(() => [
+    // 使用 useMemo 確保 permissions 正確載入後才產生 menuItems
     {
       icon: Clock,
       label: '我的打卡',
@@ -254,7 +255,7 @@ export default function Home() {
       path: '/attendance-settings',
       show: permissions.canAccessAttendanceSettings
     }
-  ].filter(item => item.show);
+  ].filter(item => item.show), [permissions]);
 
   // 記錄過濾後的功能數量
   console.log('使用者權限:', permissions);
