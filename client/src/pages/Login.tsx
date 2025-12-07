@@ -46,7 +46,7 @@ export default function Login() {
       }
 
       // 儲存登入資訊到 localStorage
-      localStorage.setItem('employee', JSON.stringify({
+      localStorage.setItem('user', JSON.stringify({
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
