@@ -21,6 +21,7 @@ import CalendarSchedule from "./pages/CalendarSchedule";
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import AdvancedAttendanceManagement from "./pages/AdvancedAttendanceManagement";
 import AttendanceSettings from "./pages/AttendanceSettings";
 import SimpleAttendanceManagement from "./pages/SimpleAttendanceManagement";
 import StaffManagement from "./pages/StaffManagement";
@@ -62,6 +63,9 @@ function Router() {
       </Route>
       <Route path="/attendance-management">
         <ProtectedRoute><SimpleAttendanceManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/advanced-attendance-management">
+        <ProtectedRoute><AdvancedAttendanceManagement /></ProtectedRoute>
       </Route>
       <Route path="/simple-attendance">
         <ProtectedRoute><SimpleAttendanceManagement /></ProtectedRoute>

@@ -171,6 +171,43 @@ export default function Attendance() {
     });
   }
 
+  // 獲取GPS定位
+  async function getLocation(): Promise<{ latitude: number; longitude: number; address: string } | null> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        toast.error('您的瀏覽器不支援定位功能');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)} (精度: ${Math.round(accuracy)}m)`;
+          resolve({ latitude, longitude, address });
+        },
+        (error) => {
+          console.error('定位失敗:', error);
+          let errorMsg = '無法獲取定位';
+          if (error.code === error.PERMISSION_DENIED) {
+            errorMsg = '定位權限被拒絕，請在瀏覽器設定中允許定位';
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            errorMsg = '定位資訊不可用';
+          } else if (error.code === error.TIMEOUT) {
+            errorMsg = '定位請求逾時';
+          }
+          toast.warning(errorMsg + '，將繼續打卡');
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
   // 上班打卡
   async function handleCheckIn() {
     if (!user) return;
@@ -188,19 +225,30 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
       // 格式化為 timestamp 格式（台灣時間）
       const checkInTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
       
+      const recordData: any = {
+        employee_id: user.employee_id,
+        employee_name: user.name,
+        check_in_time: checkInTimeStr,
+        work_date: today,
+        source: 'web'
+      };
+
+      if (location) {
+        recordData.check_in_latitude = location.latitude;
+        recordData.check_in_longitude = location.longitude;
+        recordData.check_in_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .insert({
-          employee_id: user.employee_id,
-          employee_name: user.name,
-          check_in_time: checkInTimeStr,
-          work_date: today,
-          status: 'present',
-          check_in_method: 'web'
-        })
+        .insert(recordData)
         .select()
         .single();
 
@@ -243,6 +291,10 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
       // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
       const checkOutTime = now;
@@ -251,12 +303,20 @@ export default function Attendance() {
       // 格式化為 timestamp 格式（台灣時間）
       const checkOutTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
 
+      const updateData: any = {
+        check_out_time: checkOutTimeStr,
+        total_hours: Math.round(workHours * 100) / 100
+      };
+
+      if (location) {
+        updateData.check_out_latitude = location.latitude;
+        updateData.check_out_longitude = location.longitude;
+        updateData.check_out_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .update({
-          check_out_time: checkOutTimeStr,
-          total_hours: Math.round(workHours * 100) / 100
-        })
+        .update(updateData)
         .eq('id', todayRecord.id)
         .select()
         .single();
