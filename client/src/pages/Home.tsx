@@ -468,11 +468,16 @@ export default function Home() {
               {upcomingFeatures.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <div
+                  <button
                     key={index}
-                    className="bg-white rounded-2xl p-6 shadow-lg
+                    onClick={() => toast.info('功能開發中，敬請期待！', {
+                      description: `${item.label} 功能即將上線`,
+                      duration: 3000
+                    })}
+                    className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl
                       border border-slate-100 flex flex-col items-center justify-center gap-4 min-h-[180px]
-                      relative overflow-hidden opacity-75 cursor-not-allowed"
+                      relative overflow-hidden opacity-75 hover:opacity-90 cursor-pointer
+                      transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="absolute top-3 right-3 z-20">
                       <Badge variant="secondary" className="bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border-amber-200 text-xs">
@@ -491,7 +496,7 @@ export default function Home() {
                         {item.description}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
