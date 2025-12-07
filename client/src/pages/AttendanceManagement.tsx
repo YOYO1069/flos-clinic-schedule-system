@@ -61,6 +61,9 @@ export default function AttendanceManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [dateRangeMode, setDateRangeMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
   // 編輯對話框狀態
@@ -78,7 +81,7 @@ export default function AttendanceManagement() {
     const user = JSON.parse(userStr);
     setCurrentUser(user);
     loadRecords();
-  }, [selectedDate]);
+  }, [selectedDate, startDate, endDate, dateRangeMode]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -95,11 +98,18 @@ export default function AttendanceManagement() {
   async function loadRecords() {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('attendance_records')
-        .select('*')
-        .eq('work_date', selectedDate)
-        .order('check_in_time', { ascending: true });
+        .select('*');
+      
+      // 根據模式選擇查詢條件
+      if (dateRangeMode) {
+        query = query.gte('work_date', startDate).lte('work_date', endDate);
+      } else {
+        query = query.eq('work_date', selectedDate);
+      }
+      
+      const { data, error } = await query.order('work_date', { ascending: false }).order('check_in_time', { ascending: true });
 
       if (error) throw error;
       setRecords(data || []);
@@ -209,7 +219,10 @@ export default function AttendanceManagement() {
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `打卡記錄_${selectedDate}.csv`;
+    const filename = dateRangeMode 
+      ? `打卡記錄_${startDate}_至_${endDate}.csv`
+      : `打卡記錄_${selectedDate}.csv`;
+    link.download = filename;
     link.click();
 
     toast.success("匯出成功");
@@ -251,23 +264,69 @@ export default function AttendanceManagement() {
             <CardTitle>篩選條件</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  選擇日期
-                </label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full"
-                />
+            <div className="space-y-4">
+              {/* 日期模式切換 */}
+              <div className="flex items-center gap-4">
+                <Button
+                  variant={!dateRangeMode ? "default" : "outline"}
+                  onClick={() => setDateRangeMode(false)}
+                  size="sm"
+                >
+                  單日查詢
+                </Button>
+                <Button
+                  variant={dateRangeMode ? "default" : "outline"}
+                  onClick={() => setDateRangeMode(true)}
+                  size="sm"
+                >
+                  時間段查詢
+                </Button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  搜尋員工
-                </label>
-                <div className="relative">
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {!dateRangeMode ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      選擇日期
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        開始日期
+                      </label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        結束日期
+                      </label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    搜尋員工
+                  </label>
+                  <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     type="text"

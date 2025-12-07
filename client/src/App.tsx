@@ -11,6 +11,10 @@ import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
+import FirstLogin from "./pages/FirstLogin";
+import DoctorPortal from "./pages/DoctorPortal";
+import NurseSOP from "./pages/NurseSOP";
+import BeauticianSOP from "./pages/BeauticianSOP";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
 // import TestEnv from "./pages/TestEnv"; // Temporarily disabled
@@ -41,6 +45,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={Login} />
+      <Route path="/first-login" component={FirstLogin} />
       {/* <Route path="/test-env">
         <ProtectedRoute><TestEnv /></ProtectedRoute>
       </Route> */}
@@ -55,6 +60,15 @@ function Router() {
       </Route>
       <Route path="/admin">
         <ProtectedRoute><AdminPanel /></ProtectedRoute>
+      </Route>
+      <Route path="/doctor-portal">
+        <ProtectedRoute><DoctorPortal /></ProtectedRoute>
+      </Route>
+      <Route path="/nurse-sop">
+        <ProtectedRoute><NurseSOP /></ProtectedRoute>
+      </Route>
+      <Route path="/beautician-sop">
+        <ProtectedRoute><BeauticianSOP /></ProtectedRoute>
       </Route>
       <Route path="/approval">
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>

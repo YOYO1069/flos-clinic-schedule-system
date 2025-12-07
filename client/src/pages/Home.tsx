@@ -1,306 +1,384 @@
-import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { supabase, doctors } from "@/lib/supabase";
-import { APP_TITLE } from "@/const";
-import { useLocation } from 'wouter';
-
-interface Schedule {
-  id?: number;
-  doctor_name: string;
-  date: string;
-  status: 'ON' | 'OFF';
-  created_at?: string;
-}
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Clock, FileText, Calendar, Users, Shield, Settings, 
+  DollarSign, TrendingUp, Award, MessageSquare, BookOpen, Gift, Heart,
+  LogOut, User, UserCog, Key, Stethoscope, FileHeart, PenTool, ExternalLink,
+  Activity, Sparkles
+} from "lucide-react";
+import { toast } from "sonner";
+import { doctorScheduleClient, SCHEDULE_TABLE } from "@/lib/supabase";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [currentYear, setCurrentYear] = useState(2025);
-  const [currentMonth, setCurrentMonth] = useState(10);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'doctor' | 'staff'>('doctor');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [doctorSchedules, setDoctorSchedules] = useState<any[]>([]);
 
-  // 載入排班資料
   useEffect(() => {
-    loadSchedules();
-  }, [currentYear, currentMonth]);
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+    loadDoctorSchedules();
+  }, [setLocation]);
 
-  async function loadSchedules() {
-    setLoading(true);
+  const loadDoctorSchedules = async () => {
     try {
-      const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-      const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+      const today = new Date().toISOString().split('T')[0];
+      const weekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const { data, error } = await supabase
-        .from('flos_schedules')
+      const { data, error } = await doctorScheduleClient
+        .from(SCHEDULE_TABLE)
         .select('*')
-        .gte('date', startDate)
-        .lte('date', endDate);
+        .gte('date', today)
+        .lte('date', weekLater)
+        .order('date', { ascending: true })
+        .order('start_time', { ascending: true });
 
-      if (error) {
-        console.error('載入排班資料失敗:', error);
-      } else {
-        setSchedules(data || []);
-      }
-    } catch (err) {
-      console.error('載入排班資料錯誤:', err);
+      if (error) throw error;
+      
+      // 轉換資料格式
+      const formattedData = (data || []).map(schedule => ({
+        employee_name: schedule.doctor_name,
+        date: schedule.date,
+        start_time: schedule.start_time,
+        end_time: schedule.end_time
+      }));
+      
+      setDoctorSchedules(formattedData);
+    } catch (error: any) {
+      console.error('載入醫師排班失敗:', error);
     }
-    setLoading(false);
-  }
+  };
 
-  // 切換排班狀態
-  async function toggleSchedule(doctorName: string, date: string) {
-    const existing = schedules.find(
-      s => s.doctor_name === doctorName && s.date === date
-    );
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    toast.success('已登出');
+    setLocation('/login');
+  };
 
-    try {
-      if (existing) {
-        // 切換狀態
-        const newStatus = existing.status === 'ON' ? 'OFF' : 'ON';
-        const { error } = await supabase
-          .from('flos_schedules')
-          .update({ status: newStatus })
-          .eq('id', existing.id);
+  // 所有功能定義
+  const allFeatures = [
+    { icon: Clock, label: '我的打卡', description: '查看打卡記錄', path: '/attendance', color: 'text-cyan-600', bgColor: 'bg-cyan-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '請假管理', description: '申請與查詢假單', path: '/leave-management', color: 'text-blue-600', bgColor: 'bg-blue-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: '/leave-approval', color: 'text-green-600', bgColor: 'bg-green-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: '/leave-calendar', color: 'text-pink-600', bgColor: 'bg-pink-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: '/attendance-management', color: 'text-purple-600', bgColor: 'bg-purple-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/employee-management', color: 'text-orange-600', bgColor: 'bg-orange-50', roles: ['admin', 'senior_supervisor'] },
+    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: '/attendance-settings', color: 'text-slate-600', bgColor: 'bg-slate-50', roles: ['admin'] },
+    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin', color: 'text-indigo-600', bgColor: 'bg-indigo-50', roles: ['admin'] },
+    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
+  ];
 
-        if (error) throw error;
-      } else {
-        // 新增排班
-        const { error } = await supabase
-          .from('flos_schedules')
-          .insert([{
-            doctor_name: doctorName,
-            date: date,
-            status: 'ON'
-          }]);
+  // 職能專區功能
+  const professionalFeatures = [
+    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: Activity, label: '護理師守則', description: '護理標準作業流程', path: '/nurse-sop', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: Sparkles, label: '美容師守則', description: '美容操作規範指南', path: '/beautician-sop', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+  ];
 
-        if (error) throw error;
-      }
+  // 未來功能
+  const upcomingFeatures = [
+    { icon: FileHeart, label: '病例操作', description: '醫生病例管理系統', color: 'text-teal-600', bgColor: 'bg-teal-50', url: 'https://deft-heliotrope-9157ff.netlify.app/', isExternal: true },
+    { icon: BookOpen, label: '操作守則', description: '標準作業流程查詢', color: 'text-blue-600', bgColor: 'bg-blue-50', isExternal: false },
+    { icon: PenTool, label: '電子病歷繪圖', description: '病歷圖示繪製工具', color: 'text-purple-600', bgColor: 'bg-purple-50', isExternal: false },
+    { icon: Users, label: '回頭客系統', description: '客戶關係管理與回訪追蹤', color: 'text-indigo-600', bgColor: 'bg-indigo-50', isExternal: false },
+    { icon: TrendingUp, label: '行銷數據統計', description: '客戶流量與轉換率分析', color: 'text-cyan-600', bgColor: 'bg-cyan-50', isExternal: false },
+    { icon: MessageSquare, label: '客戶回饋系統', description: '收集與分析客戶滿意度', color: 'text-violet-600', bgColor: 'bg-violet-50', isExternal: false },
+    { icon: Gift, label: '會員紅利管理', description: '會員等級與優惠方案', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', isExternal: false },
+    { icon: DollarSign, label: '薪資查詢', description: '查看薪資明細與歷史記錄', color: 'text-green-500', bgColor: 'bg-green-50', isExternal: false },
+    { icon: TrendingUp, label: '績效考核', description: '查看個人績效與目標達成', color: 'text-blue-500', bgColor: 'bg-blue-50', isExternal: false },
+    { icon: Award, label: '獎懲記錄', description: '查看獎勵與懲處記錄', color: 'text-amber-500', bgColor: 'bg-amber-50', isExternal: false },
+    { icon: MessageSquare, label: '內部公告', description: '查看公司最新消息與公告', color: 'text-purple-500', bgColor: 'bg-purple-50', isExternal: false },
+    { icon: Gift, label: '福利專區', description: '員工福利與優惠資訊', color: 'text-rose-500', bgColor: 'bg-rose-50', isExternal: false },
+    { icon: Heart, label: '健康管理', description: '健康檢查與體檢記錄', color: 'text-red-500', bgColor: 'bg-red-50', isExternal: false },
+  ];
 
-      // 重新載入
-      await loadSchedules();
-    } catch (err) {
-      console.error('更新排班失敗:', err);
-    }
-  }
+  // 根據角色篩選功能
+  const features = allFeatures.filter(feature => 
+    feature.roles.includes(currentUser?.role || 'staff')
+  );
 
-  // 取得該日期的排班狀態
-  function getScheduleStatus(doctorName: string, date: string): 'ON' | 'OFF' {
-    const schedule = schedules.find(
-      s => s.doctor_name === doctorName && s.date === date
-    );
-    return schedule?.status || 'OFF';
-  }
-
-  // 取得該月份的天數
-  function getDaysInMonth(year: number, month: number): number {
-    return new Date(year, month, 0).getDate();
-  }
-
-  // 取得星期幾
-  function getDayOfWeek(year: number, month: number, day: number): string {
-    const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-    const date = new Date(year, month - 1, day);
-    return days[date.getDay()];
-  }
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
-  const dates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  // 根據角色篩選職能專區功能
+  const professionalPortalFeatures = professionalFeatures.filter(feature => 
+    feature.roles.includes(currentUser?.role || 'staff')
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      {/* 標題區 */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-gray-100" style={{
+      backgroundImage: `
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(200,200,200,0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(220,220,220,0.25) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px),
+        repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px)
+      `,
+      backgroundSize: '100% 100%, 100% 100%, 100% 100%, 20px 20px, 20px 20px'
+    }}>
+      {/* 頂部導航 - 典雅設計 */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        backdropFilter: 'blur(8px)'
+      }}>
+        <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-pink-600">🏥 {APP_TITLE}</h1>
-              <p className="text-gray-600 mt-1">醫師與員工排班管理 - {currentYear}年{currentMonth}月</p>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-11 h-11 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center" style={{
+                  boxShadow: '0 4px 12px rgba(168,85,247,0.25)'
+                }}>
+                  <span className="text-white font-bold text-xl">F</span>
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800 tracking-tight">
+                  FLOS 曜診所
+                </h1>
+                <p className="text-xs text-gray-500 font-medium">Employee Management System</p>
+              </div>
             </div>
-            <div className="flex gap-4">
-              <select 
-                value={currentYear}
-                onChange={(e) => setCurrentYear(Number(e.target.value))}
-                className="px-4 py-2 border rounded-lg bg-white"
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 px-5 py-2.5 bg-white rounded-lg border border-gray-200" style={{
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
+              }}>
+                <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-gray-900">{currentUser?.name}</div>
+                  <div className="text-xs text-gray-500">{currentUser?.employee_id}</div>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-5 py-2.5 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-all text-gray-700"
+                style={{
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
               >
-                <option value={2025}>2025年</option>
-                <option value={2026}>2026年</option>
-              </select>
-              <select 
-                value={currentMonth}
-                onChange={(e) => setCurrentMonth(Number(e.target.value))}
-                className="px-4 py-2 border rounded-lg bg-white"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <option key={m} value={m}>{m}月</option>
-                ))}
-              </select>
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-semibold">登出</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 功能選單 */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-4 mb-6">
-          <Button 
-            onClick={() => setActiveTab('doctor')}
-            variant={activeTab === 'doctor' ? 'default' : 'outline'}
-            className="flex items-center gap-2"
-          >
-            👨‍⚕️ 醫師排班
-          </Button>
-          <Button 
-            onClick={() => setActiveTab('staff')}
-            variant={activeTab === 'staff' ? 'default' : 'outline'}
-            className="flex items-center gap-2"
-          >
-            👥 員工排班
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/')}
-          >
-            📅 休假月曆
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/attendance')}
-          >
-            ⏰ 員工打卡
-          </Button>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => setLocation('/leave')}
-          >
-            📝 請假管理
-          </Button>
+      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+        {/* 歡迎區 - 典雅設計 */}
+        <div className="bg-white rounded-2xl p-8 border border-gray-200" style={{
+          boxShadow: '0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
+        }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-1" style={{
+                letterSpacing: '-0.02em'
+              }}>
+                今天也要加油喔！
+              </h2>
+              <p className="text-gray-500 font-medium">歡迎回來，{currentUser?.name}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-gray-500 font-medium">當前時間</div>
+              <div className="text-lg font-bold text-gray-900">
+                {new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* 醫師陣容 */}
-        {activeTab === 'doctor' && (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold mb-4">👨‍⚕️ 醫師陣容 (8位)</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              點擊排班狀態按鈕切換ON/OFF，系統已根據診所營業時間預設排班
-            </p>
-            <div className="grid grid-cols-4 gap-4">
-              {doctors.map(doctor => (
-                <div 
-                  key={doctor.id}
-                  className="flex items-center gap-2 p-3 rounded-lg border"
-                  style={{ borderColor: doctor.color }}
-                >
-                  <div 
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: doctor.color }}
-                  />
-                  <span className="font-medium">{doctor.name}</span>
-                </div>
-              ))}
+        {/* 本週醫師排班 - 按日期分組 */}
+        {doctorSchedules.length > 0 && (() => {
+          // 按日期分組
+          const schedulesByDate = doctorSchedules.reduce((acc: any, schedule: any) => {
+            const date = schedule.date;
+            if (!acc[date]) {
+              acc[date] = [];
+            }
+            acc[date].push(schedule);
+            return acc;
+          }, {});
+          
+          return (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-5 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+                <h2 className="text-base font-bold text-gray-900">本週醫師排班</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                {Object.entries(schedulesByDate).map(([date, schedules]: [string, any]) => (
+                  <div key={date} className="bg-white rounded-lg p-3 border border-gray-200" style={{
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                  }}>
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                      <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {new Date(date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' })}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {schedules.map((schedule: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-purple-600 truncate flex-1">{schedule.employee_name}</span>
+                          <span className="text-gray-500 ml-2 flex-shrink-0">
+                            {schedule.start_time.substring(0, 5)}-{schedule.end_time.substring(0, 5)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 職能專區 - 根據角色顯示 */}
+        {professionalPortalFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+              <h2 className="text-xl font-bold text-gray-900">職能專區</h2>
+              <Badge variant="outline" className="border-indigo-400 text-indigo-700 text-xs font-bold bg-indigo-50 px-2.5 py-0.5">
+                專業資源
+              </Badge>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {professionalPortalFeatures.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setLocation(item.path)}
+                    className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor}`}
+                    style={{
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
+                      }}>
+                        <Icon className={`w-6 h-6 ${item.color}`} />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center w-full">{item.label}</h3>
+                      <p className="text-xs text-gray-500 leading-tight text-center w-full">{item.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* 排班表 */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-bold mb-4">
-            📅 {currentYear}年{currentMonth}月 排班表
-          </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            點擊格子切換排班狀態：OFF → ON → OFF，不提供半天班選項
-          </p>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
-              <p className="mt-2 text-gray-600">載入中...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border p-2 text-left font-medium sticky left-0 bg-gray-50 z-10">
-                      醫師 / 日期
-                    </th>
-                    {dates.map(day => {
-                      const dayOfWeek = getDayOfWeek(currentYear, currentMonth, day);
-                      const isWeekend = dayOfWeek === '週六' || dayOfWeek === '週日';
-                      return (
-                        <th 
-                          key={day}
-                          className={`border p-2 text-center text-sm ${
-                            isWeekend ? 'bg-red-50' : ''
-                          }`}
-                        >
-                          <div>{day}</div>
-                          <div className="text-xs text-gray-500">{dayOfWeek}</div>
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.map(doctor => (
-                    <tr key={doctor.id}>
-                      <td className="border p-2 font-medium sticky left-0 bg-white z-10">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: doctor.color }}
-                          />
-                          {doctor.name}
-                        </div>
-                      </td>
-                      {dates.map(day => {
-                        const date = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                        const status = getScheduleStatus(doctor.name, date);
-                        const dayOfWeek = getDayOfWeek(currentYear, currentMonth, day);
-                        const isSunday = dayOfWeek === '週日';
-                        
-                        return (
-                          <td 
-                            key={day}
-                            className={`border p-1 text-center ${
-                              isSunday ? 'bg-gray-100' : ''
-                            }`}
-                          >
-                            <Button
-                              size="sm"
-                              variant={status === 'ON' ? 'default' : 'outline'}
-                              className={`w-full text-xs ${
-                                status === 'ON' 
-                                  ? 'text-white' 
-                                  : 'bg-gray-200 text-gray-600'
-                              }`}
-                              style={status === 'ON' ? { backgroundColor: doctor.color } : {}}
-                              onClick={() => toggleSchedule(doctor.name, date)}
-                              disabled={isSunday}
-                            >
-                              {isSunday ? '休' : status}
-                            </Button>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* 常用功能 - 密集功能格 */}
+        <div>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-1 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+            <h2 className="text-xl font-bold text-gray-900">常用功能</h2>
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {features.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={index}
+                  onClick={() => setLocation(item.path)}
+                  className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border border-gray-200`}
+                  style={{
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div className="flex flex-col items-center relative">
+                    {item.isExternal && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                        <ExternalLink className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 ${item.isExternal ? 'opacity-100' : 'opacity-60'}`} style={{
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
+                    }}>
+                      <Icon className={`w-6 h-6 ${item.color}`} />
+                    </div>
+                    <h3 className={`text-sm font-bold ${item.isExternal ? 'text-gray-900' : 'text-gray-500'} mb-0.5 text-center w-full`}>{item.label}</h3>
+                    <p className={`text-xs ${item.isExternal ? 'text-gray-600' : 'text-gray-400'} leading-tight text-center w-full`}>{item.description}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* 頁尾 */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <p>FLOS 曜診所 | 診所管理系統</p>
-          <p className="mt-1">本排班表由系統自動生成 - {new Date().toLocaleDateString('zh-TW')}</p>
+        {/* 未來功能 - 密集功能格 */}
+        <div>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-1 h-6 bg-gray-300 rounded-full"></div>
+            <h2 className="text-xl font-bold text-gray-900">未來功能</h2>
+            <Badge variant="outline" className="border-amber-400 text-amber-700 text-xs font-bold bg-amber-50 px-2.5 py-0.5">
+              規劃中
+            </Badge>
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {upcomingFeatures.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={index}
+                  onClick={() => {
+                    if (item.isExternal && item.url) {
+                      window.open(item.url, '_blank');
+                    } else {
+                      toast.info('功能開發中，敬請期待！', {
+                        description: `${item.label} 功能即將上線`,
+                        duration: 3000
+                      });
+                    }
+                  }}
+                  className="bg-gray-50 rounded-xl p-4 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80"
+                  style={{
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
+                  }}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
+                      boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
+                    }}>
+                      <Icon className={`w-6 h-6 ${item.color}`} />
+                    </div>
+                    <h3 className="text-sm font-bold text-gray-600 mb-0.5 text-center w-full">{item.label}</h3>
+                    <p className="text-xs text-gray-400 leading-tight text-center w-full">{item.description}</p>
+                    <div className="mt-2 text-center w-full">
+                      <span className="text-xs text-amber-600 font-bold">開發中</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
