@@ -25,6 +25,7 @@ import StaffManagement from "./pages/StaffManagement";
 import OperationFee from "./pages/OperationFee";
 import AccountManagement from "./pages/AccountManagement";
 import PermissionManagement from "./pages/PermissionManagement";
+import SecurityDashboardPage from "./pages/SecurityDashboardPage";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -75,6 +76,9 @@ function Router() {
       </Route>
       <Route path="/operation-fee">
         <ProtectedRoute><OperationFee /></ProtectedRoute>
+      </Route>
+      <Route path="/security">
+        <ProtectedRoute><SecurityDashboardPage /></ProtectedRoute>
       </Route>
       <Route path="/leave-calendar">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
