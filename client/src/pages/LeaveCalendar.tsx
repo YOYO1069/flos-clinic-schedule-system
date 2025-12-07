@@ -67,6 +67,9 @@ export default function LeaveCalendar() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { permissions } = usePermissions(currentUser?.role as UserRole);
+  
+  // 判斷是否為只讀模式（員工只能查看）
+  const isReadOnly = currentUser?.role === 'employee';
 
   // 檢查登入狀態和權限
   useEffect(() => {
@@ -164,9 +167,9 @@ export default function LeaveCalendar() {
 
   // 切換休假狀態 - 循環: 空白 → OFF → ON → 特 → 空白
   const toggleLeave = async (staffName: string, day: number) => {
-    // 權限檢查:一般員工不能操作，只能查看
-    if (currentUser && currentUser.role === 'staff') {
-      toast.error('您沒有權限操作排班，僅能查看');
+    // 權限檢查:員工只能查看，不能修改
+    if (isReadOnly) {
+      toast.error('您沒有權限修改排班，僅能查看');
       return;
     }
     
@@ -684,7 +687,7 @@ export default function LeaveCalendar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {permissions.canManageStaffSchedule && (
+                  {!isReadOnly && (
                   <Dialog open={isEditingStaff} onOpenChange={setIsEditingStaff}>
                     <DialogTrigger asChild>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -803,8 +806,9 @@ export default function LeaveCalendar() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
 
-                  {permissions.canManageStaffSchedule && (
+                  {!isReadOnly && permissions.canManageStaffSchedule && (
                   <DropdownMenuItem onClick={handleImageUpload} disabled={isProcessing}>
                     {isProcessing ? (
                       <>
@@ -837,7 +841,7 @@ export default function LeaveCalendar() {
                     儲存圖片
                   </DropdownMenuItem>
 
-                  {permissions.canManageStaffSchedule && (
+                  {!isReadOnly && permissions.canManageStaffSchedule && (
                   <>
                   <DropdownMenuSeparator />
 
