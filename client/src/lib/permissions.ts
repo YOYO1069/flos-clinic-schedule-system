@@ -1,18 +1,21 @@
 // 權限配置檔案
 
-export type UserRole = 'admin' | 'senior_supervisor' | 'supervisor' | 'staff';
+export type UserRole = 'admin' | 'senior_supervisor' | 'supervisor' | 'employee';
 
 export interface Permission {
   // 頁面存取權限
-  canAccessAdminPanel: boolean;
-  canAccessDoctorSchedule: boolean;
-  canAccessLeaveCalendar: boolean;
-  canAccessAttendance: boolean;
-  canAccessLeaveManagement: boolean;
-  canAccessLeaveApproval: boolean;
-  canAccessStaffManagement: boolean;
-  canAccessPerformanceReport: boolean;
-  canAccessFinancialReport: boolean;
+  canAccessAttendance: boolean; // 我的打卡
+  canAccessAttendanceManagement: boolean; // 打卡記錄/打卡記錄管理
+  canAccessLeaveCalendar: boolean; // 休假月曆
+  canAccessLeaveManagement: boolean; // 請假管理
+  canAccessEmployeeManagement: boolean; // 員工管理
+  canAccessLeaveApproval: boolean; // 請假審核
+  canAccessAttendanceDashboard: boolean; // 電子看板
+  canAccessAccountManagement: boolean; // 帳號密碼管理
+  canAccessPermissionManagement: boolean; // 權限分配
+  canAccessAttendanceSettings: boolean; // 打卡設定
+  canAccessAdminPanel: boolean; // 管理者面板
+  canAccessDoctorSchedule: boolean; // 醫師排班
   
   // 功能權限
   canApproveLeave: boolean;
@@ -30,15 +33,18 @@ export interface Permission {
 export const PERMISSIONS: Record<UserRole, Permission> = {
   // 🔴 管理者 - 完整權限
   admin: {
+    canAccessAttendance: true,
+    canAccessAttendanceManagement: true,
+    canAccessLeaveCalendar: true,
+    canAccessLeaveManagement: true,
+    canAccessEmployeeManagement: true,
+    canAccessLeaveApproval: true,
+    canAccessAttendanceDashboard: true,
+    canAccessAccountManagement: true,
+    canAccessPermissionManagement: true,
+    canAccessAttendanceSettings: true,
     canAccessAdminPanel: true,
     canAccessDoctorSchedule: true,
-    canAccessLeaveCalendar: true,
-    canAccessAttendance: true,
-    canAccessLeaveManagement: true,
-    canAccessLeaveApproval: true,
-    canAccessStaffManagement: true,
-    canAccessPerformanceReport: true,
-    canAccessFinancialReport: true,
     canApproveLeave: true,
     canManageAllUsers: true,
     canViewAllPasswords: true,
@@ -52,15 +58,18 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
   
   // 🟠 高階主管 - 大部分功能 + 業績查看
   senior_supervisor: {
+    canAccessAttendance: true,
+    canAccessAttendanceManagement: true,
+    canAccessLeaveCalendar: true,
+    canAccessLeaveManagement: true,
+    canAccessEmployeeManagement: false,
+    canAccessLeaveApproval: true,
+    canAccessAttendanceDashboard: true,
+    canAccessAccountManagement: false,
+    canAccessPermissionManagement: false,
+    canAccessAttendanceSettings: false,
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: true,
-    canAccessLeaveCalendar: true,
-    canAccessAttendance: true,
-    canAccessLeaveManagement: true,
-    canAccessLeaveApproval: true,
-    canAccessStaffManagement: false,
-    canAccessPerformanceReport: true,
-    canAccessFinancialReport: true,
     canApproveLeave: true,
     canManageAllUsers: false,
     canViewAllPasswords: false,
@@ -74,15 +83,18 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
   
   // 🟡 一般主管 - 審核 + 排班管理
   supervisor: {
+    canAccessAttendance: true,
+    canAccessAttendanceManagement: true,
+    canAccessLeaveCalendar: true,
+    canAccessLeaveManagement: true,
+    canAccessEmployeeManagement: false,
+    canAccessLeaveApproval: true,
+    canAccessAttendanceDashboard: true,
+    canAccessAccountManagement: false,
+    canAccessPermissionManagement: false,
+    canAccessAttendanceSettings: false,
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: true,
-    canAccessLeaveCalendar: true,
-    canAccessAttendance: true,
-    canAccessLeaveManagement: true,
-    canAccessLeaveApproval: true,
-    canAccessStaffManagement: false,
-    canAccessPerformanceReport: false,
-    canAccessFinancialReport: true,
     canApproveLeave: true,
     canManageAllUsers: false,
     canViewAllPasswords: false,
@@ -94,17 +106,20 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
     canViewOwnPerformance: true,
   },
   
-  // 👢 員工 - 打卡 + 請假申請 + 個人業績
-  staff: {
+  // 🟢 員工 - 打卡 + 請假申請 + 個人業績
+  employee: {
+    canAccessAttendance: true,
+    canAccessAttendanceManagement: false,
+    canAccessLeaveCalendar: false,
+    canAccessLeaveManagement: true,
+    canAccessEmployeeManagement: false,
+    canAccessLeaveApproval: false,
+    canAccessAttendanceDashboard: false,
+    canAccessAccountManagement: false,
+    canAccessPermissionManagement: false,
+    canAccessAttendanceSettings: false,
     canAccessAdminPanel: false,
     canAccessDoctorSchedule: true, // 員工可以查看醫師排班
-    canAccessLeaveCalendar: true, // 員工可以查看員工休假月曆
-    canAccessAttendance: true,
-    canAccessLeaveManagement: true,
-    canAccessLeaveApproval: false,
-    canAccessStaffManagement: false,
-    canAccessPerformanceReport: false,
-    canAccessFinancialReport: false,
     canApproveLeave: false,
     canManageAllUsers: false,
     canViewAllPasswords: false,
@@ -132,7 +147,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   admin: '管理者',
   senior_supervisor: '高階主管',
   supervisor: '一般主管',
-  staff: '員工',
+  employee: '員工',
 };
 
 // 角色顏色
@@ -140,5 +155,5 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   admin: 'text-red-600 bg-red-50',
   senior_supervisor: 'text-orange-600 bg-orange-50',
   supervisor: 'text-yellow-600 bg-yellow-50',
-  staff: 'text-green-600 bg-green-50',
+  employee: 'text-green-600 bg-green-50',
 };
