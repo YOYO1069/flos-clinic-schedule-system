@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Clock, FileText, Calendar, Users, Shield, Settings, 
   DollarSign, TrendingUp, Award, MessageSquare, BookOpen, Gift, Heart,
-  LogOut, User, UserCog, Key
+  LogOut, User, UserCog, Key, Stethoscope, FileHeart, PenTool, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -62,18 +62,31 @@ export default function Home() {
     { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin-panel', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
   ];
 
+  // 醫生專區功能
+  const doctorFeatures = [
+    { icon: Stethoscope, label: '醫生專區', description: '醫生專用功能入口', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', roles: ['admin', 'senior_supervisor'] },
+  ];
+
+  // 未來功能
   const upcomingFeatures = [
-    { icon: DollarSign, label: '薪資查詢', description: '查看薪資明細與歷史記錄', color: 'text-green-500', bgColor: 'bg-green-50' },
-    { icon: TrendingUp, label: '績效考核', description: '查看個人績效與目標達成', color: 'text-blue-500', bgColor: 'bg-blue-50' },
-    { icon: Award, label: '獎懲記錄', description: '查看獎勵與懲處記錄', color: 'text-amber-500', bgColor: 'bg-amber-50' },
-    { icon: MessageSquare, label: '內部公告', description: '查看公司最新消息與公告', color: 'text-purple-500', bgColor: 'bg-purple-50' },
-    { icon: BookOpen, label: '教育訓練', description: '線上課程與訓練記錄', color: 'text-indigo-500', bgColor: 'bg-indigo-50' },
-    { icon: Gift, label: '福利專區', description: '員工福利與優惠資訊', color: 'text-rose-500', bgColor: 'bg-rose-50' },
-    { icon: Heart, label: '健康管理', description: '健康檢查與體檢記錄', color: 'text-red-500', bgColor: 'bg-red-50' },
+    { icon: FileHeart, label: '病例操作', description: '醫生病例管理系統', color: 'text-teal-600', bgColor: 'bg-teal-50', url: 'https://deft-heliotrope-9157ff.netlify.app/', isExternal: true },
+    { icon: BookOpen, label: '操作守則', description: '標準作業流程查詢', color: 'text-blue-600', bgColor: 'bg-blue-50', isExternal: false },
+    { icon: PenTool, label: '電子病歷繪圖', description: '病歷圖示繪製工具', color: 'text-purple-600', bgColor: 'bg-purple-50', isExternal: false },
+    { icon: DollarSign, label: '薪資查詢', description: '查看薪資明細與歷史記錄', color: 'text-green-500', bgColor: 'bg-green-50', isExternal: false },
+    { icon: TrendingUp, label: '績效考核', description: '查看個人績效與目標達成', color: 'text-blue-500', bgColor: 'bg-blue-50', isExternal: false },
+    { icon: Award, label: '獎懲記錄', description: '查看獎勵與懲處記錄', color: 'text-amber-500', bgColor: 'bg-amber-50', isExternal: false },
+    { icon: MessageSquare, label: '內部公告', description: '查看公司最新消息與公告', color: 'text-purple-500', bgColor: 'bg-purple-50', isExternal: false },
+    { icon: Gift, label: '福利專區', description: '員工福利與優惠資訊', color: 'text-rose-500', bgColor: 'bg-rose-50', isExternal: false },
+    { icon: Heart, label: '健康管理', description: '健康檢查與體檢記錄', color: 'text-red-500', bgColor: 'bg-red-50', isExternal: false },
   ];
 
   // 根據角色篩選功能
   const features = allFeatures.filter(feature => 
+    feature.roles.includes(currentUser?.role || 'staff')
+  );
+
+  // 根據角色篩選醫生專區功能
+  const doctorPortalFeatures = doctorFeatures.filter(feature => 
     feature.roles.includes(currentUser?.role || 'staff')
   );
 
@@ -188,6 +201,52 @@ export default function Home() {
           </div>
         )}
 
+        {/* 醫生專區 - 僅高階主管和管理員可見 */}
+        {doctorPortalFeatures.length > 0 && (
+          <div>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full"></div>
+              <h2 className="text-xl font-bold text-gray-900">醫生專區</h2>
+              <Badge variant="outline" className="border-emerald-400 text-emerald-700 text-xs font-bold bg-emerald-50 px-2.5 py-0.5">
+                醫生專用
+              </Badge>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {doctorPortalFeatures.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setLocation(item.path)}
+                    className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border border-emerald-200`}
+                    style={{
+                      boxShadow: '0 2px 6px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.9)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-emerald-100`} style={{
+                        boxShadow: 'inset 0 2px 4px rgba(16,185,129,0.1)'
+                      }}>
+                        <Icon className={`w-6 h-6 ${item.color}`} />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center w-full">{item.label}</h3>
+                      <p className="text-xs text-gray-500 leading-tight text-center w-full">{item.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* 常用功能 - 密集功能格 */}
         <div>
           <div className="flex items-center gap-3 mb-5">
@@ -214,14 +273,19 @@ export default function Home() {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div className="flex flex-col items-center">
-                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
+                  <div className="flex flex-col items-center relative">
+                    {item.isExternal && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                        <ExternalLink className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 ${item.isExternal ? 'opacity-100' : 'opacity-60'}`} style={{
                       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
                     }}>
                       <Icon className={`w-6 h-6 ${item.color}`} />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center w-full">{item.label}</h3>
-                    <p className="text-xs text-gray-500 leading-tight text-center w-full">{item.description}</p>
+                    <h3 className={`text-sm font-bold ${item.isExternal ? 'text-gray-900' : 'text-gray-500'} mb-0.5 text-center w-full`}>{item.label}</h3>
+                    <p className={`text-xs ${item.isExternal ? 'text-gray-600' : 'text-gray-400'} leading-tight text-center w-full`}>{item.description}</p>
                   </div>
                 </button>
               );
@@ -229,13 +293,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 即將推出 - 密集功能格 */}
+        {/* 未來功能 - 密集功能格 */}
         <div>
           <div className="flex items-center gap-3 mb-5">
             <div className="w-1 h-6 bg-gray-300 rounded-full"></div>
-            <h2 className="text-xl font-bold text-gray-900">即將推出</h2>
+            <h2 className="text-xl font-bold text-gray-900">未來功能</h2>
             <Badge variant="outline" className="border-amber-400 text-amber-700 text-xs font-bold bg-amber-50 px-2.5 py-0.5">
-              開發中
+              規劃中
             </Badge>
           </div>
           <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -244,10 +308,16 @@ export default function Home() {
               return (
                 <button
                   key={index}
-                  onClick={() => toast.info('功能開發中，敬請期待！', {
-                    description: `${item.label} 功能即將上線`,
-                    duration: 3000
-                  })}
+                  onClick={() => {
+                    if (item.isExternal && item.url) {
+                      window.open(item.url, '_blank');
+                    } else {
+                      toast.info('功能開發中，敬請期待！', {
+                        description: `${item.label} 功能即將上線`,
+                        duration: 3000
+                      });
+                    }
+                  }}
                   className="bg-gray-50 rounded-xl p-4 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80"
                   style={{
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'

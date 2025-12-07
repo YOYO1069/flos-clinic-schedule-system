@@ -29,6 +29,7 @@ import OperationFee from "./pages/OperationFee";
 import AccountManagement from "./pages/AccountManagement";
 import PermissionManagement from "./pages/PermissionManagement";
 import SecurityDashboardPage from "./pages/SecurityDashboardPage";
+import DoctorPortal from "./pages/DoctorPortal";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -87,6 +88,9 @@ function Router() {
       </Route>
       <Route path="/security">
         <ProtectedRoute><SecurityDashboardPage /></ProtectedRoute>
+      </Route>
+      <Route path="/doctor-portal">
+        <ProtectedRoute><DoctorPortal /></ProtectedRoute>
       </Route>
       <Route path="/leave-calendar">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
