@@ -12,6 +12,7 @@ import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
+import UnifiedLogin from "./pages/UnifiedLogin";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
 import CalendarSchedule from "./pages/CalendarSchedule";
@@ -49,6 +50,7 @@ function Router() {
 
   return (
     <Switch>
+      <Route path="/unified-login" component={UnifiedLogin} />
       <Route path="/login" component={Login} />
       {/* <Route path="/test-env">
         <ProtectedRoute><TestEnv /></ProtectedRoute>

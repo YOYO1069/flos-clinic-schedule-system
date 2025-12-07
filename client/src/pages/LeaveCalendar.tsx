@@ -812,7 +812,6 @@ export default function LeaveCalendar() {
                       </div>
                     </DialogContent>
                   </Dialog>
-                  )}
 
                   {!isReadOnly && permissions.canManageStaffSchedule && (
                   <DropdownMenuItem onClick={handleImageUpload} disabled={isProcessing}>

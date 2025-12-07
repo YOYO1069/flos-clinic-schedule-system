@@ -2,6 +2,21 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { createClient } from "@supabase/supabase-js";
+
+// CHILL69YO 資料庫連線
+const supabaseCHILL = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_ANON_KEY || ''
+);
+
+// duolaiyuanmeng 資料庫連線
+const supabaseDuolai = createClient(
+  process.env.SUPABASE_DUOLAI_URL || '',
+  process.env.SUPABASE_DUOLAI_KEY || ''
+);
 
 export const appRouter = router({
   system: systemRouter,
@@ -15,6 +30,103 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+    
+    // 統一登入
+    unifiedLogin: publicProcedure
+      .input(z.object({
+        employee_id: z.string(),
+        password: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { employee_id, password } = input;
+
+        // 從 CHILL69YO.employees 查詢員工
+        const { data: employee, error } = await supabaseCHILL
+          .from('employees')
+          .select('*')
+          .eq('employee_id', employee_id)
+          .single();
+
+        if (error || !employee) {
+          throw new Error('員工編號或密碼錯誤');
+        }
+
+        // 驗證密碼
+        const isPasswordValid = await bcrypt.compare(password, employee.password);
+
+        if (!isPasswordValid) {
+          throw new Error('員工編號或密碼錯誤');
+        }
+
+        return {
+          success: true,
+          user: {
+            id: employee.id,
+            employee_id: employee.employee_id,
+            name: employee.name,
+            role: employee.role,
+            password_changed: employee.password_changed,
+          },
+        };
+      }),
+    
+    // 修改密碼（同步到兩個資料庫）
+    changePassword: publicProcedure
+      .input(z.object({
+        employee_id: z.string(),
+        old_password: z.string(),
+        new_password: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { employee_id, old_password, new_password } = input;
+
+        // 驗證舊密碼
+        const { data: employee, error } = await supabaseCHILL
+          .from('employees')
+          .select('*')
+          .eq('employee_id', employee_id)
+          .single();
+
+        if (error || !employee) {
+          throw new Error('員工不存在');
+        }
+
+        const isOldPasswordValid = await bcrypt.compare(old_password, employee.password);
+
+        if (!isOldPasswordValid) {
+          throw new Error('舊密碼錯誤');
+        }
+
+        // 加密新密碼
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // 更新 CHILL69YO.employees
+        await supabaseCHILL
+          .from('employees')
+          .update({
+            password: hashedPassword,
+            password_changed: true,
+          })
+          .eq('employee_id', employee_id);
+
+        // 同步到 duolaiyuanmeng.users
+        try {
+          await supabaseDuolai
+            .from('users')
+            .update({
+              password: hashedPassword,
+              password_changed: true,
+            })
+            .eq('employee_id', employee_id);
+        } catch (syncError) {
+          console.warn('同步到 duolaiyuanmeng 失敗:', syncError);
+        }
+
+        return {
+          success: true,
+          message: '密碼修改成功',
+        };
+      }),
   }),
 
   // TODO: add feature routers here, e.g.
