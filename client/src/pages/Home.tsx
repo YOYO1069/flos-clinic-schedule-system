@@ -3,11 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
-import { supabase } from "@/lib/supabase";
+import { supabase, doctorScheduleClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import { 
   Clock, 
@@ -24,21 +23,6 @@ import {
   CalendarDays,
   ChevronRight
 } from 'lucide-react';
-
-// 醫師 ID 對應表
-const DOCTOR_NAMES: Record<number, string> = {
-  1: '黃柏翰',
-  2: '陳昱廷',
-  3: '劉哲軒',
-};
-
-// 時段對應表
-const SHIFT_LABELS: Record<string, string> = {
-  'morning': '早班',
-  'afternoon': '午班',
-  'evening': '晚班',
-  'night': '夜班',
-};
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -72,7 +56,7 @@ export default function Home() {
       const startDateStr = today.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
-      const { data, error } = await supabase
+      const { data, error } = await doctorScheduleClient
         .from('doctor_shift_schedules')
         .select('*')
         .gte('date', startDateStr)
@@ -182,93 +166,71 @@ export default function Home() {
     }
   };
 
-  // 日系風格功能選單 - 小卡片設計
+  // LINE 風格功能選單
   const menuItems = [
     {
       icon: Clock,
       label: '我的打卡',
-      bgColor: 'bg-orange-100',
-      iconColor: 'text-orange-600',
       path: '/attendance',
       show: permissions.canAccessAttendance
     },
     {
       icon: ClipboardList,
       label: '打卡記錄',
-      bgColor: 'bg-green-100',
-      iconColor: 'text-green-600',
       path: '/attendance-management',
       show: permissions.canAccessAttendanceManagement
     },
     {
       icon: Calendar,
       label: '休假月曆',
-      bgColor: 'bg-blue-100',
-      iconColor: 'text-blue-600',
       path: '/schedule-overview',
       show: permissions.canAccessLeaveCalendar
     },
     {
       icon: CheckSquare,
       label: '請假管理',
-      bgColor: 'bg-purple-100',
-      iconColor: 'text-purple-600',
       path: '/leave-management',
       show: permissions.canAccessLeaveManagement
     },
     {
       icon: Users,
       label: '員工管理',
-      bgColor: 'bg-cyan-100',
-      iconColor: 'text-cyan-600',
       path: '/employee-management',
       show: permissions.canAccessEmployeeManagement
     },
     {
       icon: CheckSquare,
       label: '請假審核',
-      bgColor: 'bg-indigo-100',
-      iconColor: 'text-indigo-600',
       path: '/leave-approval',
       show: permissions.canAccessLeaveApproval
     },
     {
       icon: FileText,
       label: '打卡記錄管理',
-      bgColor: 'bg-teal-100',
-      iconColor: 'text-teal-600',
       path: '/attendance-management',
       show: permissions.canAccessAttendanceManagement && user?.role === 'admin'
     },
     {
       icon: Monitor,
       label: '電子看板',
-      bgColor: 'bg-pink-100',
-      iconColor: 'text-pink-600',
       path: '/attendance-dashboard',
       show: permissions.canAccessAttendanceDashboard
     },
     {
       icon: Key,
       label: '帳號密碼管理',
-      bgColor: 'bg-rose-100',
-      iconColor: 'text-rose-600',
       path: '/admin',
       show: permissions.canAccessAccountManagement
     },
     {
       icon: Shield,
       label: '權限分配',
-      bgColor: 'bg-violet-100',
-      iconColor: 'text-violet-600',
       path: '/permission-management',
       show: permissions.canAccessPermissionManagement
     },
     {
       icon: Settings,
       label: '打卡設定',
-      bgColor: 'bg-slate-100',
-      iconColor: 'text-slate-600',
       path: '/attendance-settings',
       show: permissions.canAccessAttendanceSettings
     }
@@ -307,93 +269,62 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 本週醫師排班卡片 */}
-        <Card className="mb-6 shadow-sm border-slate-200">
-          <CardHeader className="pb-3">
+        {/* LINE 風格功能選單 - 不規則網格 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
+          {/* 本週醫師排班 - 大卡片 (手機橫跨2列,桌面橫跨2列) */}
+          <button
+            onClick={() => setLocation('/doctor-schedule')}
+            className="col-span-2 bg-white border-2 border-gray-800 rounded-xl p-4 
+              shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5
+              flex flex-col gap-3 min-h-[140px]"
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5 text-teal-600" />
-                <CardTitle className="text-lg">本週醫師排班</CardTitle>
+                <CalendarDays className="h-6 w-6 text-gray-800" strokeWidth={1.5} />
+                <h3 className="text-base font-bold text-gray-800">本週醫師排班</h3>
               </div>
-              <Button 
-                variant="ghost"
-                size="sm"
-                className="text-xs text-teal-600 hover:text-teal-700"
-                onClick={() => setLocation('/doctor-schedule')}
-              >
-                查看完整排班
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
+              <ChevronRight className="h-5 w-5 text-gray-600" />
             </div>
-          </CardHeader>
-          <CardContent>
+            
             {loadingSchedules ? (
-              <p className="text-sm text-slate-500 text-center py-4">載入中...</p>
+              <p className="text-sm text-gray-500">載入中...</p>
             ) : Object.keys(schedulesByDate).length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-4">本週暫無排班</p>
+              <p className="text-sm text-gray-500">本週暫無排班</p>
             ) : (
-              <div className="space-y-2">
-                {Object.entries(schedulesByDate).map(([date, schedules]) => (
-                  <div key={date} className="flex items-start gap-3 py-2 border-b border-slate-100 last:border-0">
-                    <div className="flex-shrink-0 w-16 text-center">
-                      <div className="text-sm font-semibold text-slate-700">
-                        {formatDate(date)}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        週{getDayOfWeek(date)}
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      {schedules.map((schedule, idx) => (
-                        <div key={idx} className="text-sm text-slate-700">
-                          <span className="font-medium">{DOCTOR_NAMES[schedule.doctor_id] || '未知醫師'}</span>
-                          <span className="text-slate-500 mx-1">·</span>
-                          <span className="text-slate-600">{SHIFT_LABELS[schedule.shift] || schedule.shift}</span>
-                          <span className="text-slate-400 text-xs ml-1">
-                            ({schedule.start_time?.slice(0, 5)} - {schedule.end_time?.slice(0, 5)})
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+              <div className="text-left space-y-1.5 overflow-hidden">
+                {Object.entries(schedulesByDate).slice(0, 2).map(([date, schedules]) => (
+                  <div key={date} className="text-sm">
+                    <span className="font-semibold text-gray-700">
+                      {formatDate(date)} (週{getDayOfWeek(date)})
+                    </span>
+                    <span className="text-gray-600 ml-2">
+                      {schedules.slice(0, 2).map(s => s.doctor_name).join(', ')}
+                      {schedules.length > 2 && '...'}
+                    </span>
                   </div>
                 ))}
+                {Object.keys(schedulesByDate).length > 2 && (
+                  <p className="text-xs text-gray-500">...還有 {Object.keys(schedulesByDate).length - 2} 天</p>
+                )}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </button>
 
-        {/* 功能選單 - 日系小卡片網格 */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {/* 其他功能卡片 - 小卡片 */}
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <button
                 key={index}
                 onClick={() => setLocation(item.path)}
-                className={`
-                  ${item.bgColor} rounded-2xl p-4
-                  shadow-sm hover:shadow-md
-                  transition-all duration-200 hover:-translate-y-1
-                  border border-white/50
-                  flex flex-col items-center justify-center gap-3
-                  min-h-[140px]
-                `}
+                className="bg-white border-2 border-gray-800 rounded-xl p-4
+                  shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5
+                  flex flex-col items-center justify-center gap-3 min-h-[140px]"
               >
-                {/* 圖標 */}
-                <div className={`
-                  w-14 h-14 rounded-full bg-white
-                  flex items-center justify-center
-                  shadow-sm
-                `}>
-                  <Icon className={`w-7 h-7 ${item.iconColor}`} strokeWidth={2} />
-                </div>
-                
-                {/* 文字 */}
-                <div className="text-center">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    {item.label}
-                  </h3>
-                </div>
+                <Icon className="h-8 w-8 text-gray-800" strokeWidth={1.5} />
+                <h3 className="text-sm font-semibold text-gray-800 text-center">
+                  {item.label}
+                </h3>
               </button>
             );
           })}
