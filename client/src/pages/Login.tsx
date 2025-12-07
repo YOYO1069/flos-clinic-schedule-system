@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
+import bcrypt from "bcryptjs";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -38,8 +39,9 @@ export default function Login() {
         return;
       }
 
-      // 驗證密碼 (實際應用中應使用加密比對)
-      if (data.password !== password) {
+      // 驗證密碼（使用 bcrypt 比對加密密碼）
+      const isPasswordValid = await bcrypt.compare(password, data.password);
+      if (!isPasswordValid) {
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
