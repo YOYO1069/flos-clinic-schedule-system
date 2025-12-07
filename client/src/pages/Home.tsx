@@ -41,7 +41,10 @@ export default function Home() {
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
-      setUser(JSON.parse(userStr));
+      const userData = JSON.parse(userStr);
+      console.log('使用者資料:', userData);
+      console.log('使用者角色:', userData.role);
+      setUser(userData);
     }
     loadWeeklySchedules();
   }, []);
@@ -56,6 +59,8 @@ export default function Home() {
       const startDateStr = today.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
+      console.log('查詢排班日期範圍:', startDateStr, '到', endDateStr);
+
       const { data, error } = await doctorScheduleClient
         .from('doctor_shift_schedules')
         .select('*')
@@ -67,6 +72,7 @@ export default function Home() {
       if (error) {
         console.error('載入排班失敗:', error);
       } else {
+        console.log('載入排班成功:', data?.length, '筆資料');
         setWeeklySchedules(data || []);
       }
     } catch (err) {
@@ -250,6 +256,11 @@ export default function Home() {
     }
   ].filter(item => item.show);
 
+  // 記錄過濾後的功能數量
+  console.log('使用者權限:', permissions);
+  console.log('可見功能數量:', menuItems.length);
+  console.log('可見功能:', menuItems.map(item => item.label));
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
@@ -285,57 +296,59 @@ export default function Home() {
 
         {/* 彩色圓角方塊功能選單 - 不規則網格 */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr">
-          {/* 本週醫師排班 - 大卡片 */}
-          <button
-            onClick={() => setLocation('/doctor-schedule')}
-            className="col-span-2 bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl 
-              transition-all duration-300 hover:-translate-y-1
-              border border-slate-100 flex flex-col gap-4 min-h-[180px]"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 
-                  flex items-center justify-center shadow-md">
-                  <CalendarDays className="h-6 w-6 text-white" strokeWidth={2} />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-bold text-slate-800">本週醫師排班</h3>
-                  <p className="text-xs text-slate-500">查看本週排班表</p>
-                </div>
-              </div>
-              <ChevronRight className="h-6 w-6 text-slate-400" />
-            </div>
-            
-            {loadingSchedules ? (
-              <p className="text-sm text-slate-500">載入中...</p>
-            ) : Object.keys(schedulesByDate).length === 0 ? (
-              <p className="text-sm text-slate-500">本週暫無排班</p>
-            ) : (
-              <div className="text-left space-y-2 overflow-hidden">
-                {Object.entries(schedulesByDate).slice(0, 2).map(([date, schedules]) => (
-                  <div key={date} className="text-sm bg-slate-50 rounded-lg p-2">
-                    <span className="font-semibold text-slate-700">
-                      {formatDate(date)} (週{getDayOfWeek(date)})
-                    </span>
-                    <div className="text-slate-600 mt-1">
-                      {schedules.slice(0, 2).map((s, idx) => (
-                        <span key={idx}>
-                          {s.doctor_name}
-                          {idx < Math.min(schedules.length, 2) - 1 && ', '}
-                        </span>
-                      ))}
-                      {schedules.length > 2 && '...'}
-                    </div>
+          {/* 本週醫師排班 - 大卡片 (所有人都可以看) */}
+          {permissions.canAccessDoctorSchedule && (
+            <button
+              onClick={() => setLocation('/doctor-schedule')}
+              className="col-span-2 bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl 
+                transition-all duration-300 hover:-translate-y-1
+                border border-slate-100 flex flex-col gap-4 min-h-[180px]"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 
+                    flex items-center justify-center shadow-md">
+                    <CalendarDays className="h-6 w-6 text-white" strokeWidth={2} />
                   </div>
-                ))}
-                {Object.keys(schedulesByDate).length > 2 && (
-                  <p className="text-xs text-slate-500 text-center">
-                    ...還有 {Object.keys(schedulesByDate).length - 2} 天
-                  </p>
-                )}
+                  <div className="text-left">
+                    <h3 className="text-lg font-bold text-slate-800">本週醫師排班</h3>
+                    <p className="text-xs text-slate-500">查看本週排班表</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-6 w-6 text-slate-400" />
               </div>
-            )}
-          </button>
+              
+              {loadingSchedules ? (
+                <p className="text-sm text-slate-500">載入中...</p>
+              ) : Object.keys(schedulesByDate).length === 0 ? (
+                <p className="text-sm text-slate-500">本週暫無排班</p>
+              ) : (
+                <div className="text-left space-y-2 overflow-hidden">
+                  {Object.entries(schedulesByDate).slice(0, 2).map(([date, schedules]) => (
+                    <div key={date} className="text-sm bg-slate-50 rounded-lg p-2">
+                      <span className="font-semibold text-slate-700">
+                        {formatDate(date)} (週{getDayOfWeek(date)})
+                      </span>
+                      <div className="text-slate-600 mt-1">
+                        {schedules.slice(0, 2).map((s, idx) => (
+                          <span key={idx}>
+                            {s.doctor_name}
+                            {idx < Math.min(schedules.length, 2) - 1 && ', '}
+                          </span>
+                        ))}
+                        {schedules.length > 2 && '...'}
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(schedulesByDate).length > 2 && (
+                    <p className="text-xs text-slate-500 text-center">
+                      ...還有 {Object.keys(schedulesByDate).length - 2} 天
+                    </p>
+                  )}
+                </div>
+              )}
+            </button>
+          )}
 
           {/* 其他功能卡片 - 彩色圓角方塊 */}
           {menuItems.map((item, index) => {
