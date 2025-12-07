@@ -353,7 +353,7 @@ export default function Home() {
           )}
 
           {/* 其他功能卡片 - 彩色圓角方塊 */}
-          {menuItems.map((item, index) => {
+          {menuItems.filter(item => item.show).map((item, index) => {
             const Icon = item.icon;
             return (
               <button
