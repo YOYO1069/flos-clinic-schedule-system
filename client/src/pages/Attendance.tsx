@@ -370,9 +370,9 @@ export default function Attendance() {
         {/* 標題列 */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation('/')}>
+            <Button variant="ghost" onClick={() => window.history.back()}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首頁
+              上一頁
             </Button>
             <h1 className="text-3xl font-bold text-gray-800">員工打卡系統</h1>
           </div>

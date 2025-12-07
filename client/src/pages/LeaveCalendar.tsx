@@ -631,9 +631,9 @@ export default function LeaveCalendar() {
         <div className="mb-4 space-y-3 print:hidden">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => setLocation('/')}>
+              <Button variant="ghost" onClick={() => window.history.back()}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                返回首頁
+                上一頁
               </Button>
               <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
             </div>

@@ -145,17 +145,17 @@ export default function ScheduleHome() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50/30 via-blue-50/20 to-slate-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* 返回首頁按鈕 */}
+        {/* 返回上一頁按鈕 */}
         <div className="flex justify-center">
           <Button 
             variant="outline" 
-            onClick={() => setLocation('/')}
-            className="flex items-center gap-2"
+            onClick={() => window.location.href = 'https://classy-biscotti-42a418.netlify.app/'}
+            className="flex items-center gap-2 hover:bg-slate-100 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            返回首頁
+            上一頁
           </Button>
         </div>
         
@@ -192,7 +192,7 @@ export default function ScheduleHome() {
         {/* 主要功能卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* 醫師排班 */}
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-teal-100/50 bg-gradient-to-br from-white to-teal-50/30">
+          <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-white via-teal-50/20 to-cyan-50/30 backdrop-blur-sm shadow-lg">
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-gradient-to-br from-teal-100 to-teal-200/50 rounded-xl shadow-sm">
@@ -217,7 +217,7 @@ export default function ScheduleHome() {
 
           {/* 員工排班 - 只有主管以上可以看到 */}
           {permissions.canAccessLeaveCalendar && (
-          <Card className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-teal-100/50 bg-gradient-to-br from-white to-teal-50/30">
+          <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 backdrop-blur-sm shadow-lg">
             <CardHeader>
               <div className="flex items-center space-x-3">
                 <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200/50 rounded-xl shadow-sm">

@@ -62,11 +62,11 @@ export default function DoctorSchedule() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setLocation("/")}
+                  onClick={() => window.history.back()}
                   className="flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                 >
                   <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
-                  返回首頁
+                  上一頁
                 </Button>
               </div>
               <h1 className="text-2xl md:text-4xl font-bold text-teal-900 mb-1 md:mb-2">
