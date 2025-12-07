@@ -200,8 +200,8 @@ export default function Home() {
     },
     {
       icon: Calendar,
-      label: '排班月曆',
-      description: '員工排班表',
+      label: '休假月曆',
+      description: '員工休假表',
       bgColor: 'bg-gradient-to-br from-pink-400 to-pink-500',
       path: '/schedule-overview',
       show: permissions.canAccessLeaveCalendar

@@ -167,6 +167,12 @@ export default function LeaveCalendar() {
 
   // 切換休假狀態 - 循環: 空白 → OFF → ON → 特 → 空白
   const toggleLeave = async (staffName: string, day: number) => {
+    // 檢查使用者是否載入完成
+    if (!currentUser) {
+      toast.error('請稍候，正在載入使用者資料...');
+      return;
+    }
+    
     // 權限檢查:員工只能查看，不能修改
     if (isReadOnly) {
       toast.error('您沒有權限修改排班，僅能查看');
