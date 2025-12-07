@@ -189,26 +189,26 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 本週醫師排班 */}
+        {/* 本週醫師排班 - 密集小卡片 */}
         {doctorSchedules.length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-1 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-900">本週醫師排班</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1 h-5 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+              <h2 className="text-base font-bold text-gray-900">本週醫師排班</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {doctorSchedules.map((schedule, index) => (
-                <div key={index} className="bg-white rounded-lg p-4 border border-gray-200" style={{
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
+                <div key={index} className="bg-white rounded-lg p-2 border border-gray-200" style={{
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                 }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-purple-600">{schedule.employee_name}</span>
-                    <span className="text-xs text-gray-500 font-medium">
-                      {new Date(schedule.date).toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' })}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-purple-600 truncate">{schedule.employee_name}</span>
+                    <span className="text-xs text-gray-400 font-medium ml-1">
+                      {new Date(schedule.date).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-600 font-medium">
-                    {schedule.start_time} - {schedule.end_time}
+                  <div className="text-xs text-gray-500">
+                    {schedule.start_time.substring(0, 5)} - {schedule.end_time.substring(0, 5)}
                   </div>
                 </div>
               ))}
