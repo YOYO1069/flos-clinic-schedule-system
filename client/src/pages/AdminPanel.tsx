@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
-import { LogOut, Users, Calendar, Clock, FileText, Shield, Eye, EyeOff, KeyRound } from "lucide-react";
+import { LogOut, Users, Calendar, Clock, FileText, Shield, Eye, EyeOff, KeyRound, Home, RefreshCw, Download } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,8 +166,12 @@ export default function AdminPanel() {
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setLocation('/')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                休假月曆
+                <Home className="w-4 h-4 mr-2" />
+                返回主頁
+              </Button>
+              <Button variant="outline" onClick={() => loadUsers()}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                重新整理
               </Button>
               <Button variant="outline" onClick={() => setLocation('/calendar')}>
                 <Calendar className="w-4 h-4 mr-2" />
