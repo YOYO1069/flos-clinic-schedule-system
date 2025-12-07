@@ -197,8 +197,9 @@ export default function Attendance() {
           employee_id: user.employee_id,
           employee_name: user.name,
           check_in_time: checkInTimeStr,
-          attendance_date: today,
-          source: 'web'
+          work_date: today,
+          status: 'present',
+          check_in_method: 'web'
         })
         .select()
         .single();
@@ -242,23 +243,10 @@ export default function Attendance() {
         return;
       }
 
-      // 計算工時 (使用 UTC 時間計算)
+      // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
-      const checkOutTime = new Date(utcNow);
+      const checkOutTime = now;
       const workHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
-
-      const updateData: any = {
-        check_out_time: utcNow,
-        total_hours: Math.round(workHours * 100) / 100
-      };
-
-      // 嘗試取得GPS定位，失敗也繼續打卡
-      const location = await getLocation();
-      if (location) {
-        updateData.check_out_latitude = location.latitude;
-        updateData.check_out_longitude = location.longitude;
-        updateData.check_out_address = location.address || '已記錄GPS座標';
-      }
 
       // 格式化為 timestamp 格式（台灣時間）
       const checkOutTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
@@ -267,7 +255,7 @@ export default function Attendance() {
         .from('attendance_records')
         .update({
           check_out_time: checkOutTimeStr,
-          work_hours: Math.round(workHours * 100) / 100
+          total_hours: Math.round(workHours * 100) / 100
         })
         .eq('id', todayRecord.id)
         .select()
