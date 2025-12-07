@@ -1,6 +1,6 @@
 // 權限配置檔案
 
-export type UserRole = 'admin' | 'senior_supervisor' | 'supervisor' | 'employee';
+export type UserRole = 'admin' | 'senior_supervisor' | 'supervisor' | 'employee' | 'staff';
 
 export interface Permission {
   // 頁面存取權限
@@ -134,12 +134,16 @@ export const PERMISSIONS: Record<UserRole, Permission> = {
 
 // 獲取用戶權限
 export function getUserPermissions(role: UserRole): Permission {
-  return PERMISSIONS[role];
+  // staff 是 employee 的別名，兼容舊資料庫
+  const normalizedRole = role === 'staff' ? 'employee' : role;
+  return PERMISSIONS[normalizedRole as keyof typeof PERMISSIONS];
 }
 
 // 檢查是否有特定權限
 export function hasPermission(role: UserRole, permission: keyof Permission): boolean {
-  return PERMISSIONS[role][permission];
+  // staff 是 employee 的別名，兼容舊資料庫
+  const normalizedRole = role === 'staff' ? 'employee' : role;
+  return PERMISSIONS[normalizedRole as keyof typeof PERMISSIONS][permission];
 }
 
 // 角色顯示名稱
@@ -148,6 +152,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   senior_supervisor: '高階主管',
   supervisor: '一般主管',
   employee: '員工',
+  staff: '員工', // staff 是 employee 的別名
 };
 
 // 角色顏色
@@ -156,4 +161,5 @@ export const ROLE_COLORS: Record<UserRole, string> = {
   senior_supervisor: 'text-orange-600 bg-orange-50',
   supervisor: 'text-yellow-600 bg-yellow-50',
   employee: 'text-green-600 bg-green-50',
+  staff: 'text-green-600 bg-green-50', // staff 是 employee 的別名
 };
