@@ -114,7 +114,9 @@ export default function Home() {
       icon: Clock,
       label: '我的打卡',
       description: '查看個人打卡記錄',
-      color: 'from-orange-500 to-orange-600',
+      bgColor: 'bg-orange-50',
+      iconColor: 'bg-gradient-to-br from-orange-500 to-orange-600',
+      buttonColor: 'bg-gradient-to-r from-orange-500 to-orange-600',
       path: '/attendance',
       show: permissions.canAccessAttendance
     },
@@ -122,7 +124,9 @@ export default function Home() {
       icon: ClipboardList,
       label: '打卡記錄',
       description: '查看全員工打卡記錄',
-      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      iconColor: 'bg-gradient-to-br from-green-500 to-green-600',
+      buttonColor: 'bg-gradient-to-r from-green-500 to-green-600',
       path: '/attendance-management',
       show: permissions.canAccessAttendanceManagement
     },
@@ -130,15 +134,19 @@ export default function Home() {
       icon: Calendar,
       label: '休假月曆',
       description: '查看員工假期與排班',
-      color: 'from-blue-500 to-blue-600',
-      path: '/leave-calendar',
+      bgColor: 'bg-blue-50',
+      iconColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      buttonColor: 'bg-gradient-to-r from-blue-500 to-blue-600',
+      path: '/schedule-overview',
       show: permissions.canAccessLeaveCalendar
     },
     {
       icon: CheckSquare,
       label: '請假管理',
       description: '申請請假申請',
-      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      iconColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      buttonColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
       path: '/leave-management',
       show: permissions.canAccessLeaveManagement
     },
@@ -146,7 +154,9 @@ export default function Home() {
       icon: Users,
       label: '員工管理',
       description: '新增、編輯、管理員工資料',
-      color: 'from-blue-500 to-indigo-600',
+      bgColor: 'bg-blue-50',
+      iconColor: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+      buttonColor: 'bg-gradient-to-r from-blue-500 to-indigo-600',
       path: '/employee-management',
       show: permissions.canAccessEmployeeManagement
     },
@@ -154,7 +164,9 @@ export default function Home() {
       icon: CheckSquare,
       label: '請假審核',
       description: '審核員工請假申請',
-      color: 'from-purple-500 to-indigo-600',
+      bgColor: 'bg-purple-50',
+      iconColor: 'bg-gradient-to-br from-purple-500 to-indigo-600',
+      buttonColor: 'bg-gradient-to-r from-purple-500 to-indigo-600',
       path: '/leave-approval',
       show: permissions.canAccessLeaveApproval
     },
@@ -162,7 +174,9 @@ export default function Home() {
       icon: FileText,
       label: '打卡記錄管理',
       description: '管理全員工打卡記錄',
-      color: 'from-teal-500 to-cyan-600',
+      bgColor: 'bg-teal-50',
+      iconColor: 'bg-gradient-to-br from-teal-500 to-cyan-600',
+      buttonColor: 'bg-gradient-to-r from-teal-500 to-cyan-600',
       path: '/attendance-management',
       show: permissions.canAccessAttendanceManagement && user?.role === 'admin'
     },
@@ -170,7 +184,9 @@ export default function Home() {
       icon: Monitor,
       label: '電子看板',
       description: '即時顯示員工考勤狀態',
-      color: 'from-purple-500 to-pink-600',
+      bgColor: 'bg-purple-50',
+      iconColor: 'bg-gradient-to-br from-purple-500 to-pink-600',
+      buttonColor: 'bg-gradient-to-r from-purple-500 to-pink-600',
       path: '/attendance-dashboard',
       show: permissions.canAccessAttendanceDashboard
     },
@@ -178,7 +194,9 @@ export default function Home() {
       icon: Key,
       label: '帳號密碼管理',
       description: '管理帳號與重置密碼',
-      color: 'from-red-500 to-rose-600',
+      bgColor: 'bg-red-50',
+      iconColor: 'bg-gradient-to-br from-red-500 to-rose-600',
+      buttonColor: 'bg-gradient-to-r from-red-500 to-rose-600',
       path: '/admin',
       show: permissions.canAccessAccountManagement
     },
@@ -186,7 +204,9 @@ export default function Home() {
       icon: Shield,
       label: '權限分配',
       description: '管理員工權限等級',
-      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      iconColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      buttonColor: 'bg-gradient-to-r from-purple-500 to-purple-600',
       path: '/permission-management',
       show: permissions.canAccessPermissionManagement
     },
@@ -194,7 +214,9 @@ export default function Home() {
       icon: Settings,
       label: '打卡設定',
       description: '管理打卡系統設定',
-      color: 'from-gray-500 to-gray-600',
+      bgColor: 'bg-gray-50',
+      iconColor: 'bg-gradient-to-br from-gray-500 to-gray-600',
+      buttonColor: 'bg-gradient-to-r from-gray-500 to-gray-600',
       path: '/attendance-settings',
       show: permissions.canAccessAttendanceSettings
     }
@@ -204,66 +226,87 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         {/* 頭部 */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">
-                歡迎回來,{user?.name || '黃柏翰'}!
-              </h1>
-              <p className="text-gray-500 mt-1">
-                {user?.position || '請選擇您要的功能'}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPasswordDialog(true)}
-                className="flex items-center gap-2"
-              >
-                <Key className="h-4 w-4" />
-                修改密碼
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center gap-2"
-              >
-                <LogOut className="h-4 w-4" />
-                登出
-              </Button>
-            </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-black text-slate-800 mb-2">
+            歡迎回來，{user?.name || '黃柏翰'}！
+          </h1>
+          <p className="text-slate-600 font-medium mb-6">
+            {user?.position || '請選擇您需要的功能'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPasswordDialog(true)}
+              className="flex items-center gap-2"
+            >
+              <Key className="h-4 w-4" />
+              修改密碼
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              登出
+            </Button>
           </div>
         </div>
 
-        {/* 功能卡片網格 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+        {/* 功能卡片網格 - 宮格點選模式 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <button
                 key={index}
                 onClick={() => setLocation(item.path)}
-                className="group bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100"
+                className={`
+                  group relative ${item.bgColor} rounded-3xl p-8 
+                  shadow-lg hover:shadow-2xl 
+                  transition-all duration-300 hover:-translate-y-2
+                  border-2 border-white/50
+                `}
               >
                 {/* 圖標容器 */}
-                <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <Icon className="h-8 w-8 text-white" strokeWidth={2.5} />
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <div className={`
+                    w-24 h-24 rounded-full ${item.iconColor}
+                    flex items-center justify-center
+                    shadow-xl
+                    transform group-hover:scale-110 group-hover:rotate-6
+                    transition-all duration-300
+                  `}>
+                    <Icon className="w-12 h-12 text-white" strokeWidth={2.5} />
+                  </div>
+                  
+                  {/* 文字 */}
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                      {item.label}
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
-                
-                {/* 文字 */}
-                <h3 className="text-lg font-bold text-gray-800 mb-1">
-                  {item.label}
-                </h3>
-                <p className="text-sm text-gray-500">
-                  {item.description}
-                </p>
                 
                 {/* 進入功能按鈕 */}
-                <div className={`mt-4 py-2 px-4 rounded-lg bg-gradient-to-r ${item.color} text-white font-medium text-sm shadow-md group-hover:shadow-lg transition-all duration-300`}>
+                <div className={`
+                  w-full py-3 px-6 rounded-xl 
+                  ${item.buttonColor}
+                  text-white font-bold text-base
+                  shadow-lg group-hover:shadow-xl
+                  transform group-hover:scale-105
+                  transition-all duration-300
+                `}>
                   進入功能
                 </div>
+
+                {/* 懸停光暈效果 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 rounded-3xl pointer-events-none transition-opacity duration-300"></div>
               </button>
             );
           })}

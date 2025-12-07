@@ -71,7 +71,7 @@ export default function ScheduleHome() {
           </h1>
           <p className="text-slate-600 font-medium">排班管理系統</p>
           <button
-            onClick={() => window.location.href = 'https://classy-biscotti-42a418.netlify.app/'}
+            onClick={() => setLocation('/')}
             className="mt-4 text-sm text-slate-500 hover:text-slate-700 transition-colors"
           >
             ← 返回主頁

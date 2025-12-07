@@ -96,10 +96,10 @@ function Router() {
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>
       </Route>
       <Route path="/">
-        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
-      </Route>
-      <Route path="/schedule">
         <ProtectedRoute><Home /></ProtectedRoute>
+      </Route>
+      <Route path="/schedule-overview">
+        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
       </Route>
 
       <Route path="/leave-management">
