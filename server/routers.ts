@@ -6,16 +6,10 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 
-// CHILL69YO 資料庫連線
-const supabaseCHILL = createClient(
+// CHILL69YO 資料庫連線（統一使用）
+const supabase = createClient(
   process.env.SUPABASE_URL || '',
   process.env.SUPABASE_ANON_KEY || ''
-);
-
-// duolaiyuanmeng 資料庫連線
-const supabaseDuolai = createClient(
-  process.env.SUPABASE_DUOLAI_URL || '',
-  process.env.SUPABASE_DUOLAI_KEY || ''
 );
 
 export const appRouter = router({
@@ -41,8 +35,8 @@ export const appRouter = router({
         const { employee_id, password } = input;
 
         // 從 duolaiyuanmeng.users 查詢員工
-        const { data: user, error } = await supabaseDuolai
-          .from('users')
+        const { data: user, error } = await supabase
+          .from('employees')
           .select('*')
           .eq('employee_id', employee_id)
           .single();
@@ -60,7 +54,7 @@ export const appRouter = router({
 
         // 記錄登入日誌（記錄到 duolaiyuanmeng）
         try {
-          await supabaseDuolai.from('login_logs').insert({
+          await supabase.from('login_logs').insert({
             employee_id: user.employee_id,
             name: user.name,
             role: user.role,
@@ -94,8 +88,8 @@ export const appRouter = router({
         const { employee_id, old_password, new_password } = input;
 
         // 從 duolaiyuanmeng.users 驗證舊密碼
-        const { data: user, error } = await supabaseDuolai
-          .from('users')
+        const { data: user, error } = await supabase
+          .from('employees')
           .select('*')
           .eq('employee_id', employee_id)
           .single();
@@ -114,8 +108,8 @@ export const appRouter = router({
         const hashedPassword = await bcrypt.hash(new_password, 10);
 
         // 更新 duolaiyuanmeng.users
-        await supabaseDuolai
-          .from('users')
+        await supabase
+          .from('employees')
           .update({
             password: hashedPassword,
             password_changed: true,
@@ -139,8 +133,8 @@ export const appRouter = router({
         const { admin_employee_id, target_employee_id, new_password } = input;
 
         // 驗證管理員權限
-        const { data: admin, error: adminError } = await supabaseDuolai
-          .from('users')
+        const { data: admin, error: adminError } = await supabase
+          .from('employees')
           .select('*')
           .eq('employee_id', admin_employee_id)
           .single();
@@ -150,8 +144,8 @@ export const appRouter = router({
         }
 
         // 驗證目標員工是否存在
-        const { data: targetUser, error: targetError } = await supabaseDuolai
-          .from('users')
+        const { data: targetUser, error: targetError } = await supabase
+          .from('employees')
           .select('*')
           .eq('employee_id', target_employee_id)
           .single();
@@ -164,8 +158,8 @@ export const appRouter = router({
         const hashedPassword = await bcrypt.hash(new_password, 10);
 
         // 更新 duolaiyuanmeng.users
-        await supabaseDuolai
-          .from('users')
+        await supabase
+          .from('employees')
           .update({
             password: hashedPassword,
             password_changed: false,
