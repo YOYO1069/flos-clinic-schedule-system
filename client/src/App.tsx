@@ -30,6 +30,8 @@ import AccountManagement from "./pages/AccountManagement";
 import PermissionManagement from "./pages/PermissionManagement";
 import SecurityDashboardPage from "./pages/SecurityDashboardPage";
 import DoctorPortal from "./pages/DoctorPortal";
+import NurseSOP from "./pages/NurseSOP";
+import BeauticianSOP from "./pages/BeauticianSOP";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -91,6 +93,12 @@ function Router() {
       </Route>
       <Route path="/doctor-portal">
         <ProtectedRoute><DoctorPortal /></ProtectedRoute>
+      </Route>
+      <Route path="/nurse-sop">
+        <ProtectedRoute><NurseSOP /></ProtectedRoute>
+      </Route>
+      <Route path="/beautician-sop">
+        <ProtectedRoute><BeauticianSOP /></ProtectedRoute>
       </Route>
       <Route path="/leave-calendar">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>

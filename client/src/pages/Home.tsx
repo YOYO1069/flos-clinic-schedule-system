@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Clock, FileText, Calendar, Users, Shield, Settings, 
   DollarSign, TrendingUp, Award, MessageSquare, BookOpen, Gift, Heart,
-  LogOut, User, UserCog, Key, Stethoscope, FileHeart, PenTool, ExternalLink
+  LogOut, User, UserCog, Key, Stethoscope, FileHeart, PenTool, ExternalLink,
+  Activity, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -62,9 +63,11 @@ export default function Home() {
     { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin-panel', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
   ];
 
-  // 醫生專區功能
-  const doctorFeatures = [
-    { icon: Stethoscope, label: '醫生專區', description: '醫生專用功能入口', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', roles: ['admin', 'senior_supervisor'] },
+  // 職能專區功能
+  const professionalFeatures = [
+    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor'] },
+    { icon: Activity, label: '護理師守則', description: '護理標準作業流程', path: '/nurse-sop', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: Sparkles, label: '美容師守則', description: '美容操作規範指南', path: '/beautician-sop', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
   ];
 
   // 未來功能
@@ -85,8 +88,8 @@ export default function Home() {
     feature.roles.includes(currentUser?.role || 'staff')
   );
 
-  // 根據角色篩選醫生專區功能
-  const doctorPortalFeatures = doctorFeatures.filter(feature => 
+  // 根據角色篩選職能專區功能
+  const professionalPortalFeatures = professionalFeatures.filter(feature => 
     feature.roles.includes(currentUser?.role || 'staff')
   );
 
@@ -201,39 +204,39 @@ export default function Home() {
           </div>
         )}
 
-        {/* 醫生專區 - 僅高階主管和管理員可見 */}
-        {doctorPortalFeatures.length > 0 && (
+        {/* 職能專區 - 根據角色顯示 */}
+        {professionalPortalFeatures.length > 0 && (
           <div>
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-900">醫生專區</h2>
-              <Badge variant="outline" className="border-emerald-400 text-emerald-700 text-xs font-bold bg-emerald-50 px-2.5 py-0.5">
-                醫生專用
+              <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
+              <h2 className="text-xl font-bold text-gray-900">職能專區</h2>
+              <Badge variant="outline" className="border-indigo-400 text-indigo-700 text-xs font-bold bg-indigo-50 px-2.5 py-0.5">
+                專業資源
               </Badge>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {doctorPortalFeatures.map((item, index) => {
+              {professionalPortalFeatures.map((item, index) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={index}
                     onClick={() => setLocation(item.path)}
-                    className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border border-emerald-200`}
+                    className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor}`}
                     style={{
-                      boxShadow: '0 2px 6px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.9)'
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.25), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)';
                       e.currentTarget.style.transform = 'translateY(-2px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
                     <div className="flex flex-col items-center">
-                      <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-emerald-100`} style={{
-                        boxShadow: 'inset 0 2px 4px rgba(16,185,129,0.1)'
+                      <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                       }}>
                         <Icon className={`w-6 h-6 ${item.color}`} />
                       </div>
