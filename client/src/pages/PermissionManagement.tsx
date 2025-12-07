@@ -26,6 +26,7 @@ export default function PermissionManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [editingRoles, setEditingRoles] = useState<Record<number, string>>({});
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -35,16 +36,19 @@ export default function PermissionManagement() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
+  }, [setLocation]);
+
+  useEffect(() => {
+    if (!currentUser) return;
     
     // 使用 permissions.ts 檢查權限
-    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
-    if (!userPermissions.canAccessPermissionManagement) {
+    if (!permissions.canAccessPermissionManagement) {
       toast.error("您沒有權限存取此頁面");
       setLocation('/');
       return;
     }
     loadUsers();
-  }, [setLocation]);
+  }, [currentUser, permissions.canAccessPermissionManagement, setLocation]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -108,6 +112,14 @@ export default function PermissionManagement() {
       if (error) throw error;
 
       toast.success(`已更新 ${user.name} 的權限為 ${ROLE_LABELS[newRole as keyof typeof ROLE_LABELS]}`);
+      
+      // 如果是當前使用者，更新 localStorage 並提示重新登入
+      if (currentUser && user.employee_id === currentUser.employee_id) {
+        const updatedUser = { ...currentUser, role: newRole };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        toast.info("您的權限已變更，請重新登入以套用新權限", { duration: 5000 });
+      }
+      
       loadUsers();
     } catch (error) {
       console.error('更新權限失敗:', error);

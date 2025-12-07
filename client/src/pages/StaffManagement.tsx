@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Trash2, UserPlus, Users, Edit, ArrowLeft } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface Staff {
   id: number;
@@ -24,6 +26,7 @@ interface Staff {
 export default function StaffManagement() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -49,12 +52,23 @@ export default function StaffManagement() {
   useEffect(() => {
     // 檢查登入狀態
     const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      setCurrentUser(user);
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+  }, [setLocation]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (!permissions.canAccessEmployeeManagement) {
+      toast.error("您沒有權限存取此頁面");
+      setLocation('/');
+      return;
     }
     loadStaff();
-  }, []);
+  }, [currentUser, permissions.canAccessEmployeeManagement, setLocation]);
 
   const loadStaff = async () => {
     try {

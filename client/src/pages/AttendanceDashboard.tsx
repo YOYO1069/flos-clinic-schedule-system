@@ -6,6 +6,9 @@ import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
+import { toast } from "sonner";
 
 interface AttendanceRecord {
   id: number;
@@ -32,6 +35,28 @@ export default function AttendanceDashboard() {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
+
+  // 檢查權限
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      setLocation('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+  }, [setLocation]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    if (!permissions.canAccessAttendanceDashboard) {
+      toast.error("您沒有權限存取此頁面");
+      setLocation('/');
+      return;
+    }
+  }, [currentUser, permissions.canAccessAttendanceDashboard, setLocation]);
 
   // 更新當前時間
   useEffect(() => {
