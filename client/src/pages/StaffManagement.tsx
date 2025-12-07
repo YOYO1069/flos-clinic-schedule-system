@@ -463,19 +463,21 @@ export default function StaffManagement() {
                 placeholder="0912-345-678"
               />
             </div>
-            <div>
-              <Label>角色權限</Label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="staff">員工</option>
-                <option value="supervisor">一般主管</option>
-                <option value="senior_supervisor">高階主管</option>
-                <option value="admin">管理員</option>
-              </select>
-            </div>
+            {currentUser?.role === 'admin' && (
+              <div>
+                <Label>角色權限</Label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="staff">員工</option>
+                  <option value="supervisor">一般主管</option>
+                  <option value="senior_supervisor">高階主管</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">管理員權限僅限系統管理</p>
+              </div>
+            )}
             <div>
               <Label>初始密碼</Label>
               <Input
@@ -557,9 +559,8 @@ export default function StaffManagement() {
                   <option value="staff">員工</option>
                   <option value="supervisor">一般主管</option>
                   <option value="senior_supervisor">高階主管</option>
-                  <option value="admin">管理員</option>
                 </select>
-
+                <p className="text-xs text-gray-500 mt-1">管理員權限僅限系統管理</p>
               </div>
             )}
             <div>
