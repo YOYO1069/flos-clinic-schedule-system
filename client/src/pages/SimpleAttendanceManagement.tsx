@@ -16,7 +16,9 @@ interface AttendanceRecord {
   employee_name: string;
   check_in_time: string;
   check_out_time?: string;
-  date: string;
+  work_date: string;
+  total_hours?: number;
+  source?: string;
 }
 
 export default function SimpleAttendanceManagement() {
@@ -64,7 +66,7 @@ export default function SimpleAttendanceManagement() {
     
     // 依日期篩選
     if (selectedDate) {
-      filtered = filtered.filter(r => r.date === selectedDate);
+      filtered = filtered.filter(r => r.work_date === selectedDate);
     }
     
     // 依姓名搜尋
@@ -84,7 +86,7 @@ export default function SimpleAttendanceManagement() {
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*')
-        .order('date', { ascending: false })
+        .order('work_date', { ascending: false })
         .order('check_in_time', { ascending: false })
         .limit(500);
 
@@ -219,7 +221,7 @@ export default function SimpleAttendanceManagement() {
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">日期:</span>
-                            <span className="font-medium">{record.date}</span>
+                            <span className="font-medium">{record.work_date}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-green-500" />
@@ -269,7 +271,7 @@ export default function SimpleAttendanceManagement() {
                   <>
                     員工: {editingRecord.employee_name} ({editingRecord.employee_id})
                     <br />
-                    日期: {editingRecord.date}
+                    日期: {editingRecord.work_date}
                   </>
                 )}
               </DialogDescription>
