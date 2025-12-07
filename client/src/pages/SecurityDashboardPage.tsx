@@ -51,7 +51,7 @@ export default function SecurityDashboardPage() {
   // 檢查管理員權限
   const checkAuth = async () => {
     try {
-      const storedEmployee = localStorage.getItem('employee');
+      const storedEmployee = localStorage.getItem('user');
       if (!storedEmployee) {
         setLocation('/login');
         return;
@@ -61,14 +61,14 @@ export default function SecurityDashboardPage() {
       
       // 檢查是否為管理員
       const { data, error } = await supabase
-        .from('employees')
+        .from('users')
         .select('*')
         .eq('employee_id', emp.employee_id)
         .single();
 
       if (error || !data || data.role !== 'admin') {
         alert('您沒有權限訪問此頁面');
-        navigate('/');
+        setLocation('/');
         return;
       }
 
