@@ -20,6 +20,7 @@ import LeaveApproval from "./pages/LeaveApproval";
 // import TestEnv from "./pages/TestEnv"; // Temporarily disabled
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
+import SecurityDashboard from "./pages/SecurityDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
@@ -53,6 +54,9 @@ function Router() {
         <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
       </Route>
       <Route path="/security">
+        <ProtectedRoute><SecurityDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/employee-dashboard">
         <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
       </Route>
       <Route path="/attendance-management">
