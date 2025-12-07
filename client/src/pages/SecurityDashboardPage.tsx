@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.ts';
 import { getRiskLevelColor, getRiskLevelIcon, getRiskLevelText, getFlagDescription } from '../utils/riskScoring';
 
 /**
