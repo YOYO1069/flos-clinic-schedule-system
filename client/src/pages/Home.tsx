@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { APP_TITLE } from "@/const";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 import { 
   Clock, 
   Users, 
@@ -24,6 +29,13 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<any>(null);
   const { permissions } = usePermissions(user?.role as UserRole);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -35,6 +47,72 @@ export default function Home() {
   const handleLogout = () => {
     localStorage.removeItem('user');
     setLocation('/login');
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error('請填寫所有欄位');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error('新密碼與確認密碼不一致');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast.error('密碼長度至少需要 6 個字元');
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      // 使用 crypto 加密密碼
+      const crypto = await import('crypto');
+      const hashPassword = (password: string) => {
+        return crypto.createHash('sha256').update(password).digest('hex');
+      };
+
+      const currentPasswordHash = hashPassword(passwordForm.currentPassword);
+      const newPasswordHash = hashPassword(passwordForm.newPassword);
+
+      // 驗證當前密碼
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('password')
+        .eq('employee_id', user.employee_id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      if (userData.password !== currentPasswordHash) {
+        toast.error('當前密碼錯誤');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // 更新密碼
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ password: newPasswordHash })
+        .eq('employee_id', user.employee_id);
+
+      if (updateError) throw updateError;
+
+      toast.success('密碼修改成功！請使用新密碼重新登入');
+      setShowPasswordDialog(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      
+      // 登出並跳轉到登入頁
+      setTimeout(() => {
+        handleLogout();
+      }, 1500);
+    } catch (error) {
+      console.error('修改密碼失敗:', error);
+      toast.error('修改密碼失敗，請稍後再試');
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   // 功能卡片資料
@@ -187,15 +265,26 @@ export default function Home() {
                 {user?.name} ({user?.position || '員工'})
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2"
-            >
-              <LogOut className="w-4 h-4" />
-              登出
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPasswordDialog(true)}
+                className="gap-2"
+              >
+                <Key className="w-4 h-4" />
+                修改密碼
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                登出
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -301,6 +390,68 @@ export default function Home() {
           <p className="mt-1">{new Date().toLocaleDateString('zh-TW')}</p>
         </div>
       </div>
+
+      {/* 修改密碼對話框 */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>修改密碼</DialogTitle>
+            <DialogDescription>
+              請輸入當前密碼和新密碼
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">當前密碼</Label>
+              <Input
+                id="currentPassword"
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                placeholder="請輸入當前密碼"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">新密碼</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                placeholder="請輸入新密碼 (至少6個字元)"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">確認新密碼</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                placeholder="請再次輸入新密碼"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              }}
+              disabled={isChangingPassword}
+            >
+              取消
+            </Button>
+            <Button
+              onClick={handleChangePassword}
+              disabled={isChangingPassword}
+            >
+              {isChangingPassword ? '處理中...' : '確認修改'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

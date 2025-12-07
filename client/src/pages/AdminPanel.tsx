@@ -102,14 +102,22 @@ export default function AdminPanel() {
     setIsResetting(true);
 
     try {
+      // 使用 crypto 加密密碼
+      const crypto = await import('crypto');
+      const hashPassword = (password: string) => {
+        return crypto.createHash('sha256').update(password).digest('hex');
+      };
+
+      const hashedPassword = hashPassword(newPassword);
+
       const { error } = await supabase
         .from('users')
-        .update({ password: newPassword })
+        .update({ password: hashedPassword })
         .eq('id', user.id);
 
       if (error) throw error;
 
-      toast.success(`已重設 ${user.name} 的密碼`);
+      toast.success(`✅ 已重設 ${user.name} 的密碼\n新密碼: ${newPassword}`);
       setResetPasswordUserId(null);
       setNewPassword("");
       loadUsers();
