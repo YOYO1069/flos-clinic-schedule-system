@@ -58,6 +58,19 @@ export const appRouter = router({
           throw new Error('員工編號或密碼錯誤');
         }
 
+        // 記錄登入日誌
+        try {
+          await supabaseCHILL.from('login_logs').insert({
+            employee_id: employee.employee_id,
+            name: employee.name,
+            role: employee.role,
+            login_time: new Date().toISOString(),
+            success: true,
+          });
+        } catch (logError) {
+          console.warn('登入日誌記錄失敗:', logError);
+        }
+
         return {
           success: true,
           user: {
@@ -125,6 +138,69 @@ export const appRouter = router({
         return {
           success: true,
           message: '密碼修改成功',
+        };
+      }),
+    
+    // 管理員重設密碼（同步到兩個資料庫）
+    resetPassword: publicProcedure
+      .input(z.object({
+        admin_employee_id: z.string(),
+        target_employee_id: z.string(),
+        new_password: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const { admin_employee_id, target_employee_id, new_password } = input;
+
+        // 驗證管理員權限
+        const { data: admin, error: adminError } = await supabaseCHILL
+          .from('employees')
+          .select('*')
+          .eq('employee_id', admin_employee_id)
+          .single();
+
+        if (adminError || !admin || admin.role !== 'admin') {
+          throw new Error('權限不足，僅管理員可以重設密碼');
+        }
+
+        // 驗證目標員工是否存在
+        const { data: targetEmployee, error: targetError } = await supabaseCHILL
+          .from('employees')
+          .select('*')
+          .eq('employee_id', target_employee_id)
+          .single();
+
+        if (targetError || !targetEmployee) {
+          throw new Error('目標員工不存在');
+        }
+
+        // 加密新密碼
+        const hashedPassword = await bcrypt.hash(new_password, 10);
+
+        // 更新 CHILL69YO.employees
+        await supabaseCHILL
+          .from('employees')
+          .update({
+            password: hashedPassword,
+            password_changed: false,
+          })
+          .eq('employee_id', target_employee_id);
+
+        // 同步到 duolaiyuanmeng.users
+        try {
+          await supabaseDuolai
+            .from('users')
+            .update({
+              password: hashedPassword,
+              password_changed: false,
+            })
+            .eq('employee_id', target_employee_id);
+        } catch (syncError) {
+          console.warn('同步到 duolaiyuanmeng 失敗:', syncError);
+        }
+
+        return {
+          success: true,
+          message: `已重設 ${targetEmployee.name} 的密碼`,
         };
       }),
   }),

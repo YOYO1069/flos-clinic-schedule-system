@@ -3,10 +3,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
+import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
+
+// 密碼強度檢查
+const checkPasswordStrength = (password: string) => {
+  const checks = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+  };
+
+  const score = Object.values(checks).filter(Boolean).length;
+  
+  return {
+    checks,
+    score,
+    strength: score <= 2 ? 'weak' : score === 3 ? 'medium' : 'strong',
+  };
+};
+
+// 密碼檢查項目元件
+function PasswordCheck({ checked, text }: { checked: boolean; text: string }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      {checked ? (
+        <CheckCircle2 className="w-4 h-4 text-green-600" />
+      ) : (
+        <XCircle className="w-4 h-4 text-gray-400" />
+      )}
+      <span className={checked ? 'text-green-700' : 'text-gray-500'}>{text}</span>
+    </div>
+  );
+}
 
 export default function ChangePassword() {
   const [, setLocation] = useLocation();
@@ -18,6 +50,24 @@ export default function ChangePassword() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const passwordStrength = checkPasswordStrength(newPassword);
+  
+  const changePasswordMutation = trpc.auth.changePassword.useMutation({
+    onSuccess: () => {
+      toast.success('密碼修改成功！將自動登出...');
+      // 清除本地儲存
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setTimeout(() => {
+        setLocation('/unified-login');
+      }, 1500);
+    },
+    onError: (error) => {
+      toast.error(error.message || '密碼修改失敗');
+      setLoading(false);
+    },
+  });
   const [isFirstLogin, setIsFirstLogin] = useState(false);
 
   // 檢查登入狀態和首次登入
@@ -52,8 +102,9 @@ export default function ChangePassword() {
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error("新密碼至少需要 6 個字元");
+    // 驗證密碼強度
+    if (passwordStrength.score < 3) {
+      toast.error("密碼強度不足，請至少滿足 3 項要求");
       return;
     }
 
@@ -64,62 +115,12 @@ export default function ChangePassword() {
 
     setLoading(true);
 
-    try {
-      // 驗證舊密碼
-      const { data: userData, error: fetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('employee_id', user.employee_id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      if (userData.password !== oldPassword) {
-        toast.error("舊密碼錯誤");
-        setLoading(false);
-        return;
-      }
-
-      // 更新密碼和 password_changed 標記
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ 
-          password: newPassword,
-          password_changed: true
-        })
-        .eq('employee_id', user.employee_id);
-
-      if (updateError) throw updateError;
-
-      // 更新 localStorage 中的用戶資料
-      const updatedUser = { ...user, password: newPassword, password_changed: true };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
-
-      toast.success("密碼修改成功!");
-      
-      // 如果是首次登入，導向主頁面
-      if (isFirstLogin) {
-        setTimeout(() => {
-          if (user.role === 'admin') {
-            setLocation('/admin');
-          } else {
-            setLocation('/');
-          }
-        }, 1000);
-      } else {
-        // 清空輸入框
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      }
-
-    } catch (error) {
-      console.error('修改密碼失敗:', error);
-      toast.error("修改密碼失敗,請稍後再試");
-    } finally {
-      setLoading(false);
-    }
+    // 使用 tRPC 修改密碼（會同步到兩個資料庫）
+    changePasswordMutation.mutate({
+      employee_id: user.employee_id,
+      old_password: oldPassword,
+      new_password: newPassword,
+    });
   };
 
   return (
@@ -238,21 +239,35 @@ export default function ChangePassword() {
               </div>
             </div>
 
-            {/* 提示訊息 */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-              <p className="font-medium mb-2">密碼要求:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>至少 6 個字元</li>
-                <li>不能與舊密碼相同</li>
-                <li>建議包含英文字母和數字</li>
-              </ul>
-            </div>
+            {/* 密碼強度指示器 */}
+            {newPassword && (
+              <div className="space-y-2 p-3 bg-gray-50 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">密碼強度</span>
+                  <span className={`text-sm font-bold ${
+                    passwordStrength.strength === 'weak' ? 'text-red-600' :
+                    passwordStrength.strength === 'medium' ? 'text-yellow-600' :
+                    'text-green-600'
+                  }`}>
+                    {passwordStrength.strength === 'weak' ? '弱' :
+                     passwordStrength.strength === 'medium' ? '中' : '強'}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <PasswordCheck checked={passwordStrength.checks.length} text="至少 8 個字元" />
+                  <PasswordCheck checked={passwordStrength.checks.uppercase} text="包含大寫字母 (A-Z)" />
+                  <PasswordCheck checked={passwordStrength.checks.lowercase} text="包含小寫字母 (a-z)" />
+                  <PasswordCheck checked={passwordStrength.checks.number} text="包含數字 (0-9)" />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">* 請至少滿足 3 項要求</p>
+              </div>
+            )}
 
             {/* 按鈕 */}
             <div className="flex gap-4">
               <Button
                 onClick={handleChangePassword}
-                disabled={loading}
+                disabled={loading || (newPassword && passwordStrength.score < 3)}
                 className="flex-1"
               >
                 {loading ? "處理中..." : "確認修改"}
