@@ -166,168 +166,210 @@ export default function Home() {
     }
   };
 
-  // LINE 風格功能選單
+  // 彩色圓角方塊風格功能選單
   const menuItems = [
     {
       icon: Clock,
       label: '我的打卡',
+      description: '查看打卡記錄',
+      bgColor: 'bg-gradient-to-br from-cyan-400 to-cyan-500',
       path: '/attendance',
       show: permissions.canAccessAttendance
     },
     {
-      icon: ClipboardList,
-      label: '打卡記錄',
-      path: '/attendance-management',
-      show: permissions.canAccessAttendanceManagement
-    },
-    {
-      icon: Calendar,
-      label: '休假月曆',
-      path: '/schedule-overview',
-      show: permissions.canAccessLeaveCalendar
-    },
-    {
-      icon: CheckSquare,
+      icon: FileText,
       label: '請假管理',
+      description: '申請請假申請',
+      bgColor: 'bg-gradient-to-br from-blue-400 to-blue-500',
       path: '/leave-management',
       show: permissions.canAccessLeaveManagement
     },
     {
-      icon: Users,
-      label: '員工管理',
-      path: '/employee-management',
-      show: permissions.canAccessEmployeeManagement
-    },
-    {
       icon: CheckSquare,
       label: '請假審核',
+      description: '審核員工請假申請',
+      bgColor: 'bg-gradient-to-br from-green-400 to-green-500',
       path: '/leave-approval',
       show: permissions.canAccessLeaveApproval
     },
     {
-      icon: FileText,
-      label: '打卡記錄管理',
+      icon: Calendar,
+      label: '排班月曆',
+      description: '員工排班表',
+      bgColor: 'bg-gradient-to-br from-pink-400 to-pink-500',
+      path: '/schedule-overview',
+      show: permissions.canAccessLeaveCalendar
+    },
+    {
+      icon: ClipboardList,
+      label: '打卡記錄',
+      description: '查看全員工打卡記錄',
+      bgColor: 'bg-gradient-to-br from-purple-400 to-purple-500',
       path: '/attendance-management',
-      show: permissions.canAccessAttendanceManagement && user?.role === 'admin'
+      show: permissions.canAccessAttendanceManagement
+    },
+    {
+      icon: Users,
+      label: '員工管理',
+      description: '管理員工資料',
+      bgColor: 'bg-gradient-to-br from-orange-400 to-orange-500',
+      path: '/employee-management',
+      show: permissions.canAccessEmployeeManagement
     },
     {
       icon: Monitor,
       label: '電子看板',
+      description: '即時顯示員工考勤狀態',
+      bgColor: 'bg-gradient-to-br from-rose-400 to-rose-500',
       path: '/attendance-dashboard',
       show: permissions.canAccessAttendanceDashboard
     },
     {
       icon: Key,
       label: '帳號密碼管理',
+      description: '管理使用者帳號',
+      bgColor: 'bg-gradient-to-br from-indigo-400 to-indigo-500',
       path: '/admin',
       show: permissions.canAccessAccountManagement
     },
     {
       icon: Shield,
       label: '權限分配',
+      description: '設定使用者權限',
+      bgColor: 'bg-gradient-to-br from-violet-400 to-violet-500',
       path: '/permission-management',
       show: permissions.canAccessPermissionManagement
     },
     {
       icon: Settings,
       label: '打卡設定',
+      description: '設定打卡規則',
+      bgColor: 'bg-gradient-to-br from-slate-400 to-slate-500',
       path: '/attendance-settings',
       show: permissions.canAccessAttendanceSettings
     }
   ].filter(item => item.show);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-6 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 py-8 px-4">
       <div className="max-w-6xl mx-auto">
         {/* 頭部 */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            歡迎回來,{user?.name || '使用者'}!
+            員工功能選單
           </h1>
-          <p className="text-sm text-slate-600 mb-4">
-            {user?.position || '請選擇您需要的功能'}
+          <p className="text-base text-slate-600 mb-1">
+            歡迎回來,{user?.name || '貴賓殿嬈'}
           </p>
-          <div className="flex gap-2 justify-center">
-            <Button
-              variant="outline"
-              size="sm"
+          <p className="text-sm text-slate-500 mb-4">
+            {user?.position || '員工'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
               onClick={() => setShowPasswordDialog(true)}
-              className="text-xs"
+              className="text-sm text-slate-600 hover:text-slate-800 flex items-center gap-1 transition-colors"
             >
-              <Key className="h-3 w-3 mr-1" />
+              <Key className="h-4 w-4" />
               修改密碼
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
               onClick={handleLogout}
-              className="text-xs"
+              className="text-sm text-slate-600 hover:text-slate-800 flex items-center gap-1 transition-colors"
             >
-              <LogOut className="h-3 w-3 mr-1" />
+              <LogOut className="h-4 w-4" />
               登出
-            </Button>
+            </button>
           </div>
         </div>
 
-        {/* LINE 風格功能選單 - 不規則網格 */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 auto-rows-fr">
-          {/* 本週醫師排班 - 大卡片 (手機橫跨2列,桌面橫跨2列) */}
+        {/* 彩色圓角方塊功能選單 - 不規則網格 */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-fr">
+          {/* 本週醫師排班 - 大卡片 */}
           <button
             onClick={() => setLocation('/doctor-schedule')}
-            className="col-span-2 bg-white border-2 border-gray-800 rounded-xl p-4 
-              shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5
-              flex flex-col gap-3 min-h-[140px]"
+            className="col-span-2 bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl 
+              transition-all duration-300 hover:-translate-y-1
+              border border-slate-100 flex flex-col gap-4 min-h-[180px]"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="h-6 w-6 text-gray-800" strokeWidth={1.5} />
-                <h3 className="text-base font-bold text-gray-800">本週醫師排班</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-400 to-teal-500 
+                  flex items-center justify-center shadow-md">
+                  <CalendarDays className="h-6 w-6 text-white" strokeWidth={2} />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-lg font-bold text-slate-800">本週醫師排班</h3>
+                  <p className="text-xs text-slate-500">查看本週排班表</p>
+                </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-gray-600" />
+              <ChevronRight className="h-6 w-6 text-slate-400" />
             </div>
             
             {loadingSchedules ? (
-              <p className="text-sm text-gray-500">載入中...</p>
+              <p className="text-sm text-slate-500">載入中...</p>
             ) : Object.keys(schedulesByDate).length === 0 ? (
-              <p className="text-sm text-gray-500">本週暫無排班</p>
+              <p className="text-sm text-slate-500">本週暫無排班</p>
             ) : (
-              <div className="text-left space-y-1.5 overflow-hidden">
+              <div className="text-left space-y-2 overflow-hidden">
                 {Object.entries(schedulesByDate).slice(0, 2).map(([date, schedules]) => (
-                  <div key={date} className="text-sm">
-                    <span className="font-semibold text-gray-700">
+                  <div key={date} className="text-sm bg-slate-50 rounded-lg p-2">
+                    <span className="font-semibold text-slate-700">
                       {formatDate(date)} (週{getDayOfWeek(date)})
                     </span>
-                    <span className="text-gray-600 ml-2">
-                      {schedules.slice(0, 2).map(s => s.doctor_name).join(', ')}
+                    <div className="text-slate-600 mt-1">
+                      {schedules.slice(0, 2).map((s, idx) => (
+                        <span key={idx}>
+                          {s.doctor_name}
+                          {idx < Math.min(schedules.length, 2) - 1 && ', '}
+                        </span>
+                      ))}
                       {schedules.length > 2 && '...'}
-                    </span>
+                    </div>
                   </div>
                 ))}
                 {Object.keys(schedulesByDate).length > 2 && (
-                  <p className="text-xs text-gray-500">...還有 {Object.keys(schedulesByDate).length - 2} 天</p>
+                  <p className="text-xs text-slate-500 text-center">
+                    ...還有 {Object.keys(schedulesByDate).length - 2} 天
+                  </p>
                 )}
               </div>
             )}
           </button>
 
-          {/* 其他功能卡片 - 小卡片 */}
+          {/* 其他功能卡片 - 彩色圓角方塊 */}
           {menuItems.map((item, index) => {
             const Icon = item.icon;
             return (
               <button
                 key={index}
                 onClick={() => setLocation(item.path)}
-                className="bg-white border-2 border-gray-800 rounded-xl p-4
-                  shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5
-                  flex flex-col items-center justify-center gap-3 min-h-[140px]"
+                className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl
+                  transition-all duration-300 hover:-translate-y-1
+                  border border-slate-100 flex flex-col items-center justify-center gap-4 min-h-[180px]"
               >
-                <Icon className="h-8 w-8 text-gray-800" strokeWidth={1.5} />
-                <h3 className="text-sm font-semibold text-gray-800 text-center">
-                  {item.label}
-                </h3>
+                <div className={`w-16 h-16 rounded-2xl ${item.bgColor} 
+                  flex items-center justify-center shadow-md`}>
+                  <Icon className="h-8 w-8 text-white" strokeWidth={2} />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-base font-bold text-slate-800 mb-1">
+                    {item.label}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {item.description}
+                  </p>
+                </div>
               </button>
             );
           })}
+        </div>
+
+        {/* 底部標註 */}
+        <div className="text-center mt-8">
+          <p className="text-xs text-slate-400">
+            FLOS 曜診所排班系統
+          </p>
         </div>
       </div>
 
