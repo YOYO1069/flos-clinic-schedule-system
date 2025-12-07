@@ -272,9 +272,11 @@ export default function Home() {
           <p className="text-base text-slate-600 mb-1">
             歡迎回來,{user?.name || '貴賓殿嬈'}
           </p>
-          <p className="text-sm text-slate-500 mb-4">
-            {ROLE_LABELS[user?.role as UserRole] || '員工'}
-          </p>
+          {user?.role === 'admin' && (
+            <p className="text-sm text-slate-500 mb-4">
+              {ROLE_LABELS[user?.role as UserRole] || '員工'}
+            </p>
+          )}
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => setShowPasswordDialog(true)}
