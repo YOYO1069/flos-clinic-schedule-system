@@ -31,6 +31,9 @@ interface AttendanceRecord {
   status: string;
   check_in_method: string;
   created_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  address?: string | null;
 }
 
 // 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
@@ -465,6 +468,7 @@ export default function AttendanceManagement() {
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">上班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">下班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">工作時數</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">定位資訊</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">狀態</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">操作</th>
                     </tr>
@@ -478,6 +482,22 @@ export default function AttendanceManagement() {
                         <td className="px-4 py-3 text-sm">{formatTime(record.check_out_time)}</td>
                         <td className="px-4 py-3 text-sm">
                           {record.total_hours ? `${record.total_hours.toFixed(2)}h` : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {record.latitude && record.longitude ? (
+                            <div className="text-xs">
+                              <div className="text-gray-600">
+                                {record.latitude.toFixed(6)}, {record.longitude.toFixed(6)}
+                              </div>
+                              {record.address && (
+                                <div className="text-gray-500 mt-1 truncate max-w-xs" title={record.address}>
+                                  {record.address}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {record.check_out_time ? (
