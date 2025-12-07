@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
-import { UserRole } from "@/lib/permissions";
+import { UserRole, ROLE_LABELS } from "@/lib/permissions";
 import { supabase, doctorScheduleClient } from "@/lib/supabase";
 import { toast } from "sonner";
 import { 
@@ -273,7 +273,7 @@ export default function Home() {
             歡迎回來,{user?.name || '貴賓殿嬈'}
           </p>
           <p className="text-sm text-slate-500 mb-4">
-            {user?.position || '員工'}
+            {ROLE_LABELS[user?.role as UserRole] || '員工'}
           </p>
           <div className="flex gap-3 justify-center">
             <button
