@@ -77,7 +77,7 @@ export default function Home() {
 
   // 職能專區功能
   const professionalFeatures = [
-    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor'] },
+    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
     { icon: Activity, label: '護理師守則', description: '護理標準作業流程', path: '/nurse-sop', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
     { icon: Sparkles, label: '美容師守則', description: '美容操作規範指南', path: '/beautician-sop', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
   ];

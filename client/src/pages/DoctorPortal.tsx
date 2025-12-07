@@ -20,14 +20,6 @@ export default function DoctorPortal() {
       return;
     }
     const user = JSON.parse(userStr);
-    
-    // 只有高階主管和管理員可以訪問
-    if (!['admin', 'senior_supervisor'].includes(user.role)) {
-      toast.error('您沒有權限訪問此頁面');
-      setLocation('/');
-      return;
-    }
-    
     setCurrentUser(user);
   }, [setLocation]);
 
