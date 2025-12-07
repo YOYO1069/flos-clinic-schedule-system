@@ -5,7 +5,7 @@ export function usePermissions(userRole: UserRole | null | undefined) {
   const permissions = useMemo(() => {
     if (!userRole) {
       // 未登入用戶沒有任何權限
-      return Object.keys(getUserPermissions('staff')).reduce((acc, key) => {
+      return Object.keys(getUserPermissions('employee')).reduce((acc, key) => {
         acc[key as keyof Permission] = false;
         return acc;
       }, {} as Permission);
