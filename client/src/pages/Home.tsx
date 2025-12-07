@@ -79,8 +79,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-100" style={{
-      backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0)',
-      backgroundSize: '40px 40px'
+      backgroundImage: `
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(200,200,200,0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(220,220,220,0.25) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px),
+        repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(0,0,0,0.02) 2px, rgba(0,0,0,0.02) 4px)
+      `,
+      backgroundSize: '100% 100%, 100% 100%, 100% 100%, 20px 20px, 20px 20px'
     }}>
       {/* 頂部導航 - 典雅設計 */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50" style={{
