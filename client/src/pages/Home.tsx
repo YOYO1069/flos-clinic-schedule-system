@@ -204,7 +204,7 @@ export default function Home() {
       label: '休假月曆',
       description: '員工休假表',
       bgColor: 'bg-gradient-to-br from-pink-400 to-pink-500',
-      path: '/schedule-overview',
+      path: '/leave-calendar',
       show: permissions.canAccessLeaveCalendar
     },
     {

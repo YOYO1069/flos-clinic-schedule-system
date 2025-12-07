@@ -105,6 +105,9 @@ function Router() {
       <Route path="/schedule-overview">
         <ProtectedRoute><ScheduleHome /></ProtectedRoute>
       </Route>
+      <Route path="/schedule">
+        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
+      </Route>
 
       <Route path="/leave-management">
         <ProtectedRoute><LeaveManagement /></ProtectedRoute>
