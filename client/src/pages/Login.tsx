@@ -28,7 +28,7 @@ export default function Login() {
     try {
       // 查詢使用者
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
