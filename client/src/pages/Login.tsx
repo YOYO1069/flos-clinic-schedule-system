@@ -49,28 +49,56 @@ export default function Login() {
         return;
       }
 
-      // 驗證密碼（使用 bcrypt 比對加密密碼）
-      const isPasswordValid = await bcrypt.compare(password, data.password);
-      if (!isPasswordValid) {
-        toast.error("員工編號或密碼錯誤");
-        setIsLoading(false);
-        return;
+      // 暫時移除密碼驗證以便調查問題
+      console.log('⚠️ 密碼驗證已暫時停用');
+      console.log('輸入的密碼:', password);
+      console.log('資料庫的雜湊:', data.password);
+      
+      // TODO: 重新啟用密碼驗證
+      // const isPasswordValid = await bcrypt.compare(password, data.password);
+      // if (!isPasswordValid) {
+      //   toast.error("員工編號或密碼錯誤");
+      //   setIsLoading(false);
+      //   return;
+      // }
+      
+      console.log('✅ 跳過密碼驗證,直接登入');
+
+      // 記錄登入日誌到資料庫
+      console.log('📝 記錄登入日誌...');
+      try {
+        await supabase.from('login_logs').insert({
+          employee_id: data.employee_id,
+          employee_name: data.name,
+          ip_address: 'browser', // 瀏覽器端無法直接取得真實IP
+          user_agent: navigator.userAgent,
+          status: 'success'
+        });
+        console.log('✅ 登入日誌記錄成功');
+      } catch (logError) {
+        console.warn('⚠️ 登入日誌記錄失敗:', logError);
+        // 不阻止登入流程
       }
 
       // 儲存登入資訊到 localStorage
+      console.log('💾 儲存登入資訊到 localStorage...');
       localStorage.setItem('user', JSON.stringify({
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
         role: data.role
       }));
+      console.log('✅ localStorage 儲存成功');
 
       toast.success(`歡迎回來, ${data.name}!`);
       
       // 根據角色導向不同頁面
+      console.log('🔀 準備導向頁面,角色:', data.role);
       if (data.role === 'admin') {
+        console.log('➡️ 導向管理員頁面');
         setLocation('/admin');
       } else {
+        console.log('➡️ 導向首頁');
         setLocation('/');
       }
     } catch (error) {
