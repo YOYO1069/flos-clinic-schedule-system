@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
+import bcrypt from "bcryptjs";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -27,7 +28,7 @@ export default function Login() {
     try {
       // 查詢使用者
       const { data, error } = await supabase
-        .from('employees')
+        .from('users')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
@@ -38,8 +39,9 @@ export default function Login() {
         return;
       }
 
-      // 驗證密碼 (實際應用中應使用加密比對)
-      if (data.password !== password) {
+      // 驗證密碼（使用 bcrypt 比對加密密碼）
+      const isPasswordValid = await bcrypt.compare(password, data.password);
+      if (!isPasswordValid) {
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
@@ -53,24 +55,14 @@ export default function Login() {
         role: data.role
       }));
 
-      console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
-      console.log('✅ localStorage 已存儲');
-
-      toast.success(`歡迎回來,${data.name}!`);
+      toast.success(`歡迎回來, ${data.name}!`);
       
-      // 添加延遲確保 localStorage 完全寫入，然後使用 window.location.href 強制刷新頁面
-      setTimeout(() => {
-        console.log('🔄 準備跳轉頁面...');
-        
-        // 使用 window.location.href 強制刷新頁面
-        if (data.role === 'admin') {
-          console.log('🔄 管理員跳轉到 /admin');
-          window.location.href = '/admin';
-        } else {
-          console.log('🔄 員工跳轉到 /');
-          window.location.href = '/';
-        }
-      }, 100);
+      // 根據角色導向不同頁面
+      if (data.role === 'admin') {
+        setLocation('/admin');
+      } else {
+        setLocation('/');
+      }
     } catch (error) {
       console.error('登入失敗:', error);
       toast.error("登入失敗,請重試");

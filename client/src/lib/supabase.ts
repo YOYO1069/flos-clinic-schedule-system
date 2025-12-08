@@ -1,20 +1,41 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://clzjdlykhjwrlksyjlfz.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsempkbHlraGp3cmxrc3lqbGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTM2ODAsImV4cCI6MjA3NTM2OTY4MH0.V6QAoh4N2aSF5CgDYfKTnY8cMQnDV3AYilj7TbpWJcU'
+// 醫師排班資料庫
+const doctorScheduleUrl = 'https://clzjdlykhjwrlksyjlfz.supabase.co'
+const doctorScheduleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsempkbHlraGp3cmxrc3lqbGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTM2ODAsImV4cCI6MjA3NTM2OTY4MH0.V6QAoh4N2aSF5CgDYfKTnY8cMQnDV3AYilj7TbpWJcU'
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 員工系統資料庫 (打卡/審核/排班)
+const staffSystemUrl = 'https://pizzpwesrbulfjylejlu.supabase.co'
+const staffSystemKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpenpwd2VzcmJ1bGZqeWxlamx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDE1MzgsImV4cCI6MjA3NjIxNzUzOH0.xkVhoQhKBaPGkBzU1tuzAH49rP91gUaBLZFffcnKZIk'
+
+// 預設使用員工系統資料庫
+export const supabase = createClient(staffSystemUrl, staffSystemKey)
+
+// 醫師排班專用客戶端
+export const doctorScheduleClient = createClient(doctorScheduleUrl, doctorScheduleKey)
 
 // 醫師資料
 export const doctors = [
-  { id: 1, name: '鍾曜任', color: '#ec4899' },
-  { id: 2, name: '伍詠聰', color: '#3b82f6' },
-  { id: 3, name: '林思宇', color: '#10b981' },
-  { id: 4, name: '王昱淞', color: '#f59e0b' },
-  { id: 5, name: '黃俊堯', color: '#8b5cf6' },
-  { id: 6, name: '藍子軒', color: '#06b6d4' },
-  { id: 7, name: '何逸群', color: '#ef4444' },
-  { id: 8, name: '郭昌浩', color: '#14b8a6' },
+  { id: 1, name: '何逸群醫師', color: '#ef4444' },
+  { id: 2, name: '藍子軒醫師', color: '#06b6d4' },
+  { id: 3, name: '宋昀翰醫師', color: '#a855f7' },
+  { id: 4, name: '伍詠聪醫師', color: '#3b82f6' },
+  { id: 5, name: '蔡秉遑醫師', color: '#f59e0b' },
+  { id: 6, name: '王昱淞醫師', color: '#f59e0b' },
+  { id: 7, name: '劉佑澤醫師', color: '#ef4444' },
+  { id: 8, name: '林思宇醫師', color: '#10b981' },
+  { id: 9, name: '陳宥嘉醫師', color: '#10b981' },
+  { id: 10, name: '鍾曜任醫師', color: '#ec4899' },
+  { id: 11, name: '李洋醫師', color: '#3b82f6' },
+  { id: 12, name: '龍勤利醫師', color: '#ec4899' },
+  { id: 13, name: '楊鈞賢醫師', color: '#a855f7' },
+  { id: 14, name: '視當日情況', color: '#9ca3af' },
+  { id: 15, name: '郭宜潔醫師', color: '#14b8a6' },
+  { id: 16, name: '張敬暠醫師', color: '#06b6d4' },
+  { id: 17, name: '陳冠廷醫師', color: '#8b5cf6' },
+  { id: 18, name: '許哲瑫醫師', color: '#3b82f6' },
+  { id: 19, name: '黃柏翔醫師', color: '#f59e0b' },
+  { id: 20, name: '劉彥廷醫師', color: '#10b981' },
 ]
 
 // 諮詢師資料
@@ -47,13 +68,13 @@ export const businessHours = {
 }
 
 // 醫師排班資料庫表名
-export const SCHEDULE_TABLE = 'doctor_schedules';
+export const SCHEDULE_TABLE = 'doctor_shift_schedules';
 
 // 醫師排班資料類型
 export interface DoctorSchedule {
   id: string;
   date: string;
-  doctor_id: number;
+  doctor_name: string;
   start_time: string;
   end_time: string;
   created_at?: string;
