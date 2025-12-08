@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { Clock, CheckCircle, XCircle, Users, ArrowLeft } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Users, ArrowLeft, RefreshCw } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
 
 interface AttendanceRecord {
   id: number;
@@ -19,7 +20,7 @@ interface AttendanceRecord {
   check_in_method: string;
 }
 
-interface User {
+interface Employee {
   id: number;
   employee_id: string;
   name: string;
@@ -30,7 +31,7 @@ export default function AttendanceDashboard() {
   const [, setLocation] = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 更新當前時間
@@ -44,8 +45,8 @@ export default function AttendanceDashboard() {
   // 載入資料
   useEffect(() => {
     loadData();
-    // 每30秒自動重新載入
-    const interval = setInterval(loadData, 30000);
+    // 每15秒自動重新載入
+    const interval = setInterval(loadData, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -53,13 +54,13 @@ export default function AttendanceDashboard() {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
 
-      // 載入所有員工（不限角色）
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
+      // 載入所有員工
+      const { data: employeesData, error: employeesError } = await supabase
+        .from('employees')
         .select('*')
         .order('name', { ascending: true });
 
-      if (usersError) throw usersError;
+      if (employeesError) throw employeesError;
 
       // 載入今日打卡記錄
       const { data: recordsData, error: recordsError } = await supabase
@@ -69,7 +70,7 @@ export default function AttendanceDashboard() {
 
       if (recordsError) throw recordsError;
 
-      setAllUsers(usersData || []);
+      setAllEmployees(employeesData || []);
       setTodayRecords(recordsData || []);
     } catch (error) {
       console.error('載入資料失敗:', error);
@@ -79,197 +80,156 @@ export default function AttendanceDashboard() {
   }
 
   // 統計資料
-  const totalStaff = allUsers.length;
-  const checkedIn = todayRecords.filter(r => r.check_in_time && !r.check_out_time).length;
-  const checkedOut = todayRecords.filter(r => r.check_out_time).length;
-  const notCheckedIn = allUsers.filter(u => !todayRecords.find(r => r.employee_id === u.employee_id)).length;
+  const checkedInCount = todayRecords.filter(r => r.check_in_time && !r.check_out_time).length;
+  const checkedOutCount = todayRecords.filter(r => r.check_out_time).length;
+  const notCheckedInCount = allEmployees.length - todayRecords.length;
 
-  // 取得員工的打卡記錄
-  function getEmployeeRecord(employeeId: string): AttendanceRecord | null {
-    return todayRecords.find(r => r.employee_id === employeeId) || null;
-  }
-
-  // 格式化時間顯示
-  function formatTime(timeStr: string | null): string {
-    if (!timeStr) return '-';
-    try {
-      const date = new Date(timeStr);
-      return format(date, 'HH:mm:ss');
-    } catch {
-      return '-';
+  // 獲取員工狀態
+  function getEmployeeStatus(employeeId: string): { status: string; color: string; time: string } {
+    const record = todayRecords.find(r => r.employee_id === employeeId);
+    
+    if (!record) {
+      return { status: '未打卡', color: 'bg-gray-100 text-gray-700', time: '-' };
     }
-  }
-
-  // 取得狀態樣式
-  function getStatusStyle(record: AttendanceRecord | null) {
-    if (!record || !record.check_in_time) {
-      return 'bg-gray-100 border-gray-300';
-    }
+    
     if (record.check_out_time) {
-      return 'bg-blue-50 border-blue-300';
+      return { 
+        status: '已下班', 
+        color: 'bg-blue-100 text-blue-700',
+        time: format(new Date(record.check_out_time), 'HH:mm', { locale: zhTW })
+      };
     }
-    return 'bg-green-50 border-green-300';
-  }
-
-  // 取得狀態圖示
-  function getStatusIcon(record: AttendanceRecord | null) {
-    if (!record || !record.check_in_time) {
-      return <XCircle className="w-5 h-5 text-gray-500" />;
+    
+    if (record.check_in_time) {
+      return { 
+        status: '上班中', 
+        color: 'bg-green-100 text-green-700',
+        time: format(new Date(record.check_in_time), 'HH:mm', { locale: zhTW })
+      };
     }
-    if (record.check_out_time) {
-      return <CheckCircle className="w-5 h-5 text-blue-500" />;
-    }
-    return <CheckCircle className="w-5 h-5 text-green-500" />;
-  }
-
-  // 取得狀態文字
-  function getStatusText(record: AttendanceRecord | null) {
-    if (!record || !record.check_in_time) {
-      return '未打卡';
-    }
-    if (record.check_out_time) {
-      return '已下班';
-    }
-    return '已上班';
+    
+    return { status: '未打卡', color: 'bg-gray-100 text-gray-700', time: '-' };
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <p className="text-xl">載入中...</p>
+        <div className="text-xl text-gray-600">載入中...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* 標題列 */}
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation('/')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
+        {/* 標題區 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              onClick={() => setLocation('/')}
+              className="mb-4"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
               返回首頁
             </Button>
-            <h1 className="text-4xl font-bold text-gray-800">電子看板</h1>
+            <Button 
+              variant="outline" 
+              onClick={loadData}
+              className="mb-4"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              重新整理
+            </Button>
+          </div>
+          <div className="flex items-center gap-4">
+            <Users className="w-12 h-12 text-blue-600" />
+            <div>
+              <h1 className="text-4xl font-bold text-gray-800">員工上班狀態看板</h1>
+              <p className="text-lg text-gray-600 mt-1">
+                {format(currentTime, 'yyyy年MM月dd日 HH:mm:ss EEEE', { locale: zhTW })}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* 當前時間卡片 */}
-        <Card className="mb-6 bg-white/90 backdrop-blur shadow-lg">
-          <CardContent className="py-8">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-indigo-600 mb-2">
-                {format(currentTime, 'HH:mm:ss')}
-              </div>
-              <div className="text-2xl text-gray-700">
-                {format(currentTime, 'yyyy年MM月dd日 EEEE', { locale: zhTW })}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* 統計卡片 */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card className="bg-white/90 backdrop-blur">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                總員工數
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">總員工數</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-900">{totalStaff}</div>
+              <div className="flex items-center gap-2">
+                <Users className="w-8 h-8 text-blue-500" />
+                <span className="text-3xl font-bold text-gray-900">{allEmployees.length}</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-green-50 border-green-200">
+          <Card className="border-l-4 border-l-green-500">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-green-700 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                已上班
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">上班中</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-700">{checkedIn}</div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-8 h-8 text-green-500" />
+                <span className="text-3xl font-bold text-gray-900">{checkedInCount}</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-blue-50 border-blue-200">
+          <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" />
-                已下班
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">已下班</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-700">{checkedOut}</div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-8 h-8 text-blue-500" />
+                <span className="text-3xl font-bold text-gray-900">{checkedOutCount}</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-50 border-gray-200">
+          <Card className="border-l-4 border-l-gray-500">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <XCircle className="w-4 h-4" />
-                未打卡
-              </CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">未打卡</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-gray-700">{notCheckedIn}</div>
+              <div className="flex items-center gap-2">
+                <XCircle className="w-8 h-8 text-gray-500" />
+                <span className="text-3xl font-bold text-gray-900">{notCheckedInCount}</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* 今日卡班狀況 */}
-        <Card className="bg-white/90 backdrop-blur shadow-lg">
+        {/* 員工狀態列表 */}
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">今日卡班狀況</CardTitle>
+            <CardTitle className="text-xl">員工即時狀態</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {allUsers.map((user) => {
-                const record = getEmployeeRecord(user.employee_id);
+              {allEmployees.map((employee) => {
+                const { status, color, time } = getEmployeeStatus(employee.employee_id);
                 return (
-                  <div
-                    key={user.id}
-                    className={`p-4 rounded-lg border-2 ${getStatusStyle(record)}`}
+                  <div 
+                    key={employee.id}
+                    className="p-4 border-2 border-gray-200 rounded-lg hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(record)}
-                        <div>
-                          <div className="font-semibold text-lg">{user.name}</div>
-                          <div className="text-xs text-gray-600">{user.employee_id}</div>
-                        </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-lg text-gray-900">{employee.name}</h3>
+                        <p className="text-sm text-gray-500">{employee.employee_id}</p>
                       </div>
-                      <div className="text-sm font-medium">
-                        {getStatusText(record)}
-                      </div>
+                      <Badge className={color}>
+                        {status}
+                      </Badge>
                     </div>
-
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">上班:</span>
-                        <span className="font-medium">
-                          {formatTime(record?.check_in_time || null)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">下班:</span>
-                        <span className="font-medium">
-                          {formatTime(record?.check_out_time || null)}
-                        </span>
-                      </div>
-                      {record?.check_in_method && (
-                        <div className="flex justify-between items-center pt-1 border-t border-gray-200">
-                          <span className="text-gray-600">打卡方式:</span>
-                          <span className="text-xs px-2 py-1 bg-white rounded">
-                            {record.check_in_method === 'gps' && '📍 GPS'}
-                            {record.check_in_method === 'bluetooth' && '📶 藍牙'}
-                            {record.check_in_method === 'quick' && '⚡ 快速'}
-                          </span>
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      <span>{time}</span>
                     </div>
                   </div>
                 );
