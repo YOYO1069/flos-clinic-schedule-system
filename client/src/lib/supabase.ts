@@ -47,13 +47,13 @@ export const businessHours = {
 }
 
 // 醫師排班資料庫表名
-export const SCHEDULE_TABLE = 'doctor_shift_schedules';
+export const SCHEDULE_TABLE = 'doctor_schedules';
 
 // 醫師排班資料類型
 export interface DoctorSchedule {
   id: string;
   date: string;
-  doctor_name: string;
+  doctor_id: number;
   start_time: string;
   end_time: string;
   created_at?: string;
