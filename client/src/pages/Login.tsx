@@ -28,9 +28,9 @@ export default function Login() {
     try {
       console.log('🔍 開始查詢員工資料:', employeeId.trim());
       
-      // 查詢使用者（從 employees 表）
+      // 查詢使用者（從 users 表）
       const { data, error } = await supabase
-        .from('employees')
+        .from('users')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
