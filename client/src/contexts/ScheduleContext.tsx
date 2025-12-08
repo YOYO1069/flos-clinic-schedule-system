@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { DaySchedule, DoctorShift, MonthSchedule } from '@/types/schedule';
-import { doctorScheduleClient, DoctorSchedule, SCHEDULE_TABLE, doctors } from '@/lib/supabase';
+import { supabase, DoctorSchedule, SCHEDULE_TABLE } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface ScheduleContextType {
@@ -33,10 +33,9 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       // 先載入所有醫師資料
-      const { data: doctorsData, error: doctorsError } = await doctorScheduleClient
+      const { data: doctorsData, error: doctorsError } = await supabase
         .from('doctors')
-        .select('id, name')
-        .execute();
+        .select('id, name');
       
       if (doctorsError) {
         console.error('Error loading doctors:', doctorsError);
@@ -51,7 +50,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       console.log('[ScheduleContext] Loaded doctors:', doctorMap);
       
       // 載入排班資料
-      const { data, error } = await doctorScheduleClient
+      const { data, error } = await supabase
         .from(SCHEDULE_TABLE)
         .select('*')
         .order('date', { ascending: true });
@@ -112,8 +111,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // 直接使用 doctor_name
-      const { data, error } = await doctorScheduleClient
+      const { data, error } = await supabase
         .from(SCHEDULE_TABLE)
         .insert({
           date: date,
@@ -131,7 +129,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         const daySchedule = prev[date] || { date, shifts: [] };
         const newShift: DoctorShift = {
           id: data.id,
-          doctorName: shift.doctorName,
+          doctorName: data.doctor_name,
           startTime: data.start_time,
           endTime: data.end_time,
         };
@@ -155,8 +153,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const updateShift = async (date: string, shiftId: string, shift: Omit<DoctorShift, 'id'>) => {
     try {
-      // 直接使用 doctor_name
-      const { error } = await doctorScheduleClient
+      const { error } = await supabase
         .from(SCHEDULE_TABLE)
         .update({
           doctor_name: shift.doctorName,
@@ -194,7 +191,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const deleteShift = async (date: string, shiftId: string) => {
     try {
-      const { error } = await doctorScheduleClient
+      const { error } = await supabase
         .from(SCHEDULE_TABLE)
         .delete()
         .eq('id', shiftId);
@@ -236,7 +233,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const clearAllSchedules = async () => {
     try {
-      const { error } = await doctorScheduleClient
+      const { error } = await supabase
         .from(SCHEDULE_TABLE)
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000'); // 刪除所有記錄

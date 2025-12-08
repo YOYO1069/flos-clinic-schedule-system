@@ -7,31 +7,20 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import ScheduleHome from "./pages/ScheduleHome";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
 import Login from "./pages/Login";
-import UnifiedLogin from "./pages/UnifiedLogin";
-import ChangePassword from "./pages/ChangePassword";
-import AdminPanel from "./pages/AdminPanel";
-import LeaveApproval from "./pages/LeaveApproval";
-import CalendarSchedule from "./pages/CalendarSchedule";
-// import TestEnv from "./pages/TestEnv"; // Temporarily disabled
-import DoctorSchedule from "./pages/DoctorSchedule";
-import AttendanceDashboard from "./pages/AttendanceDashboard";
-import AttendanceManagement from "./pages/AttendanceManagement";
-import AdvancedAttendanceManagement from "./pages/AdvancedAttendanceManagement";
-import AttendanceSettings from "./pages/AttendanceSettings";
-import SimpleAttendanceManagement from "./pages/SimpleAttendanceManagement";
-import StaffManagement from "./pages/StaffManagement";
-import OperationFee from "./pages/OperationFee";
-import AccountManagement from "./pages/AccountManagement";
-import PermissionManagement from "./pages/PermissionManagement";
-import SecurityDashboardPage from "./pages/SecurityDashboardPage";
 import DoctorPortal from "./pages/DoctorPortal";
 import NurseSOP from "./pages/NurseSOP";
 import BeauticianSOP from "./pages/BeauticianSOP";
+import AdminPanel from "./pages/AdminPanel";
+import LeaveApproval from "./pages/LeaveApproval";
+// import TestEnv from "./pages/TestEnv"; // Temporarily disabled
+import DoctorSchedule from "./pages/DoctorSchedule";
+import AttendanceDashboard from "./pages/AttendanceDashboard";
+import SecurityDashboard from "./pages/SecurityDashboard";
+import AttendanceManagement from "./pages/AttendanceManagement";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -55,8 +44,6 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/unified-login" component={UnifiedLogin} />
-      <Route path="/change-password" component={ChangePassword} />
       <Route path="/login" component={Login} />
       {/* <Route path="/test-env">
         <ProtectedRoute><TestEnv /></ProtectedRoute>
@@ -64,32 +51,20 @@ function Router() {
       <Route path="/attendance-dashboard">
         <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
       </Route>
-      <Route path="/attendance-management">
-        <ProtectedRoute><SimpleAttendanceManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/advanced-attendance-management">
-        <ProtectedRoute><AdvancedAttendanceManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/simple-attendance">
-        <ProtectedRoute><SimpleAttendanceManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/attendance-settings">
-        <ProtectedRoute><AttendanceSettings /></ProtectedRoute>
-      </Route>
-      <Route path="/employee-management">
-        <ProtectedRoute><StaffManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/account-management">
-        <ProtectedRoute><AccountManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/permission-management">
-        <ProtectedRoute><PermissionManagement /></ProtectedRoute>
-      </Route>
-      <Route path="/operation-fee">
-        <ProtectedRoute><OperationFee /></ProtectedRoute>
-      </Route>
       <Route path="/security">
-        <ProtectedRoute><SecurityDashboardPage /></ProtectedRoute>
+        <ProtectedRoute><SecurityDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/employee-dashboard">
+        <ProtectedRoute><AttendanceDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-management">
+        <ProtectedRoute><AttendanceManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/doctor-schedule">
+        <ProtectedRoute><DoctorSchedule /></ProtectedRoute>
+      </Route>
+      <Route path="/admin">
+        <ProtectedRoute><AdminPanel /></ProtectedRoute>
       </Route>
       <Route path="/doctor-portal">
         <ProtectedRoute><DoctorPortal /></ProtectedRoute>
@@ -100,32 +75,19 @@ function Router() {
       <Route path="/beautician-sop">
         <ProtectedRoute><BeauticianSOP /></ProtectedRoute>
       </Route>
-      <Route path="/leave-calendar">
+      <Route path="/approval">
+        <ProtectedRoute><LeaveApproval /></ProtectedRoute>
+      </Route>
+      <Route path="/">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
+      </Route>
+      <Route path="/schedule">
+        <ProtectedRoute><Home /></ProtectedRoute>
       </Route>
       <Route path="/attendance">
         <ProtectedRoute><Attendance /></ProtectedRoute>
       </Route>
-      <Route path="/doctor-schedule">
-        <ProtectedRoute><DoctorSchedule /></ProtectedRoute>
-      </Route>
-      <Route path="/admin">
-        <ProtectedRoute><AdminPanel /></ProtectedRoute>
-      </Route>
-      <Route path="/leave-approval">
-        <ProtectedRoute><LeaveApproval /></ProtectedRoute>
-      </Route>
-      <Route path="/">
-        <ProtectedRoute><Home /></ProtectedRoute>
-      </Route>
-      <Route path="/schedule-overview">
-        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
-      </Route>
-      <Route path="/schedule">
-        <ProtectedRoute><ScheduleHome /></ProtectedRoute>
-      </Route>
-
-      <Route path="/leave-management">
+      <Route path="/leave">
         <ProtectedRoute><LeaveManagement /></ProtectedRoute>
       </Route>
       <Route path="/404" component={NotFound} />

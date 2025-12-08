@@ -2,14 +2,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Download, Search, Edit, Trash2, X, Plus } from "lucide-react";
+import { ArrowLeft, Download, Search, Edit, Trash2, X } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { usePermissions } from "@/hooks/usePermissions";
-import { UserRole } from "@/lib/permissions";
 import {
   Dialog,
   DialogContent,
@@ -31,9 +29,6 @@ interface AttendanceRecord {
   status: string;
   check_in_method: string;
   created_at: string;
-  latitude?: number | null;
-  longitude?: number | null;
-  address?: string | null;
 }
 
 // 格式化時間為 datetime-local input 格式 (YYYY-MM-DDTHH:mm)
@@ -66,6 +61,9 @@ export default function AttendanceManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [dateRangeMode, setDateRangeMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
   // 編輯對話框狀態
@@ -73,41 +71,6 @@ export default function AttendanceManagement() {
   const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null);
   const [editCheckInTime, setEditCheckInTime] = useState("");
   const [editCheckOutTime, setEditCheckOutTime] = useState("");
-  
-  // 新增打卡記錄狀態
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [employees, setEmployees] = useState<{employee_id: string, name: string}[]>([]);
-  const [addEmployeeId, setAddEmployeeId] = useState("");
-  const [addCheckInTime, setAddCheckInTime] = useState("");
-  const [addCheckOutTime, setAddCheckOutTime] = useState("");
-  const { permissions } = usePermissions(currentUser?.role as UserRole);
-
-  async function loadRecords(date: string) {
-    setLoading(true);
-    console.log('🔍 載入打卡記錄，日期:', date);
-    try {
-      const { data, error } = await supabase
-        .from('attendance_records')
-        .select('*')
-        .eq('work_date', date)
-        .order('check_in_time', { ascending: true });
-      
-      console.log('📊 查詢結果:', { 記錄數: data?.length, 錯誤: error });
-
-      if (error) {
-        console.error('❌ 查詢錯誤:', error);
-        throw error;
-      }
-      console.log('✅ 成功載入', data?.length, '筆記錄');
-      setRecords(data || []);
-      setFilteredRecords(data || []);
-    } catch (error) {
-      console.error('載入打卡記錄失敗:', error);
-      toast.error("載入打卡記錄失敗");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -117,17 +80,8 @@ export default function AttendanceManagement() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
-    
-    // 使用 permissions.ts 檢查權限
-    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
-    if (!userPermissions.canAccessAttendanceManagement) {
-      toast.error("您沒有權限存取此頁面");
-      setLocation('/');
-      return;
-    }
-    loadRecords(selectedDate);
-    loadEmployees();
-  }, [selectedDate, setLocation]);
+    loadRecords();
+  }, [selectedDate, startDate, endDate, dateRangeMode]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -140,8 +94,35 @@ export default function AttendanceManagement() {
       setFilteredRecords(records);
     }
   }, [searchTerm, records]);
-  
-  function formatTime(timeStr: string | null): string{
+
+  async function loadRecords() {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('attendance_records')
+        .select('*');
+      
+      // 根據模式選擇查詢條件
+      if (dateRangeMode) {
+        query = query.gte('work_date', startDate).lte('work_date', endDate);
+      } else {
+        query = query.eq('work_date', selectedDate);
+      }
+      
+      const { data, error } = await query.order('work_date', { ascending: false }).order('check_in_time', { ascending: true });
+
+      if (error) throw error;
+      setRecords(data || []);
+      setFilteredRecords(data || []);
+    } catch (error) {
+      console.error('載入打卡記錄失敗:', error);
+      toast.error("載入打卡記錄失敗");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function formatTime(timeStr: string | null): string {
     if (!timeStr) return '-';
     try {
       const date = new Date(timeStr);
@@ -187,7 +168,7 @@ export default function AttendanceManagement() {
 
       toast.success("打卡記錄已更新");
       setEditDialogOpen(false);
-      loadRecords(selectedDate);
+      loadRecords();
     } catch (error) {
       console.error('更新打卡記錄失敗:', error);
       toast.error("更新打卡記錄失敗");
@@ -206,80 +187,10 @@ export default function AttendanceManagement() {
       if (error) throw error;
 
       toast.success("打卡記錄已刪除");
-      loadRecords(selectedDate);
+      loadRecords();
     } catch (error) {
       console.error('刪除打卡記錄失敗:', error);
       toast.error("刪除打卡記錄失敗");
-    }
-  }
-
-  async function loadEmployees() {
-    try {
-      const { data, error } = await supabase
-        .from('employees')
-        .select('employee_id, name')
-        .order('name');
-
-      if (error) throw error;
-      setEmployees(data || []);
-    } catch (error: any) {
-      console.error('載入員工清單失敗:', error);
-    }
-  }
-
-  function openAddDialog() {
-    setAddEmployeeId("");
-    setAddCheckInTime("");
-    setAddCheckOutTime("");
-    setAddDialogOpen(true);
-  }
-
-  async function handleAddRecord() {
-    if (!addEmployeeId || !addCheckInTime) {
-      toast.error('請填寫必填欄位（員工、上班時間）');
-      return;
-    }
-
-    try {
-      const employee = employees.find(e => e.employee_id === addEmployeeId);
-      if (!employee) {
-        toast.error('找不到該員工');
-        return;
-      }
-
-      // 計算工時
-      let workHours = null;
-      if (addCheckInTime && addCheckOutTime) {
-        const checkIn = new Date(addCheckInTime);
-        const checkOut = new Date(addCheckOutTime);
-        workHours = (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60);
-      }
-
-      // 格式化為資料庫格式
-      const checkInTimeStr = formatForDatabase(addCheckInTime);
-      const checkOutTimeStr = addCheckOutTime ? formatForDatabase(addCheckOutTime) : null;
-
-      const { error } = await supabase
-        .from('attendance_records')
-        .insert([{
-          employee_id: addEmployeeId,
-          employee_name: employee.name,
-          work_date: selectedDate,
-          check_in_time: checkInTimeStr,
-          check_out_time: checkOutTimeStr,
-          total_hours: workHours,
-          check_in_method: 'manual',
-          status: 'normal'
-        }]);
-
-      if (error) throw error;
-
-      toast.success('打卡記錄已新增');
-      setAddDialogOpen(false);
-      loadRecords(selectedDate);
-    } catch (error) {
-      console.error('新增打卡記錄失敗:', error);
-      toast.error('新增打卡記錄失敗');
     }
   }
 
@@ -308,7 +219,10 @@ export default function AttendanceManagement() {
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `打卡記錄_${selectedDate}.csv`;
+    const filename = dateRangeMode 
+      ? `打卡記錄_${startDate}_至_${endDate}.csv`
+      : `打卡記錄_${selectedDate}.csv`;
+    link.download = filename;
     link.click();
 
     toast.success("匯出成功");
@@ -346,31 +260,73 @@ export default function AttendanceManagement() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* 篩選區域 */}
         <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>篩選條件</CardTitle>
-            <Button onClick={openAddDialog} className="gap-2">
-              <Plus className="w-4 h-4" />
-              新增打卡記錄
-            </Button>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  選擇日期
-                </label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full"
-                />
+            <div className="space-y-4">
+              {/* 日期模式切換 */}
+              <div className="flex items-center gap-4">
+                <Button
+                  variant={!dateRangeMode ? "default" : "outline"}
+                  onClick={() => setDateRangeMode(false)}
+                  size="sm"
+                >
+                  單日查詢
+                </Button>
+                <Button
+                  variant={dateRangeMode ? "default" : "outline"}
+                  onClick={() => setDateRangeMode(true)}
+                  size="sm"
+                >
+                  時間段查詢
+                </Button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  搜尋員工
-                </label>
-                <div className="relative">
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {!dateRangeMode ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      選擇日期
+                    </label>
+                    <Input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        開始日期
+                      </label>
+                      <Input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        結束日期
+                      </label>
+                      <Input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    搜尋員工
+                  </label>
+                  <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     type="text"
@@ -452,9 +408,7 @@ export default function AttendanceManagement() {
           <CardHeader>
             <CardTitle>打卡記錄</CardTitle>
             <CardDescription>
-              {selectedDate && !isNaN(new Date(selectedDate).getTime()) 
-                ? `${format(new Date(selectedDate), 'yyyy年MM月dd日 EEEE', { locale: zhTW })} 的打卡記錄`
-                : '請選擇日期'}
+              {format(new Date(selectedDate), 'yyyy年MM月dd日 EEEE', { locale: zhTW })} 的打卡記錄
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -468,7 +422,6 @@ export default function AttendanceManagement() {
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">上班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">下班時間</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">工作時數</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">定位資訊</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">狀態</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">操作</th>
                     </tr>
@@ -482,22 +435,6 @@ export default function AttendanceManagement() {
                         <td className="px-4 py-3 text-sm">{formatTime(record.check_out_time)}</td>
                         <td className="px-4 py-3 text-sm">
                           {record.total_hours ? `${record.total_hours.toFixed(2)}h` : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          {record.latitude && record.longitude ? (
-                            <div className="text-xs">
-                              <div className="text-gray-600">
-                                {record.latitude.toFixed(6)}, {record.longitude.toFixed(6)}
-                              </div>
-                              {record.address && (
-                                <div className="text-gray-500 mt-1 truncate max-w-xs" title={record.address}>
-                                  {record.address}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {record.check_out_time ? (
@@ -594,80 +531,6 @@ export default function AttendanceManagement() {
             </Button>
             <Button onClick={handleSaveEdit}>
               儲存
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 新增打卡記錄對話框 */}
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>新增打卡記錄</DialogTitle>
-            <DialogDescription>
-              日期: {selectedDate}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="employee-select">員工 *</Label>
-              <select
-                id="employee-select"
-                value={addEmployeeId}
-                onChange={(e) => setAddEmployeeId(e.target.value)}
-                className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">請選擇員工</option>
-                {employees.map(emp => (
-                  <option key={emp.employee_id} value={emp.employee_id}>
-                    {emp.name} ({emp.employee_id})
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <Label htmlFor="add-check-in-time">上班時間 (台灣時間) *</Label>
-              <Input
-                id="add-check-in-time"
-                type="datetime-local"
-                value={addCheckInTime}
-                onChange={(e) => setAddCheckInTime(e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {addCheckInTime && `顯示: ${format(new Date(addCheckInTime), 'yyyy-MM-dd HH:mm:ss')}`}
-              </p>
-            </div>
-            
-            <div>
-              <Label htmlFor="add-check-out-time">下班時間 (台灣時間)</Label>
-              <Input
-                id="add-check-out-time"
-                type="datetime-local"
-                value={addCheckOutTime}
-                onChange={(e) => setAddCheckOutTime(e.target.value)}
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                {addCheckOutTime && `顯示: ${format(new Date(addCheckOutTime), 'yyyy-MM-dd HH:mm:ss')}`}
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded p-3">
-              <p className="text-sm text-blue-800">
-                <strong>提示：</strong>所有時間都是台灣時間，直接輸入您想要的時間即可。
-              </p>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-              取消
-            </Button>
-            <Button onClick={handleAddRecord}>
-              新增
             </Button>
           </DialogFooter>
         </DialogContent>

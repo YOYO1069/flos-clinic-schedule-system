@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
-import bcrypt from "bcryptjs";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -26,71 +25,38 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 查詢員工資料
+      // 查詢使用者
       const { data, error } = await supabase
         .from('employees')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
 
-      console.log('查詢結果:', { data, error });
-
-      if (error) {
-        console.error('查詢錯誤:', error);
+      if (error || !data) {
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
       }
 
-      if (!data) {
-        console.error('未找到員工資料');
+      // 驗證密碼 (實際應用中應使用加密比對)
+      if (data.password !== password) {
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
-      }
-
-      // 驗證密碼（使用 bcrypt 比對加密密碼）
-      console.log('🔑 開始驗證密碼...');
-      const isPasswordValid = await bcrypt.compare(password, data.password);
-      console.log('✅ 密碼驗證結果:', isPasswordValid);
-      
-      if (!isPasswordValid) {
-        console.log('❌ 密碼錯誤');
-        toast.error("員工編號或密碼錯誤");
-        setIsLoading(false);
-        return;
-      }
-
-      // 記錄登入日誌到資料庫
-      console.log('📝 記錄登入日誌...');
-      try {
-        await supabase.from('login_logs').insert({
-          employee_id: data.employee_id,
-          employee_name: data.name,
-          ip_address: 'browser', // 瀏覽器端無法直接取得真實IP
-          user_agent: navigator.userAgent,
-          status: 'success'
-        });
-        console.log('✅ 登入日誌記錄成功');
-      } catch (logError) {
-        console.warn('⚠️ 登入日誌記錄失敗:', logError);
-        // 不阻止登入流程
       }
 
       // 儲存登入資訊到 localStorage
-      console.log('💾 儲存登入資訊到 localStorage...');
       localStorage.setItem('user', JSON.stringify({
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
         role: data.role
       }));
-      console.log('✅ localStorage 儲存成功');
 
       console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
       console.log('✅ localStorage 已存儲');
 
-      toast.success(`歡迎回來, ${data.name}!`);
+      toast.success(`歡迎回來,${data.name}!`);
       
       // 添加延遲確保 localStorage 完全寫入，然後使用 window.location.href 強制刷新頁面
       setTimeout(() => {
