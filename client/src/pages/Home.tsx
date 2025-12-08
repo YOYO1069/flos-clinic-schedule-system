@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Clock, FileText, Calendar, Users, Shield, Settings, 
   DollarSign, TrendingUp, Award, MessageSquare, BookOpen, Gift, Heart,
@@ -8,12 +12,20 @@ import {
   Activity, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
-import { doctorScheduleClient, SCHEDULE_TABLE } from "@/lib/supabase";
+import { doctorScheduleClient, SCHEDULE_TABLE, supabase } from "@/lib/supabase";
+import bcrypt from "bcryptjs";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [doctorSchedules, setDoctorSchedules] = useState<any[]>([]);
+  
+  // 修改密碼對話框狀態
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -25,6 +37,69 @@ export default function Home() {
     setCurrentUser(user);
     loadDoctorSchedules();
   }, [setLocation]);
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      toast.error("請填寫所有欄位");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("新密碼長度至少需要 6 個字元");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("兩次輸入的新密碼不一致");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // 驗證舊密碼
+      const { data: userData, error: fetchError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('employee_id', currentUser.employee_id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 使用 bcrypt 驗證舊密碼
+      const isPasswordValid = await bcrypt.compare(oldPassword, userData.password);
+      if (!isPasswordValid) {
+        toast.error("舊密碼錯誤");
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // 使用 bcrypt 加密新密碼
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // 更新密碼
+      const { error: updateError } = await supabase
+        .from('employees')
+        .update({ 
+          password: hashedPassword,
+          password_changed: true
+        })
+        .eq('employee_id', currentUser.employee_id);
+
+      if (updateError) throw updateError;
+
+      toast.success("密碼修改成功！");
+      setChangePasswordOpen(false);
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      console.error('修改密碼失敗:', error);
+      toast.error("修改密碼失敗，請重試");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const loadDoctorSchedules = async () => {
     try {
@@ -63,16 +138,16 @@ export default function Home() {
 
   // 所有功能定義
   const allFeatures = [
-    { icon: Clock, label: '我的打卡', description: '查看打卡記錄', path: '/attendance', color: 'text-cyan-600', bgColor: 'bg-cyan-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '請假管理', description: '申請與查詢假單', path: '/leave-management', color: 'text-blue-600', bgColor: 'bg-blue-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: '/leave-approval', color: 'text-green-600', bgColor: 'bg-green-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: '/leave-calendar', color: 'text-pink-600', bgColor: 'bg-pink-50', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: '/attendance-management', color: 'text-purple-600', bgColor: 'bg-purple-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/employee-management', color: 'text-orange-600', bgColor: 'bg-orange-50', roles: ['admin', 'senior_supervisor'] },
-    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: '/attendance-settings', color: 'text-slate-600', bgColor: 'bg-slate-50', roles: ['admin'] },
-    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin', color: 'text-indigo-600', bgColor: 'bg-indigo-50', roles: ['admin'] },
-    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin', color: 'text-violet-600', bgColor: 'bg-violet-50', roles: ['admin'] },
+    { icon: Clock, label: '我的打卡', description: '查看打卡記錄', path: '/attendance', color: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '請假管理', description: '申請與查詢假單', path: '/leave-management', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: '/leave-approval', color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: '/leave-calendar', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: '/attendance-management', color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/employee-management', color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', roles: ['admin', 'senior_supervisor'] },
+    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
+    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: '/attendance-settings', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', roles: ['admin'] },
+    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin', color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', roles: ['admin'] },
+    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin', color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', roles: ['admin'] },
   ];
 
   // 職能專區功能
@@ -184,10 +259,78 @@ export default function Home() {
               </h2>
               <p className="text-gray-500 font-medium">歡迎回來，{currentUser?.name}</p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500 font-medium">當前時間</div>
-              <div className="text-lg font-bold text-gray-900">
-                {new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+            <div className="flex items-center gap-4">
+              <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Key className="w-4 h-4" />
+                    修改密碼
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>修改密碼</DialogTitle>
+                    <DialogDescription>
+                      請輸入您的舊密碼和新密碼
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="oldPassword">舊密碼</Label>
+                      <Input
+                        id="oldPassword"
+                        type="password"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        placeholder="請輸入舊密碼"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">新密碼</Label>
+                      <Input
+                        id="newPassword"
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="請輸入新密碼（至少 6 個字元）"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">確認新密碼</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="請再次輸入新密碼"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setChangePasswordOpen(false)}
+                      disabled={isChangingPassword}
+                    >
+                      取消
+                    </Button>
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={isChangingPassword}
+                    >
+                      {isChangingPassword ? "處理中..." : "確認修改"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              <div className="text-right">
+                <div className="text-sm text-gray-500 font-medium">當前時間</div>
+                <div className="text-lg font-bold text-gray-900">
+                  {new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}
+                </div>
               </div>
             </div>
           </div>
@@ -298,16 +441,16 @@ export default function Home() {
                 <button
                   key={index}
                   onClick={() => setLocation(item.path)}
-                  className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border border-gray-200`}
+                  className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
                   style={{
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
@@ -317,13 +460,13 @@ export default function Home() {
                         <ExternalLink className="w-3 h-3 text-white" />
                       </div>
                     )}
-                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 ${item.isExternal ? 'opacity-100' : 'opacity-60'}`} style={{
-                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.04)'
+                    <div className={`w-14 h-14 ${item.bgColor} rounded-xl flex items-center justify-center mb-3 border-2 ${item.borderColor || 'border-gray-200'}`} style={{
+                      boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                     }}>
-                      <Icon className={`w-6 h-6 ${item.color}`} />
+                      <Icon className={`w-7 h-7 ${item.color}`} />
                     </div>
-                    <h3 className={`text-sm font-bold ${item.isExternal ? 'text-gray-900' : 'text-gray-500'} mb-0.5 text-center w-full`}>{item.label}</h3>
-                    <p className={`text-xs ${item.isExternal ? 'text-gray-600' : 'text-gray-400'} leading-tight text-center w-full`}>{item.description}</p>
+                    <h3 className="text-sm font-bold text-gray-900 mb-1 text-center w-full">{item.label}</h3>
+                    <p className="text-xs text-gray-600 leading-tight text-center w-full">{item.description}</p>
                   </div>
                 </button>
               );
