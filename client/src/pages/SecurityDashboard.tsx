@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface VisitorLog {
   id: number;
@@ -22,11 +24,28 @@ interface VisitorLog {
 
 export default function SecurityDashboard() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [strangerLogs, setStrangerLogs] = useState<VisitorLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredLogs, setFilteredLogs] = useState<VisitorLog[]>([]);
+
+  // 檢查管理員權限
+  useEffect(() => {
+    if (!user) return;
+    
+    // 只有管理員可以訪問
+    if (user.role !== 'admin') {
+      toast({
+        title: "權限不足",
+        description: "只有管理員可以訪問陣生IP監控看板",
+        variant: "destructive",
+      });
+      setLocation('/');
+    }
+  }, [user, setLocation, toast]);
 
   // 更新當前時間
   useEffect(() => {

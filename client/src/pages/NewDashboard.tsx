@@ -190,14 +190,24 @@ export default function NewDashboard() {
       show: permissions.canAccessLeaveApproval,
     },
     {
-      id: 'dashboard',
-      title: '電子看板',
-      description: '即時顯示今日打卡',
-      icon: Monitor,
-      color: 'from-purple-400 to-purple-600',
-      bgColor: 'bg-purple-50',
+      id: 'employee-status',
+      title: '員工狀態',
+      description: '查看上班狀態',
+      icon: Users,
+      color: 'from-blue-400 to-blue-600',
+      bgColor: 'bg-blue-50',
       onClick: () => setLocation('/attendance-dashboard'),
-      show: permissions.canAccessLeaveApproval,
+      show: true, // 所有人都可以看
+    },
+    {
+      id: 'security-dashboard',
+      title: '陣生IP監控',
+      description: '監控陣生訪客',
+      icon: Monitor,
+      color: 'from-red-400 to-red-600',
+      bgColor: 'bg-red-50',
+      onClick: () => setLocation('/security'),
+      show: user?.role === 'admin', // 只有管理員可以看
     },
   ];
 
