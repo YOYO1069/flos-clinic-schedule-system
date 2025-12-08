@@ -49,20 +49,17 @@ export default function Login() {
         return;
       }
 
-      // 暫時移除密碼驗證以便調查問題
-      console.log('⚠️ 密碼驗證已暫時停用');
-      console.log('輸入的密碼:', password);
-      console.log('資料庫的雜湊:', data.password);
+      // 驗證密碼（使用 bcrypt 比對加密密碼）
+      console.log('🔑 開始驗證密碼...');
+      const isPasswordValid = await bcrypt.compare(password, data.password);
+      console.log('✅ 密碼驗證結果:', isPasswordValid);
       
-      // TODO: 重新啟用密碼驗證
-      // const isPasswordValid = await bcrypt.compare(password, data.password);
-      // if (!isPasswordValid) {
-      //   toast.error("員工編號或密碼錯誤");
-      //   setIsLoading(false);
-      //   return;
-      // }
-      
-      console.log('✅ 跳過密碼驗證,直接登入');
+      if (!isPasswordValid) {
+        console.log('❌ 密碼錯誤');
+        toast.error("員工編號或密碼錯誤");
+        setIsLoading(false);
+        return;
+      }
 
       // 記錄登入日誌到資料庫
       console.log('📝 記錄登入日誌...');
