@@ -342,55 +342,6 @@ export default function NewDashboard() {
           </CardContent>
         </Card>
 
-        {/* 本週醫師排班 */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Stethoscope className="w-5 h-5 text-teal-600" />
-              本週醫師排班
-            </h3>
-            <Button
-              variant="link"
-              size="sm"
-              onClick={() => setLocation('/doctor-schedule')}
-              className="text-teal-600"
-            >
-              查看更多 →
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {weekSchedules.length > 0 ? (
-              weekSchedules.map((schedule, index) => (
-                <Card key={index} className="bg-white hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm text-teal-600">
-                      {format(new Date(schedule.date), 'M/d (EEE)', { locale: zhTW })}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-1">
-                    <p className="text-xs text-gray-600">{schedule.shift_start} - {schedule.shift_end}</p>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card className="col-span-full bg-gray-50">
-                <CardContent className="py-8 text-center text-gray-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p>暫無本週排班資料</p>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => setLocation('/doctor-schedule')}
-                    className="mt-2"
-                  >
-                    前往查看完整排班
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-
         {/* 職能專區 */}
         <div>
           <div className="flex items-center gap-2 mb-4">
@@ -531,6 +482,55 @@ export default function NewDashboard() {
                 </Card>
               );
             })}
+          </div>
+        </div>
+
+        {/* 本週醫師排班 */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Stethoscope className="w-5 h-5 text-teal-600" />
+              本週醫師排班
+            </h3>
+            <Button
+              variant="link"
+              size="sm"
+              onClick={() => setLocation('/doctor-schedule')}
+              className="text-teal-600"
+            >
+              查看更多 →
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {weekSchedules.length > 0 ? (
+              weekSchedules.map((schedule, index) => (
+                <Card key={index} className="bg-white hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm text-teal-600">
+                      {format(new Date(schedule.date), 'M/d (EEE)', { locale: zhTW })}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    <p className="text-xs text-gray-600">{schedule.shift_start} - {schedule.shift_end}</p>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <Card className="col-span-full bg-gray-50">
+                <CardContent className="py-8 text-center text-gray-500">
+                  <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                  <p>暫無本週排班資料</p>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={() => setLocation('/doctor-schedule')}
+                    className="mt-2"
+                  >
+                    前往查看完整排班
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
