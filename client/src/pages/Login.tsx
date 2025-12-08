@@ -89,6 +89,9 @@ export default function Login() {
 
       toast.success(`歡迎回來, ${data.name}!`);
       
+      // 等待一小段時間確保 localStorage 完全寫入
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // 根據角色導向不同頁面
       console.log('🔀 準備導向頁面,角色:', data.role);
       if (data.role === 'admin') {
