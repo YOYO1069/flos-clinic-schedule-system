@@ -31,9 +31,9 @@ router.post('/unified-login', async (req, res) => {
       return res.status(400).json({ message: '請提供員工編號和密碼' });
     }
 
-    // 從 CHILL69YO.employees 查詢員工
+    // 從 CHILL69YO.users 查詢員工
     const { data: employee, error } = await supabaseCHILL
-      .from('employees')
+      .from('users')
       .select('*')
       .eq('employee_id', employee_id)
       .single();
@@ -102,7 +102,7 @@ router.post('/change-password', async (req, res) => {
 
     // 驗證舊密碼
     const { data: employee, error } = await supabaseCHILL
-      .from('employees')
+      .from('users')
       .select('*')
       .eq('employee_id', employee_id)
       .single();
@@ -120,9 +120,9 @@ router.post('/change-password', async (req, res) => {
     // 加密新密碼
     const hashedPassword = await bcrypt.hash(new_password, 10);
 
-    // 更新 CHILL69YO.employees
+    // 更新 CHILL69YO.users
     const { error: updateError1 } = await supabaseCHILL
-      .from('employees')
+      .from('users')
       .update({
         password: hashedPassword,
         password_changed: true,
@@ -173,7 +173,7 @@ router.get('/verify', async (req, res) => {
 
     // 從資料庫查詢最新的用戶資訊
     const { data: employee, error } = await supabaseCHILL
-      .from('employees')
+      .from('users')
       .select('*')
       .eq('employee_id', decoded.employee_id)
       .single();

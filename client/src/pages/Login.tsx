@@ -4,13 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
-import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
-import bcrypt from "bcryptjs";
 
 export default function Login() {
-  const [, setLocation] = useLocation();
   const [employeeId, setEmployeeId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -26,123 +22,116 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      console.log('🔍 開始查詢員工資料:', employeeId.trim());
+      console.log('🔍 開始登入:', employeeId.trim());
       
-      // 查詢使用者（從 users 表）
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('employee_id', employeeId.trim())
-        .single();
-      
-      console.log('📊 查詢結果:', { data, error });
+      // 呼叫後端 API 進行登入
+      const response = await fetch('/api/auth/unified-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          employee_id: employeeId.trim(),
+          password: password,
+        }),
+      });
 
-      if (error || !data) {
-        toast.error("員工編號或密碼錯誤");
+      const data = await response.json();
+      console.log('📊 登入回應:', data);
+
+      if (!response.ok || !data.success) {
+        toast.error(data.message || "員工編號或密碼錯誤");
         setIsLoading(false);
         return;
       }
 
-      // 驗證密碼（使用 bcrypt 比對加密密碼）
-      console.log('🔑 開始驗證密碼...');
-      const isPasswordValid = await bcrypt.compare(password, data.password);
-      console.log('✅ 密碼驗證結果:', isPasswordValid);
-      
-      if (!isPasswordValid) {
-        console.log('❌ 密碼錯誤');
-        toast.error("員工編號或密碼錯誤");
-        setIsLoading(false);
-        return;
-      }
+      // 儲存 token 和使用者資訊到 localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      // 儲存登入資訊到 localStorage
-      localStorage.setItem('user', JSON.stringify({
-        id: data.id,
-        employee_id: data.employee_id,
-        name: data.name,
-        role: data.role
-      }));
-
-      console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
-      console.log('✅ localStorage 已存儲');
+      console.log('✅ 登入成功，用戶資訊:', data.user.name, data.user.role);
+      console.log('✅ Token 已儲存');
       
-      toast.success(`歡迎回來, ${data.name}!`);
+      toast.success(`歡迎回來, ${data.user.name}!`);
       
       // 添加延遲確保 localStorage 完全寫入
       setTimeout(() => {
         console.log('🔄 準備跳轉頁面...');
         
         // 使用 window.location.href 強制刷新頁面
-        if (data.role === 'admin') {
+        if (data.user.role === 'admin') {
           console.log('🔄 管理員跳轉到 /admin');
           window.location.href = '/admin';
         } else {
           console.log('🔄 員工跳轉到 /');
           window.location.href = '/';
         }
-      }, 100);
+      }, 500);
     } catch (error) {
-      console.error('登入失敗:', error);
-      toast.error("登入失敗,請重試");
-    } finally {
+      console.error('❌ 登入錯誤:', error);
+      toast.error("登入失敗，請稍後再試");
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">FLOS 診所系統</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            FLOS 診所系統
+          </CardTitle>
+          <CardDescription className="text-base">
             請使用您的員工編號登入
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="employeeId">員工編號</Label>
+              <Label htmlFor="employeeId" className="text-sm font-medium">
+                員工編號
+              </Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   id="employeeId"
                   type="text"
                   placeholder="例如: flosHBH012"
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 text-base"
                   disabled={isLoading}
+                  autoFocus
                 />
               </div>
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="password">密碼</Label>
+              <Label htmlFor="password" className="text-sm font-medium">
+                密碼
+              </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="請輸入密碼"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 text-base"
                   disabled={isLoading}
                 />
               </div>
             </div>
-
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
               disabled={isLoading}
             >
               {isLoading ? "登入中..." : "登入"}
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>忘記密碼?請聯絡管理者</p>
+          <div className="mt-6 text-center text-sm text-gray-500">
+            忘記密碼?請聯絡管理者
           </div>
         </CardContent>
       </Card>
