@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import NewDashboard from "./pages/NewDashboard";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
@@ -80,6 +81,9 @@ function Router() {
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>
       </Route>
       <Route path="/">
+        <ProtectedRoute><NewDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/dashboard-old">
         <ProtectedRoute><Dashboard /></ProtectedRoute>
       </Route>
       <Route path="/leave-calendar">
