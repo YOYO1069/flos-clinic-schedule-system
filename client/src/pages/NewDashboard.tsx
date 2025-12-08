@@ -20,7 +20,21 @@ import {
   Stethoscope,
   GraduationCap,
   HeartPulse,
-  Sparkles
+  Sparkles,
+  Shield,
+  Settings,
+  UserCog,
+  TrendingUp,
+  ClipboardList,
+  BookOpen,
+  FileBarChart,
+  MessageSquare,
+  Gift,
+  DollarSign,
+  Award,
+  Lock,
+  Bell,
+  Heart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
@@ -421,6 +435,52 @@ export default function NewDashboard() {
                 );
               })}
             </div>
+          </div>
+        </div>
+
+        {/* 未來功能 */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-xl font-bold text-gray-800">未來功能</h3>
+            <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+              開發中
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { title: '病例操作', description: '電子病歷查詢系統', icon: ClipboardList },
+              { title: '操作守則', description: '護理操作守則查詢', icon: BookOpen },
+              { title: '電子病歷看圖', description: '電子病歷圖片查看', icon: FileBarChart },
+              { title: '回撥查系統', description: '客戶回撥查詢統計', icon: MessageSquare },
+              { title: '行銷數據統計', description: '客戶數據與統計分析', icon: TrendingUp },
+              { title: '客戶回饋系統', description: '收集與管理客戶意見', icon: MessageSquare },
+              { title: '會員紅利管理', description: '會員點數與紅利系統', icon: Gift },
+              { title: '薪資查詢', description: '查看個人薪資與獎金', icon: DollarSign },
+              { title: '績效考核', description: '查看個人績效評估', icon: Award },
+              { title: '獎懲記錄', description: '查看個人獎懲歷史', icon: Award },
+              { title: '內部公告', description: '查看公司最新公告', icon: Bell },
+              { title: '福利專區', description: '員工福利與活動資訊', icon: Gift },
+              { title: '健康管理', description: '保健與健康檢查紀錄', icon: Heart },
+            ].map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <Card
+                  key={index}
+                  className="bg-gray-50 border border-gray-200 opacity-60 cursor-not-allowed"
+                >
+                  <CardContent className="py-4 text-center">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-300 flex items-center justify-center">
+                      <Icon className="w-6 h-6 text-gray-500" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">{feature.title}</p>
+                    <p className="text-xs text-gray-400 mt-1">{feature.description}</p>
+                    <span className="inline-block mt-2 px-2 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full">
+                      開發中
+                    </span>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
