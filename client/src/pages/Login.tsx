@@ -26,14 +26,24 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 查詢使用者
+      // 查詢員工資料
       const { data, error } = await supabase
         .from('employees')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
 
-      if (error || !data) {
+      console.log('查詢結果:', { data, error });
+
+      if (error) {
+        console.error('查詢錯誤:', error);
+        toast.error("員工編號或密碼錯誤");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!data) {
+        console.error('未找到員工資料');
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
