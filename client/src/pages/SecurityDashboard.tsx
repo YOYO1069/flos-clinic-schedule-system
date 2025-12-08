@@ -9,7 +9,6 @@ import { useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 
 interface VisitorLog {
   id: number;
@@ -25,7 +24,6 @@ interface VisitorLog {
 export default function SecurityDashboard() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [strangerLogs, setStrangerLogs] = useState<VisitorLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,14 +36,10 @@ export default function SecurityDashboard() {
     
     // 只有管理員可以訪問
     if (user.role !== 'admin') {
-      toast({
-        title: "權限不足",
-        description: "只有管理員可以訪問陣生IP監控看板",
-        variant: "destructive",
-      });
+      alert('權限不足：只有管理員可以訪問陣生IP監控看板');
       setLocation('/');
     }
-  }, [user, setLocation, toast]);
+  }, [user, setLocation]);
 
   // 更新當前時間
   useEffect(() => {
