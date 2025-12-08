@@ -10,7 +10,7 @@ export default function TestEnv() {
       try {
         // 測試 Supabase 連線
         const { data, error } = await supabase
-          .from('users')
+          .from('employees')
           .select('employee_id, name')
           .limit(1);
 

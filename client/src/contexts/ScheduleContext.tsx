@@ -31,6 +31,25 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const loadSchedules = async () => {
     try {
       setIsLoading(true);
+      
+      // 先載入所有醫師資料
+      const { data: doctorsData, error: doctorsError } = await supabase
+        .from('doctors')
+        .select('id, name');
+      
+      if (doctorsError) {
+        console.error('Error loading doctors:', doctorsError);
+      }
+      
+      // 建立醫師 ID 到名稱的映射
+      const doctorMap: Record<number, string> = {};
+      doctorsData?.forEach((doctor: any) => {
+        doctorMap[doctor.id] = doctor.name;
+      });
+      
+      console.log('[ScheduleContext] Loaded doctors:', doctorMap);
+      
+      // 載入排班資料
       const { data, error } = await supabase
         .from(SCHEDULE_TABLE)
         .select('*')
@@ -41,16 +60,22 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       // 轉換 Supabase 資料為本地格式
       const schedulesMap: Record<string, DaySchedule> = {};
       
-      console.log('[ScheduleContext] Loaded data from Supabase:', data);
+      console.log('[ScheduleContext] Loaded schedules from Supabase:', data);
       
       data?.forEach((schedule: DoctorSchedule) => {
         const dateStr = schedule.date;
         if (!schedulesMap[dateStr]) {
           schedulesMap[dateStr] = { date: dateStr, shifts: [] };
         }
+        
+        // 使用 doctor_id 查詢醫師名稱
+        const doctorName = doctorMap[schedule.doctor_id] || '未知醫師';
+        
+        console.log(`[ScheduleContext] Schedule ${schedule.id}: doctor_id=${schedule.doctor_id}, name=${doctorName}`);
+        
         schedulesMap[dateStr].shifts.push({
           id: schedule.id,
-          doctorName: schedule.doctor_name,
+          doctorName: doctorName,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
         });
