@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { UserCog, Key, Search, ArrowLeft, Shield, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import bcrypt from "bcryptjs";
 
 export default function AdminPanel() {
   const [, setLocation] = useLocation();
@@ -106,17 +107,23 @@ export default function AdminPanel() {
 
     setLoading(true);
     try {
+      // 在前端使用 bcryptjs 加密密碼
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      // 更新資料庫
       const { error } = await supabase
         .from('employees')
         .update({ 
-          password: newPassword,
-          password_changed: false 
+          password: hashedPassword,
+          password_changed: true
         })
         .eq('employee_id', selectedEmployee.employee_id);
 
       if (error) throw error;
 
-      toast.success(`已成功重設「${selectedEmployee.name}」的密碼\n新密碼：${newPassword}`);
+      toast.success(`已成功重設「${selectedEmployee.name}」的密碼\n新密碼：${newPassword}`, {
+        duration: 5000
+      });
       setNewPassword('');
       setSelectedEmployee(null);
       setShowResetDialog(false);
