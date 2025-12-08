@@ -124,7 +124,7 @@ export default function LeaveApproval() {
 
       // 載入所有使用者資料
       const { data: userData, error: userError } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, employee_id, name, role');
 
       if (userError) throw userError;

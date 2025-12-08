@@ -77,7 +77,7 @@ export default function AccountManagement() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('employee_id, name, position, role, password, created_at')
         .order('name');
 

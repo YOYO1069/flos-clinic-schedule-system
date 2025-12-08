@@ -61,12 +61,13 @@ export default function SecurityDashboardPage() {
       
       // 檢查是否為管理員
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('*')
         .eq('employee_id', emp.employee_id)
         .single();
 
       if (error || !data || data.role !== 'admin') {
+        console.error('Security check failed:', error, data);
         alert('您沒有權限訪問此頁面');
         setLocation('/');
         return;

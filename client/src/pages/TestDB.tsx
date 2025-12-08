@@ -41,7 +41,7 @@ export default function TestDB() {
     // 測試員工系統資料庫
     try {
       const { data, error, count } = await supabase
-        .from('users')
+        .from('employees')
         .select('*', { count: 'exact' })
         .limit(5);
       
