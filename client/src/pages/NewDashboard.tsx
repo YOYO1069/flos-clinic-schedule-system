@@ -81,13 +81,13 @@ export default function NewDashboard() {
   // 職能專區卡片
   const specialtyCards = [
     {
-      id: 'student',
-      title: '學生專區',
-      description: '用於學生年度重工資',
-      icon: GraduationCap,
+      id: 'doctor',
+      title: '醫生專區',
+      description: '用於醫生年度重工資',
+      icon: Stethoscope,
       color: 'from-cyan-400 to-cyan-600',
       bgColor: 'bg-cyan-50',
-      onClick: () => setLocation('/student-portal'),
+      onClick: () => setLocation('/doctor-portal'),
     },
     {
       id: 'nurse',
@@ -350,10 +350,10 @@ export default function NewDashboard() {
                         <Icon className="w-6 h-6 text-white" />
                       </div>
                     </div>
-                    <CardTitle className="text-center text-lg">
+                    <CardTitle className="text-center text-base font-bold">
                       {card.title}
                     </CardTitle>
-                    <CardDescription className="text-center text-xs">
+                    <CardDescription className="text-center text-sm font-medium text-gray-600">
                       {card.description}
                     </CardDescription>
                   </CardHeader>
