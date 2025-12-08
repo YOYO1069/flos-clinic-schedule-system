@@ -109,7 +109,7 @@ export default function AttendanceManagement() {
     }
   }
 
-  useEffect(() => {
+    useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
@@ -117,17 +117,17 @@ export default function AttendanceManagement() {
     }
     const user = JSON.parse(userStr);
     setCurrentUser(user);
-    
-    // 使用 permissions.ts 檢查權限
-    const { permissions: userPermissions } = usePermissions(user.role as UserRole);
-    if (!userPermissions.canAccessAttendanceManagement) {
-      toast.error("您沒有權限存取此頁面");
-      setLocation('/');
-      return;
-    }
     loadRecords(selectedDate);
     loadEmployees();
   }, [selectedDate, setLocation]);
+
+  // 權限檢查
+  useEffect(() => {
+    if (currentUser && !permissions.canAccessAttendanceManagement) {
+      toast.error("您沒有權限存取此頁面");
+      setLocation('/');
+    }
+  }, [currentUser, permissions, setLocation]);
 
   useEffect(() => {
     if (searchTerm) {
