@@ -87,29 +87,24 @@ export default function Login() {
       }));
       console.log('✅ localStorage 儲存成功');
 
+      console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
+      console.log('✅ localStorage 已存儲');
+
       toast.success(`歡迎回來, ${data.name}!`);
       
-      // 等待確保 localStorage 完全寫入
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // 驗證 localStorage 是否成功寫入
-      const savedUser = localStorage.getItem('user');
-      console.log('🔍 驗證 localStorage:', savedUser ? 'OK' : 'FAILED');
-      if (!savedUser) {
-        console.error('❌ localStorage 寫入失敗!');
-        toast.error('登入狀態儲存失敗,請重試');
-        return;
-      }
-      
-      // 根據角色導向不同頁面
-      console.log('🔀 準備導向頁面,角色:', data.role);
-      if (data.role === 'admin') {
-        console.log('➡️ 導向管理員頁面');
-        setLocation('/admin');
-      } else {
-        console.log('➡️ 導向首頁');
-        setLocation('/');
-      }
+      // 添加延遲確保 localStorage 完全寫入，然後使用 window.location.href 強制刷新頁面
+      setTimeout(() => {
+        console.log('🔄 準備跳轉頁面...');
+        
+        // 使用 window.location.href 強制刷新頁面
+        if (data.role === 'admin') {
+          console.log('🔄 管理員跳轉到 /admin');
+          window.location.href = '/admin';
+        } else {
+          console.log('🔄 員工跳轉到 /');
+          window.location.href = '/';
+        }
+      }, 100);
     } catch (error) {
       console.error('登入失敗:', error);
       toast.error("登入失敗,請重試");
