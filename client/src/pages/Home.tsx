@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { doctorScheduleClient, SCHEDULE_TABLE, supabase } from "@/lib/supabase";
+import bcrypt from "bcryptjs";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -58,28 +59,32 @@ export default function Home() {
     try {
       // 驗證舊密碼
       const { data: userData, error: fetchError } = await supabase
-        .from('users')
+        .from('employees')
         .select('*')
-        .eq('id', currentUser.id)
+        .eq('employee_id', currentUser.employee_id)
         .single();
 
       if (fetchError) throw fetchError;
 
-      if (userData.password !== oldPassword) {
+      // 使用 bcrypt 驗證舊密碼
+      const isPasswordValid = await bcrypt.compare(oldPassword, userData.password);
+      if (!isPasswordValid) {
         toast.error("舊密碼錯誤");
         setIsChangingPassword(false);
         return;
       }
 
+      // 使用 bcrypt 加密新密碼
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
       // 更新密碼
       const { error: updateError } = await supabase
-        .from('users')
+        .from('employees')
         .update({ 
-          password: newPassword,
-          password_changed: true,
-          updated_at: new Date().toISOString()
+          password: hashedPassword,
+          password_changed: true
         })
-        .eq('id', currentUser.id);
+        .eq('employee_id', currentUser.employee_id);
 
       if (updateError) throw updateError;
 
