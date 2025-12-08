@@ -23,6 +23,7 @@ import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
 import SecurityDashboard from "./pages/SecurityDashboard";
 import AttendanceManagement from "./pages/AttendanceManagement";
+import ChangePassword from "./pages/ChangePassword";
 import { useAuth } from "./_core/hooks/useAuth";
 import { useVisitorLog } from "./_core/hooks/useVisitorLog";
 
@@ -97,6 +98,9 @@ function Router() {
       </Route>
       <Route path="/leave">
         <ProtectedRoute><LeaveManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/change-password">
+        <ProtectedRoute><ChangePassword /></ProtectedRoute>
       </Route>
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
