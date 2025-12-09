@@ -8,8 +8,8 @@ const doctorScheduleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const staffSystemUrl = 'https://pizzpwesrbulfjylejlu.supabase.co'
 const staffSystemKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpenpwd2VzcmJ1bGZqeWxlamx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDE1MzgsImV4cCI6MjA3NjIxNzUzOH0.xkVhoQhKBaPGkBzU1tuzAH49rP91gUaBLZFffcnKZIk'
 
-// 預設使用員工系統資料庫
-export const supabase = createClient(staffSystemUrl, staffSystemKey)
+// 預設使用醫師排班資料庫（employees 表在這個資料庫中）
+export const supabase = createClient(doctorScheduleUrl, doctorScheduleKey)
 
 // 醫師排班專用客戶端
 export const doctorScheduleClient = createClient(doctorScheduleUrl, doctorScheduleKey)
