@@ -44,6 +44,14 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         return;
       }
 
+      // 更新 localStorage 確保包含最新的 role 資訊
+      const updatedUser = {
+        ...user,
+        role: data.role,
+        name: data.name
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
       // 記錄授權訪問
       await logAuthorizedAccess(data);
       setIsAuthenticated(true);
