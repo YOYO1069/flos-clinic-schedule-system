@@ -47,12 +47,29 @@ export default function LeaveManagement() {
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
 
-  // 模擬員工 ID
-  const employeeId = 1;
+  // 從 localStorage 讀取登入使用者資訊
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [employeeId, setEmployeeId] = useState<number | null>(null);
 
   useEffect(() => {
-    loadRequests();
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
+      setEmployeeId(user.id);
+      console.log('✅ 當前登入使用者:', user);
+    } else {
+      console.warn('⚠️ 未找到登入資訊，請先登入');
+      // 可選：重定向到登入頁面
+      // window.location.href = '/login';
+    }
   }, []);
+
+  useEffect(() => {
+    if (employeeId) {
+      loadRequests();
+    }
+  }, [employeeId]);
 
   // 載入請假記錄
   async function loadRequests() {
@@ -171,7 +188,14 @@ export default function LeaveManagement() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             請假管理系統
           </h1>
-          <p className="text-gray-600 mt-2">線上請假申請 · 即時審核狀態</p>
+          <p className="text-gray-600 mt-2">
+            線上請假申請 · 即時審核狀態
+            {currentUser && (
+              <span className="ml-4 text-purple-600 font-medium">
+                👤 {currentUser.name} ({currentUser.employee_id})
+              </span>
+            )}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
