@@ -5,6 +5,7 @@ import { Route, Switch, useLocation } from "wouter";
 import { useEffect } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleBasedRoute from "./components/RoleBasedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
@@ -67,7 +68,11 @@ function Router() {
         <ProtectedRoute><DoctorSchedule /></ProtectedRoute>
       </Route>
       <Route path="/admin">
-        <ProtectedRoute><AdminPanel /></ProtectedRoute>
+        <ProtectedRoute>
+          <RoleBasedRoute allowedRoles={['admin']}>
+            <AdminPanel />
+          </RoleBasedRoute>
+        </ProtectedRoute>
       </Route>
       <Route path="/doctor-portal">
         <ProtectedRoute><DoctorPortal /></ProtectedRoute>
@@ -79,7 +84,11 @@ function Router() {
         <ProtectedRoute><BeauticianSOP /></ProtectedRoute>
       </Route>
       <Route path="/approval">
-        <ProtectedRoute><LeaveApproval /></ProtectedRoute>
+        <ProtectedRoute>
+          <RoleBasedRoute allowedRoles={['admin', 'senior_supervisor', 'supervisor']}>
+            <LeaveApproval />
+          </RoleBasedRoute>
+        </ProtectedRoute>
       </Route>
       <Route path="/">
         <ProtectedRoute><NewDashboard /></ProtectedRoute>
