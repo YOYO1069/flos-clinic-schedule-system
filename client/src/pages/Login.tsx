@@ -60,17 +60,17 @@ export default function Login() {
 
       toast.success(`歡迎回來,${data.name}!`);
       
-      // 添加延遲確保 localStorage 完全寫入，然後使用 window.location.href 強制刷新頁面
+      // 添加延遲確保 localStorage 完全寫入，然後跳轉頁面
       setTimeout(() => {
         console.log('🔄 準備跳轉頁面...');
         
-        // 使用 window.location.href 強制刷新頁面
+        // 使用 setLocation 進行 SPA 導航，不強制刷新頁面
         if (data.role === 'admin') {
-          console.log('🔄 管理員跳轉到 /admin');
-          window.location.href = '/admin';
+          console.log('🔄 管理員跳轉到 /');
+          setLocation('/');
         } else {
           console.log('🔄 員工跳轉到 /');
-          window.location.href = '/';
+          setLocation('/');
         }
       }, 100);
     } catch (error) {

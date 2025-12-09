@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase, tables } from "@/lib/supabase";
-import { Calendar, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, FileText, CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
 import { format } from 'date-fns';
+import { useLocation } from "wouter";
 import { zhTW } from 'date-fns/locale';
 
 interface LeaveRequest {
@@ -37,6 +38,7 @@ const leaveTypes = [
 ];
 
 export default function LeaveManagement() {
+  const [, setLocation] = useLocation();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -185,6 +187,12 @@ export default function LeaveManagement() {
       <div className="max-w-6xl mx-auto">
         {/* 標題 */}
         <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <Button variant="ghost" onClick={() => setLocation('/')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              返回首頁
+            </Button>
+          </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             請假管理系統
           </h1>

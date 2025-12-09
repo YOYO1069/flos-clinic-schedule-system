@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText } from "lucide-react";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, Home } from "lucide-react";
 import html2canvas from "html2canvas";
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
@@ -434,45 +434,10 @@ export default function LeaveCalendar() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
             <div className="flex gap-2">
-              {/* 導航按鈕 */}
-              <Button variant="default" size="sm" onClick={() => setLocation('/doctor-schedule')} className="bg-teal-600 hover:bg-teal-700">
-                <Calendar className="w-4 h-4 mr-2" />
-                醫師排班
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/schedule')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                員工排班
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
-                <Clock className="w-4 h-4 mr-2" />
-                員工打卡
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
-                <FileText className="w-4 h-4 mr-2" />
-                請假管理
-              </Button>
-              
-              {currentUser?.role === 'admin' && (
-                <Button variant="outline" size="sm" onClick={() => setLocation('/admin')}>
-                  管理者主控台
-                </Button>
-              )}
-              
-              {['admin', 'senior_supervisor', 'supervisor'].includes(currentUser?.role) && (
-                <Button variant="outline" size="sm" onClick={() => setLocation('/approval')}>
-                  審核請假
-                </Button>
-              )}
-              
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={() => {
-                  localStorage.removeItem('user');
-                  setLocation('/login');
-                }}
-              >
-                登出
+              {/* 返回首頁按鈕 */}
+              <Button variant="outline" size="sm" onClick={() => setLocation('/')}>
+                <Home className="w-4 h-4 mr-2" />
+                返回首頁
               </Button>
               
               {/* 次要功能選單 */}
