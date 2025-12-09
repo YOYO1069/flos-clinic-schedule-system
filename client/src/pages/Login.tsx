@@ -18,8 +18,8 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!employeeId.trim()) {
-      toast.error("請輸入員工編號");
+    if (!employeeId.trim() || !password.trim()) {
+      toast.error("請輸入員工編號和密碼");
       return;
     }
 
@@ -34,12 +34,18 @@ export default function Login() {
         .single();
 
       if (error || !data) {
-        toast.error("員工編號不存在");
+        toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
       }
 
-      // 不驗證密碼，直接登入
+      // 驗證密碼（使用 SHA-256）
+      const isPasswordValid = await verifyPassword(password, data.password);
+      if (!isPasswordValid) {
+        toast.error("員工編號或密碼錯誤");
+        setIsLoading(false);
+        return;
+      }
 
       // 儲存登入資訊到 localStorage
       localStorage.setItem('user', JSON.stringify({
