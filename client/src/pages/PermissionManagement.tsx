@@ -67,7 +67,7 @@ export default function PermissionManagement() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, employee_id, name, position, role, created_at')
         .order('name');
 
@@ -105,7 +105,7 @@ export default function PermissionManagement() {
 
     try {
       const { error } = await supabase
-        .from('users')
+        .from('employees')
         .update({ role: newRole })
         .eq('id', user.id);
 

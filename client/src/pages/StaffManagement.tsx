@@ -74,7 +74,7 @@ export default function StaffManagement() {
   const loadStaff = async () => {
     try {
       const { data, error } = await supabase
-        .from("users")
+        .from("employees")
         .select("*")
         .order("name");
 
@@ -101,7 +101,7 @@ export default function StaffManagement() {
       const newEmployeeId = `STAFF-${String(maxId + 1).padStart(3, "0")}`;
 
       const { error } = await supabase
-        .from("users")
+        .from("employees")
         .insert({
           employee_id: newEmployeeId,
           name: newStaffName.trim(),
@@ -162,7 +162,7 @@ export default function StaffManagement() {
       }
 
       const { error } = await supabase
-        .from("users")
+        .from("employees")
         .update(updateData)
         .eq("id", editingStaff.id);
 
@@ -243,7 +243,7 @@ export default function StaffManagement() {
 
     try {
       const { error } = await supabase
-        .from("users")
+        .from("employees")
         .delete()
         .eq("id", staffId);
 
@@ -595,7 +595,7 @@ export default function StaffManagement() {
                   
                   try {
                     const { error } = await supabase
-                      .from("users")
+                      .from("employees")
                       .update({ password: "Staff@2025" })
                       .eq("id", editingStaff.id);
                     

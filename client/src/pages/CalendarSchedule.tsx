@@ -121,7 +121,7 @@ export default function CalendarSchedule() {
   const loadEmployees = async () => {
     try {
       const { data, error } = await supabase
-        .from("users")
+        .from("employees")
         .select("*")
         .eq("role", "staff")
         .order("name");

@@ -56,7 +56,7 @@ export default function AttendanceDashboard() {
 
       // 載入所有員工（從 users 表）
       const { data: employeesData, error: employeesError } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, employee_id, name, role')
         .order('name', { ascending: true });
 

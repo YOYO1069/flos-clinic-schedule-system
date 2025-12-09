@@ -216,7 +216,7 @@ export default function AttendanceManagement() {
   async function loadEmployees() {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('employee_id, name')
         .order('name');
 
