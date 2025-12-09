@@ -31,7 +31,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       
       // 驗證用戶是否仍然存在於數據庫中
       const { data, error } = await supabase
-        .from('employees')
+        .from('users')
         .select('id, employee_id, name, role')
         .eq('employee_id', user.employee_id)
         .single();
@@ -44,14 +44,6 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         return;
       }
 
-      // 更新 localStorage 確保包含最新的 role 資訊
-      const updatedUser = {
-        ...user,
-        role: data.role,
-        name: data.name
-      };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
       // 記錄授權訪問
       await logAuthorizedAccess(data);
       setIsAuthenticated(true);

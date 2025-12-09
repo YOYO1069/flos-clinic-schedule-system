@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { DaySchedule, DoctorShift, MonthSchedule } from '@/types/schedule';
-import { supabase, DoctorSchedule, SCHEDULE_TABLE } from '@/lib/supabase';
+import { doctorScheduleClient, DoctorSchedule, SCHEDULE_TABLE, doctors } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface ScheduleContextType {
@@ -31,26 +31,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
   const loadSchedules = async () => {
     try {
       setIsLoading(true);
-      
-      // 先載入所有醫師資料
-      const { data: doctorsData, error: doctorsError } = await supabase
-        .from('doctors')
-        .select('id, name');
-      
-      if (doctorsError) {
-        console.error('Error loading doctors:', doctorsError);
-      }
-      
-      // 建立醫師 ID 到名稱的映射
-      const doctorMap: Record<number, string> = {};
-      doctorsData?.forEach((doctor: any) => {
-        doctorMap[doctor.id] = doctor.name;
-      });
-      
-      console.log('[ScheduleContext] Loaded doctors:', doctorMap);
-      
-      // 載入排班資料
-      const { data, error } = await supabase
+      const { data, error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .select('*')
         .order('date', { ascending: true });
@@ -60,18 +41,15 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
       // 轉換 Supabase 資料為本地格式
       const schedulesMap: Record<string, DaySchedule> = {};
       
-      console.log('[ScheduleContext] Loaded schedules from Supabase:', data);
+      console.log('[ScheduleContext] Loaded data from Supabase:', data);
       
       data?.forEach((schedule: DoctorSchedule) => {
         const dateStr = schedule.date;
         if (!schedulesMap[dateStr]) {
           schedulesMap[dateStr] = { date: dateStr, shifts: [] };
         }
-        
-        // 使用 doctor_id 查詢醫師名稱
-        const doctorName = doctorMap[schedule.doctor_id] || '未知醫師';
-        
-        console.log(`[ScheduleContext] Schedule ${schedule.id}: doctor_id=${schedule.doctor_id}, name=${doctorName}`);
+        // 直接使用 doctor_name 欄位
+        const doctorName = schedule.doctor_name || '未知醫師';
         
         schedulesMap[dateStr].shifts.push({
           id: schedule.id,
@@ -111,7 +89,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
+      // 直接使用 doctor_name
+      const { data, error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .insert({
           date: date,
@@ -129,7 +108,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
         const daySchedule = prev[date] || { date, shifts: [] };
         const newShift: DoctorShift = {
           id: data.id,
-          doctorName: data.doctor_name,
+          doctorName: shift.doctorName,
           startTime: data.start_time,
           endTime: data.end_time,
         };
@@ -153,7 +132,8 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const updateShift = async (date: string, shiftId: string, shift: Omit<DoctorShift, 'id'>) => {
     try {
-      const { error } = await supabase
+      // 直接使用 doctor_name
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .update({
           doctor_name: shift.doctorName,
@@ -191,7 +171,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const deleteShift = async (date: string, shiftId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .delete()
         .eq('id', shiftId);
@@ -233,7 +213,7 @@ export function ScheduleProvider({ children }: { children: ReactNode }) {
 
   const clearAllSchedules = async () => {
     try {
-      const { error } = await supabase
+      const { error } = await doctorScheduleClient
         .from(SCHEDULE_TABLE)
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000'); // 刪除所有記錄

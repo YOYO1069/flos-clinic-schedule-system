@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { FileDown, FileSpreadsheet, Trash2 } from 'lucide-react';
+import { FileDown, FileSpreadsheet, Trash2, Image } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,28 +14,25 @@ import {
 import { useSchedule } from '@/contexts/ScheduleContext';
 
 interface ToolbarProps {
-  onExportExcel: () => void;
-  onExportPDF: () => void;
+  onExportImage?: () => void;
 }
 
-export function Toolbar({ onExportExcel, onExportPDF }: ToolbarProps) {
+export function Toolbar({ onExportImage }: ToolbarProps) {
   const { clearAllSchedules } = useSchedule();
 
   return (
-    <div className="flex items-center gap-2">
-      <Button variant="outline" onClick={onExportExcel}>
-        <FileSpreadsheet className="h-4 w-4 mr-2" />
-        匯出 Excel
-      </Button>
-      <Button variant="outline" onClick={onExportPDF}>
-        <FileDown className="h-4 w-4 mr-2" />
-        匯出 PDF
-      </Button>
+    <div className="flex flex-wrap items-center gap-1.5 md:gap-2 mb-4">
+      {onExportImage && (
+        <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={onExportImage}>
+          <Image className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+          <span className="hidden sm:inline">匯出 </span>圖片
+        </Button>
+      )}
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" className="text-destructive">
-            <Trash2 className="h-4 w-4 mr-2" />
-            清空所有排班
+          <Button variant="outline" size="sm" className="text-destructive text-xs md:text-sm">
+            <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">清空所有</span>排班
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>

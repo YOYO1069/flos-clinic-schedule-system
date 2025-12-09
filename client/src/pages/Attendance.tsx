@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { Clock, CheckCircle, XCircle, Calendar, LogOut, ArrowLeft } from "lucide-react";
+import { Clock, CheckCircle, XCircle, Calendar, LogOut, ArrowLeft, History, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { utcToTaiwanTime, getTaiwanNow, taiwanTimeToUTC } from '@/lib/timezone';
 
 interface AttendanceRecord {
   id: number;
@@ -14,8 +18,14 @@ interface AttendanceRecord {
   employee_name: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  check_in_latitude: number | null;
+  check_in_longitude: number | null;
+  check_out_latitude: number | null;
+  check_out_longitude: number | null;
+  check_in_address: string | null;
+  check_out_address: string | null;
   work_hours: number | null;
-  attendance_date: string;
+  work_date: string;
   source: string;
   created_at: string;
 }
@@ -25,8 +35,16 @@ export default function Attendance() {
   const [loading, setLoading] = useState(false);
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
   const [recentRecords, setRecentRecords] = useState<AttendanceRecord[]>([]);
+  const [historyRecords, setHistoryRecords] = useState<AttendanceRecord[]>([]);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [user, setUser] = useState<any>(null);
+  
+  // 打卡方式設定
+  const [checkInMode] = useState<'gps'>('gps'); // 固定使用GPS模式
+  const [settings, setSettings] = useState<any>({});
 
   // 檢查登入狀態
   useEffect(() => {
@@ -51,8 +69,30 @@ export default function Attendance() {
     if (user) {
       loadTodayRecord();
       loadRecentRecords();
+      loadSettings();
     }
   }, [user]);
+
+  // 載入打卡設定
+  async function loadSettings() {
+    try {
+      const { data, error } = await supabase
+        .from('attendance_settings')
+        .select('*');
+
+      if (error) {
+        console.error('載入設定失敗:', error);
+      } else {
+        const settingsObj: any = {};
+        data?.forEach(item => {
+          settingsObj[item.setting_key] = item.setting_value;
+        });
+        setSettings(settingsObj);
+      }
+    } catch (err) {
+      console.error('載入設定錯誤:', err);
+    }
+  }
 
   // 載入今日打卡記錄
   async function loadTodayRecord() {
@@ -64,7 +104,7 @@ export default function Attendance() {
         .from('attendance_records')
         .select('*')
         .eq('employee_id', user.employee_id)
-        .eq('attendance_date', today)
+        .eq('work_date', today)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -88,7 +128,7 @@ export default function Attendance() {
         .from('attendance_records')
         .select('*')
         .eq('employee_id', user.employee_id)
-        .order('attendance_date', { ascending: false })
+        .order('work_date', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(7);
 
@@ -100,6 +140,72 @@ export default function Attendance() {
     } catch (err) {
       console.error('載入最近記錄錯誤:', err);
     }
+  }
+
+  // 獲取GPS定位
+  async function getLocation(): Promise<{ latitude: number; longitude: number; address: string } | null> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        console.log('瀏覽器不支援定位,跳過定位功能');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)} (精度: ${Math.round(accuracy)}m)`;
+          resolve({ latitude, longitude, address });
+        },
+        (error) => {
+          console.log('定位失敗(非致命錯誤):', error.code, error.message);
+          // 静默失敗,不顯示錯誤訊息,讓打卡繼續
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  }
+
+  // 獲取GPS定位
+  async function getLocation(): Promise<{ latitude: number; longitude: number; address: string } | null> {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        toast.error('您的瀏覽器不支援定位功能');
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude, accuracy } = position.coords;
+          const address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)} (精度: ${Math.round(accuracy)}m)`;
+          resolve({ latitude, longitude, address });
+        },
+        (error) => {
+          console.error('定位失敗:', error);
+          let errorMsg = '無法獲取定位';
+          if (error.code === error.PERMISSION_DENIED) {
+            errorMsg = '定位權限被拒絕，請在瀏覽器設定中允許定位';
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            errorMsg = '定位資訊不可用';
+          } else if (error.code === error.TIMEOUT) {
+            errorMsg = '定位請求逾時';
+          }
+          toast.warning(errorMsg + '，將繼續打卡');
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
   }
 
   // 上班打卡
@@ -119,18 +225,30 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
       // 格式化為 timestamp 格式（台灣時間）
       const checkInTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
       
+      const recordData: any = {
+        employee_id: user.employee_id,
+        employee_name: user.name,
+        check_in_time: checkInTimeStr,
+        work_date: today,
+        source: 'web'
+      };
+
+      if (location) {
+        recordData.check_in_latitude = location.latitude;
+        recordData.check_in_longitude = location.longitude;
+        recordData.check_in_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .insert({
-          employee_id: user.employee_id,
-          employee_name: user.name,
-          check_in_time: checkInTimeStr,
-          attendance_date: today,
-          source: 'web'
-        })
+        .insert(recordData)
         .select()
         .single();
 
@@ -173,19 +291,32 @@ export default function Attendance() {
         return;
       }
 
+      // 獲取定位
+      toast.info('正在獲取定位...');
+      const location = await getLocation();
+
       // 計算工時
       const checkInTime = new Date(todayRecord.check_in_time);
-      const workHours = (now.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
+      const checkOutTime = now;
+      const workHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
       // 格式化為 timestamp 格式（台灣時間）
       const checkOutTimeStr = format(now, 'yyyy-MM-dd HH:mm:ss');
 
+      const updateData: any = {
+        check_out_time: checkOutTimeStr,
+        total_hours: Math.round(workHours * 100) / 100
+      };
+
+      if (location) {
+        updateData.check_out_latitude = location.latitude;
+        updateData.check_out_longitude = location.longitude;
+        updateData.check_out_address = location.address;
+      }
+
       const { data, error } = await supabase
         .from('attendance_records')
-        .update({
-          check_out_time: checkOutTimeStr,
-          work_hours: Math.round(workHours * 100) / 100
-        })
+        .update(updateData)
         .eq('id', todayRecord.id)
         .select()
         .single();
@@ -214,6 +345,81 @@ export default function Attendance() {
     setLocation('/login');
   }
 
+  // 載入歷史打卡記錄
+  async function loadHistoryRecords() {
+    if (!user) return;
+    
+    try {
+      let query = supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('employee_id', user.employee_id)
+        .order('work_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+      // 如果有開始日期
+      if (startDate) {
+        query = query.gte('work_date', startDate);
+      }
+
+      // 如果有結束日期
+      if (endDate) {
+        query = query.lte('work_date', endDate);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('載入歷史記錄失敗:', error);
+        toast.error('載入歷史記錄失敗');
+      } else {
+        setHistoryRecords(data || []);
+      }
+    } catch (err) {
+      console.error('載入歷史記錄錯誤:', err);
+      toast.error('載入歷史記錄失敗');
+    }
+  }
+
+  // 匯出 Excel
+  function exportToExcel() {
+    if (historyRecords.length === 0) {
+      toast.error('沒有資料可匯出');
+      return;
+    }
+
+    // 準備匯出資料
+    const exportData = historyRecords.map(record => ({
+      '日期': record.work_date,
+      '上班時間': record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm:ss') : '-',
+      '下班時間': record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm:ss') : '-',
+      '工時': record.work_hours ? `${record.work_hours.toFixed(2)}` : '-',
+      '上班地點': record.check_in_address || '-',
+      '下班地點': record.check_out_address || '-',
+      '打卡方式': record.source === 'web' ? '網頁打卡' : 'LINE打卡'
+    }));
+
+    // 建立 CSV內容
+    const headers = Object.keys(exportData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(','))
+    ].join('\n');
+
+    // 下載檔案
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `打卡記錄_${user.name}_${format(new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('匯出成功！');
+  }
+
   if (!user) {
     return null;
   }
@@ -224,9 +430,9 @@ export default function Attendance() {
         {/* 標題列 */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => setLocation('/')}>
+            <Button variant="ghost" onClick={() => window.history.back()}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首頁
+              上一頁
             </Button>
             <h1 className="text-3xl font-bold text-gray-800">員工打卡系統</h1>
           </div>
@@ -253,6 +459,23 @@ export default function Attendance() {
             </div>
             <div className="text-center text-sm text-gray-500 mt-1">
               員工: {user.name} ({user.employee_id})
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 打卡說明 */}
+        <Card className="mb-6 bg-white/80 backdrop-blur">
+          <CardContent className="pt-6">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">📍</span>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-1">智慧打卡系統</h3>
+                  <p className="text-sm text-gray-700">
+                    系統會自動嘗試取得您的GPS定位資訊。如果GPS定位失敗，系統會自動切換為快速打卡模式，確保您可以順利打卡。
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -293,13 +516,13 @@ export default function Attendance() {
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">上班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_in_time ? format(new Date(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_in_time ? format(utcToTaiwanTime(todayRecord.check_in_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">下班時間:</span>
                   <span className="font-semibold">
-                    {todayRecord.check_out_time ? format(new Date(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
+                    {todayRecord.check_out_time ? format(utcToTaiwanTime(todayRecord.check_out_time), 'HH:mm:ss') : '-'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -314,6 +537,18 @@ export default function Attendance() {
                     {todayRecord.source === 'web' ? '網頁打卡' : 'LINE 打卡'}
                   </span>
                 </div>
+                {todayRecord.check_in_address && (
+                  <div className="flex flex-col gap-1 pt-2 border-t">
+                    <span className="text-gray-600 text-sm">📍 上班打卡地點:</span>
+                    <span className="text-sm text-gray-700">{todayRecord.check_in_address}</span>
+                  </div>
+                )}
+                {todayRecord.check_out_address && (
+                  <div className="flex flex-col gap-1 pt-2 border-t">
+                    <span className="text-gray-600 text-sm">📍 下班打卡地點:</span>
+                    <span className="text-sm text-gray-700">{todayRecord.check_out_address}</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-4">
@@ -322,6 +557,126 @@ export default function Attendance() {
             )}
           </CardContent>
         </Card>
+
+        {/* 歷史打卡明細按鈕 */}
+        <div className="mb-6">
+          <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="w-full h-14 text-lg bg-purple-500 hover:bg-purple-600"
+                onClick={() => {
+                  setHistoryDialogOpen(true);
+                  loadHistoryRecords();
+                }}
+              >
+                <History className="w-6 h-6 mr-2" />
+                歷史打卡明細
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>歷史打卡明細</DialogTitle>
+                <DialogDescription>
+                  查看和匯出您的歷史打卡記錄
+                </DialogDescription>
+              </DialogHeader>
+              
+              {/* 日期篩選 */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <Label htmlFor="startDate">開始日期</Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="endDate">結束日期</Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* 查詢和匯出按鈕 */}
+              <div className="flex gap-2 mb-4">
+                <Button onClick={loadHistoryRecords} className="flex-1">
+                  <History className="w-4 h-4 mr-2" />
+                  查詢
+                </Button>
+                <Button onClick={exportToExcel} variant="outline" className="flex-1">
+                  <Download className="w-4 h-4 mr-2" />
+                  匯出 Excel
+                </Button>
+              </div>
+
+              {/* 記錄列表 */}
+              <div className="space-y-3">
+                {historyRecords.length > 0 ? (
+                  historyRecords.map((record) => (
+                    <div key={record.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="font-semibold text-gray-800">
+                          {format(new Date(record.work_date), 'yyyy-MM-dd EEEE', { locale: zhTW })}
+                        </div>
+                        <div className="text-xs text-gray-500 bg-white px-2 py-1 rounded">
+                          {record.source === 'web' ? '網頁打卡' : 'LINE打卡'}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                        <div>
+                          <span className="text-gray-600">上班:</span>
+                          <div className="font-medium mt-1">
+                            {record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm:ss') : '-'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">下班:</span>
+                          <div className="font-medium mt-1">
+                            {record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm:ss') : '-'}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">工時:</span>
+                          <div className="font-medium mt-1">
+                            {record.work_hours ? `${record.work_hours.toFixed(1)} 小時` : '-'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {(record.check_in_address || record.check_out_address) && (
+                        <div className="border-t pt-3 space-y-2">
+                          {record.check_in_address && (
+                            <div className="text-xs">
+                              <span className="text-gray-600">📍 上班地點:</span>
+                              <div className="text-gray-700 mt-1">{record.check_in_address}</div>
+                            </div>
+                          )}
+                          {record.check_out_address && (
+                            <div className="text-xs">
+                              <span className="text-gray-600">📍 下班地點:</span>
+                              <div className="text-gray-700 mt-1">{record.check_out_address}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    沒有符合條件的打卡記錄
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
         {/* 最近打卡記錄 */}
         <Card className="bg-white/80 backdrop-blur">
@@ -336,7 +691,7 @@ export default function Attendance() {
                   <div key={record.id} className="border rounded-lg p-4 bg-white">
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-semibold text-gray-800">
-                        {format(new Date(record.attendance_date), 'yyyy-MM-dd EEEE', { locale: zhTW })}
+                        {format(new Date(record.work_date), 'yyyy-MM-dd EEEE', { locale: zhTW })}
                       </div>
                       <div className="text-xs text-gray-500">
                         {record.source === 'web' ? '網頁' : 'LINE'}
@@ -346,13 +701,13 @@ export default function Attendance() {
                       <div>
                         <span className="text-gray-600">上班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_in_time ? format(new Date(record.check_in_time), 'HH:mm') : '-'}
+                          {record.check_in_time ? format(utcToTaiwanTime(record.check_in_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>
                         <span className="text-gray-600">下班:</span>
                         <span className="ml-1 font-medium">
-                          {record.check_out_time ? format(new Date(record.check_out_time), 'HH:mm') : '-'}
+                          {record.check_out_time ? format(utcToTaiwanTime(record.check_out_time), 'HH:mm') : '-'}
                         </span>
                       </div>
                       <div>

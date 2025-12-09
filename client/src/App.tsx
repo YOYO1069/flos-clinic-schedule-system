@@ -7,6 +7,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import NewDashboard from "./pages/NewDashboard";
 import Attendance from "./pages/Attendance";
 import LeaveManagement from "./pages/LeaveManagement";
 import LeaveCalendar from "./pages/LeaveCalendar";
@@ -16,6 +18,9 @@ import NurseSOP from "./pages/NurseSOP";
 import BeauticianSOP from "./pages/BeauticianSOP";
 import AdminPanel from "./pages/AdminPanel";
 import LeaveApproval from "./pages/LeaveApproval";
+import PermissionManagement from "./pages/PermissionManagement";
+import StaffManagement from "./pages/StaffManagement";
+import AttendanceSettings from "./pages/AttendanceSettings";
 // import TestEnv from "./pages/TestEnv"; // Temporarily disabled
 import DoctorSchedule from "./pages/DoctorSchedule";
 import AttendanceDashboard from "./pages/AttendanceDashboard";
@@ -66,6 +71,15 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute><AdminPanel /></ProtectedRoute>
       </Route>
+      <Route path="/permissions">
+        <ProtectedRoute><PermissionManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/staff-management">
+        <ProtectedRoute><StaffManagement /></ProtectedRoute>
+      </Route>
+      <Route path="/attendance-settings">
+        <ProtectedRoute><AttendanceSettings /></ProtectedRoute>
+      </Route>
       <Route path="/doctor-portal">
         <ProtectedRoute><DoctorPortal /></ProtectedRoute>
       </Route>
@@ -79,6 +93,12 @@ function Router() {
         <ProtectedRoute><LeaveApproval /></ProtectedRoute>
       </Route>
       <Route path="/">
+        <ProtectedRoute><NewDashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/dashboard-old">
+        <ProtectedRoute><Dashboard /></ProtectedRoute>
+      </Route>
+      <Route path="/leave-calendar">
         <ProtectedRoute><LeaveCalendar /></ProtectedRoute>
       </Route>
       <Route path="/schedule">

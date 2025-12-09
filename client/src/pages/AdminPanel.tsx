@@ -58,7 +58,7 @@ export default function AdminPanel() {
   const loadEmployees = async () => {
     try {
       const { data, error } = await supabase
-        .from('employees')
+        .from('users')
         .select('*')
         .order('name');
 
@@ -78,7 +78,7 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('employees')
+        .from('users')
         .update({ role: newRole })
         .eq('employee_id', employeeId);
 
@@ -112,7 +112,7 @@ export default function AdminPanel() {
       
       // 更新資料庫
       const { error } = await supabase
-        .from('employees')
+        .from('users')
         .update({ 
           password: hashedPassword,
           password_changed: true

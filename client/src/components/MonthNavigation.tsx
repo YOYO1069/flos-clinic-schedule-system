@@ -28,19 +28,19 @@ export function MonthNavigation() {
   };
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-          <ChevronLeft className="h-4 w-4" />
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-1 md:gap-2">
+        <Button variant="outline" size="icon" className="h-8 w-8 md:h-10 md:w-10" onClick={handlePrevMonth}>
+          <ChevronLeft className="h-3 w-3 md:h-4 md:w-4" />
         </Button>
-        <h2 className="text-2xl font-bold min-w-48 text-center">
+        <h2 className="text-base md:text-2xl font-bold min-w-32 md:min-w-48 text-center">
           {currentYear} 年 {getMonthName(currentMonth)}
         </h2>
-        <Button variant="outline" size="icon" onClick={handleNextMonth}>
-          <ChevronRight className="h-4 w-4" />
+        <Button variant="outline" size="icon" className="h-8 w-8 md:h-10 md:w-10" onClick={handleNextMonth}>
+          <ChevronRight className="h-3 w-3 md:h-4 md:w-4" />
         </Button>
       </div>
-      <Button variant="outline" onClick={handleToday}>
+      <Button variant="outline" size="sm" className="text-xs md:text-sm" onClick={handleToday}>
         今天
       </Button>
     </div>

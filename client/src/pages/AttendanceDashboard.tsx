@@ -54,10 +54,10 @@ export default function AttendanceDashboard() {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
 
-      // 載入所有員工
+      // 載入所有員工（從 users 表）
       const { data: employeesData, error: employeesError } = await supabase
-        .from('employees')
-        .select('*')
+        .from('users')
+        .select('id, employee_id, name, role')
         .order('name', { ascending: true });
 
       if (employeesError) throw employeesError;

@@ -9,13 +9,15 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, Home } from "lucide-react";
-import html2canvas from "html2canvas";
+import { Printer, Download, Upload, Loader2, Users, FileSpreadsheet, Plus, Trash2, MoreVertical, Calendar, Clock, FileText, ArrowLeft } from "lucide-react";
+import domtoimage from 'dom-to-image-more';
 import Tesseract from "tesseract.js";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from 'wouter';
+import { usePermissions } from "@/hooks/usePermissions";
+import { UserRole } from "@/lib/permissions";
 
 interface LeaveRecord {
   id?: number;
@@ -23,6 +25,9 @@ interface LeaveRecord {
   month: number;
   staff_name: string;
   day: number;
+  leave_type?: string; // 'OFF', 'ON', '晚', '特'
+  operator_id?: number;
+  operator_name?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -31,6 +36,7 @@ interface StaffMember {
   id: number;
   name: string;
   order_index: number;
+  position?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -60,30 +66,44 @@ const MONTH_NAMES = [
 export default function LeaveCalendar() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const { permissions } = usePermissions(currentUser?.role as UserRole);
+  
+  // 判斷是否為只讀模式（員工只能查看）
+  const isReadOnly = currentUser?.role === 'employee';
 
-  // 檢查登入狀態
+  // 檢查登入狀態和權限
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       setLocation('/login');
       return;
     }
-    setCurrentUser(JSON.parse(userStr));
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
   }, []);
+  
+  // 檢查權限
+  useEffect(() => {
+    if (currentUser && !permissions.canAccessLeaveCalendar) {
+      toast.error('您沒有權限存取此頁面');
+      setLocation('/');
+    }
+  }, [currentUser, permissions]);
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // 當前選擇的年月
   const [selectedYear, setSelectedYear] = useState(2025);
-  const [selectedMonth, setSelectedMonth] = useState(11);
+  const [selectedMonth, setSelectedMonth] = useState(12);
   
   // 員工名單
-  const [staffMembers, setStaffMembers] = useState<string[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [isEditingStaff, setIsEditingStaff] = useState(false);
   const [newStaffName, setNewStaffName] = useState("");
+  const [editingStaff, setEditingStaff] = useState<{name: string, newName: string, position: string} | null>(null);
   
-  // 休假狀態
-  const [leaveStatus, setLeaveStatus] = useState<Map<string, boolean>>(new Map());
+  // 休假狀態 - 儲存類型: 'OFF', 'ON', '特'
+  const [leaveStatus, setLeaveStatus] = useState<Map<string, string>>(new Map());
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -101,7 +121,7 @@ export default function LeaveCalendar() {
       if (error) throw error;
 
       if (data) {
-        setStaffMembers(data.map((s: StaffMember) => s.name));
+        setStaffMembers(data as StaffMember[]);
       }
     } catch (error) {
       console.error('載入員工名單失敗:', error);
@@ -120,11 +140,11 @@ export default function LeaveCalendar() {
 
       if (error) throw error;
 
-      const newMap = new Map<string, boolean>();
+      const newMap = new Map<string, string>();
       if (data) {
         data.forEach((record: LeaveRecord) => {
           const key = `${record.year}-${record.month}-${record.staff_name}-${record.day}`;
-          newMap.set(key, true);
+          newMap.set(key, record.leave_type || 'OFF');
         });
       }
       setLeaveStatus(newMap);
@@ -145,14 +165,46 @@ export default function LeaveCalendar() {
     init();
   }, [selectedYear, selectedMonth]);
 
-  // 切換休假狀態
+  // 切換休假狀態 - 循環: 空白 → OFF → ON → 特 → 空白
   const toggleLeave = async (staffName: string, day: number) => {
+    // 檢查使用者是否載入完成
+    if (!currentUser) {
+      toast.error('請稍候，正在載入使用者資料...');
+      return;
+    }
+    
+    // 權限檢查:員工只能查看，不能修改
+    if (isReadOnly) {
+      toast.error('您沒有權限修改排班，僅能查看');
+      return;
+    }
+    
+    // 主管以上可以操作所有人的排班
+    if (!permissions.canManageStaffSchedule) {
+      toast.error('您沒有權限操作排班');
+      return;
+    }
+
     const key = `${selectedYear}-${selectedMonth}-${staffName}-${day}`;
-    const isCurrentlyLeave = leaveStatus.has(key);
+    const currentType = leaveStatus.get(key);
+    
+    // 定義循環順序: 無 → OFF → ON → 晚 → 特 → 無
+    let nextType: string | null = null;
+    if (!currentType) {
+      nextType = 'OFF';
+    } else if (currentType === 'OFF') {
+      nextType = 'ON';
+    } else if (currentType === 'ON') {
+      nextType = '晚';
+    } else if (currentType === '晚') {
+      nextType = '特';
+    } else {
+      nextType = null; // 刪除
+    }
 
     try {
-      if (isCurrentlyLeave) {
-        // 刪除休假記錄
+      if (nextType === null) {
+        // 刪除記錄
         const { error } = await supabase
           .from('leave_records')
           .delete()
@@ -163,27 +215,90 @@ export default function LeaveCalendar() {
 
         if (error) throw error;
 
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'remove',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: currentType,
+            new_value: null
+          });
+        }
+
         setLeaveStatus(prev => {
           const newMap = new Map(prev);
           newMap.delete(key);
           return newMap;
         });
-      } else {
-        // 新增休假記錄
+      } else if (!currentType) {
+        // 新增記錄
         const { error } = await supabase
           .from('leave_records')
           .insert({
             year: selectedYear,
             month: selectedMonth,
             staff_name: staffName,
-            day: day
+            day: day,
+            leave_type: nextType,
+            operator_id: currentUser?.id,
+            operator_name: currentUser?.name
           });
 
         if (error) throw error;
 
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'add',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: null,
+            new_value: nextType
+          });
+        }
+
         setLeaveStatus(prev => {
           const newMap = new Map(prev);
-          newMap.set(key, true);
+          newMap.set(key, nextType);
+          return newMap;
+        });
+      } else {
+        // 更新記錄
+        const { error } = await supabase
+          .from('leave_records')
+          .update({
+            leave_type: nextType,
+            operator_id: currentUser?.id,
+            operator_name: currentUser?.name
+          })
+          .eq('year', selectedYear)
+          .eq('month', selectedMonth)
+          .eq('staff_name', staffName)
+          .eq('day', day);
+
+        if (error) throw error;
+
+        // 記錄操作
+        if (currentUser) {
+          await supabase.from('operation_logs').insert({
+            user_id: currentUser.id,
+            user_name: currentUser.name,
+            operation_type: 'edit',
+            target_staff: staffName,
+            target_date: `${selectedYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`,
+            old_value: currentType,
+            new_value: nextType
+          });
+        }
+
+        setLeaveStatus(prev => {
+          const newMap = new Map(prev);
+          newMap.set(key, nextType);
           return newMap;
         });
       }
@@ -193,7 +308,12 @@ export default function LeaveCalendar() {
     }
   };
 
-  // 檢查是否為休假
+  // 獲取休假類型
+  const getLeaveType = (staffName: string, day: number): string | undefined => {
+    return leaveStatus.get(`${selectedYear}-${selectedMonth}-${staffName}-${day}`);
+  };
+
+  // 檢查是否有休假記錄
   const isLeave = (staffName: string, day: number): boolean => {
     return leaveStatus.has(`${selectedYear}-${selectedMonth}-${staffName}-${day}`);
   };
@@ -209,15 +329,20 @@ export default function LeaveCalendar() {
     
     try {
       toast.info("正在生成圖片...");
-      const canvas = await html2canvas(calendarRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff'
+      const blob = await domtoimage.toBlob(calendarRef.current, {
+        quality: 1,
+        bgcolor: '#ffffff',
+        scale: 2
       });
       
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
+      link.href = url;
       link.download = `員工休假月曆_${selectedYear}年${selectedMonth}月_${new Date().getTime()}.png`;
-      link.href = canvas.toDataURL();
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       toast.success("圖片已儲存!");
     } catch (error) {
       console.error('儲存圖片失敗:', error);
@@ -234,9 +359,9 @@ export default function LeaveCalendar() {
       data.push(headerRow);
       
       staffMembers.forEach(staff => {
-        const row = [staff];
+        const row = [staff.name];
         for (let day = 1; day <= daysInMonth; day++) {
-          row.push(isLeave(staff, day) ? "OFF" : "");
+          row.push(getLeaveType(staff.name, day) || "");
         }
         data.push(row);
       });
@@ -287,7 +412,7 @@ export default function LeaveCalendar() {
       const lines = text.split('\n');
       
       for (const line of lines) {
-        const staffMatch = staffMembers.find(staff => line.includes(staff));
+        const staffMatch = staffMembers.find(staff => line.includes(staff.name));
         
         if (staffMatch) {
           const numberMatches = line.matchAll(/\b([1-9]|[12][0-9]|30|31)\b/g);
@@ -299,7 +424,7 @@ export default function LeaveCalendar() {
                 newLeaveRecords.push({
                   year: selectedYear,
                   month: selectedMonth,
-                  staff_name: staffMatch,
+                  staff_name: staffMatch.name,
                   day: day
                 });
               }
@@ -361,7 +486,7 @@ export default function LeaveCalendar() {
       toast.error("請輸入員工名字");
       return;
     }
-    if (staffMembers.includes(newStaffName.trim())) {
+    if (staffMembers.some(s => s.name === newStaffName.trim())) {
       toast.error("員工名字已存在");
       return;
     }
@@ -382,6 +507,88 @@ export default function LeaveCalendar() {
     } catch (error) {
       console.error('新增員工失敗:', error);
       toast.error("新增員工失敗");
+    }
+  };
+
+  // 調整員工順序
+  const handleMoveStaff = async (staffName: string, direction: 'up' | 'down') => {
+    const currentIndex = staffMembers.findIndex(s => s.name === staffName);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= staffMembers.length) return;
+    
+    try {
+      const currentStaff = staffMembers[currentIndex];
+      const targetStaff = staffMembers[targetIndex];
+      
+      // 交換 order_index
+      const { error: error1 } = await supabase
+        .from('staff_members')
+        .update({ order_index: targetStaff.order_index })
+        .eq('id', currentStaff.id);
+      
+      if (error1) throw error1;
+      
+      const { error: error2 } = await supabase
+        .from('staff_members')
+        .update({ order_index: currentStaff.order_index })
+        .eq('id', targetStaff.id);
+      
+      if (error2) throw error2;
+      
+      await loadStaffMembers();
+      toast.success('順序已調整');
+    } catch (error) {
+      console.error('調整順序失敗:', error);
+      toast.error("調整順序失敗");
+    }
+  };
+
+  // 編輯員工
+  const handleEditStaff = async () => {
+    if (!editingStaff) return;
+    
+    const newName = editingStaff.newName.trim();
+    const newPosition = editingStaff.position.trim();
+    
+    if (!newName) {
+      toast.error("請輸入員工名字");
+      return;
+    }
+    
+    if (newName !== editingStaff.name && staffMembers.some(s => s.name === newName)) {
+      toast.error("員工名字已存在");
+      return;
+    }
+    
+    try {
+      // 更新員工名稱和職稱
+      const { error: staffError } = await supabase
+        .from('staff_members')
+        .update({ 
+          name: newName,
+          position: newPosition || null
+        })
+        .eq('name', editingStaff.name);
+      
+      if (staffError) throw staffError;
+      
+      // 更新該員工的所有休假記錄
+      const { error: leaveError } = await supabase
+        .from('leave_records')
+        .update({ staff_name: newName })
+        .eq('staff_name', editingStaff.name);
+      
+      if (leaveError) throw leaveError;
+      
+      await loadStaffMembers();
+      await loadLeaveRecords();
+      setEditingStaff(null);
+      toast.success(`已更新員工: ${newName}`);
+    } catch (error) {
+      console.error('編輯員工失敗:', error);
+      toast.error("編輯員工失敗");
     }
   };
 
@@ -432,12 +639,49 @@ export default function LeaveCalendar() {
         {/* 標題和操作按鈕 */}
         <div className="mb-4 space-y-3 print:hidden">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" onClick={() => window.history.back()}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                上一頁
+              </Button>
+              <h1 className="text-2xl font-bold text-gray-800">員工休假月曆</h1>
+            </div>
             <div className="flex gap-2">
-              {/* 返回首頁按鈕 */}
-              <Button variant="outline" size="sm" onClick={() => setLocation('/')}>
-                <Home className="w-4 h-4 mr-2" />
-                返回首頁
+              {/* 導航按鈕 */}
+              <Button variant="default" size="sm" onClick={() => setLocation('/doctor-schedule')} className="bg-teal-600 hover:bg-teal-700">
+                <Calendar className="w-4 h-4 mr-2" />
+                醫師排班
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setLocation('/attendance')}>
+                <Clock className="w-4 h-4 mr-2" />
+                員工打卡
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setLocation('/leave')}>
+                <FileText className="w-4 h-4 mr-2" />
+                請假管理
+              </Button>
+              
+              {currentUser?.role === 'admin' && (
+                <Button variant="outline" size="sm" onClick={() => setLocation('/admin')}>
+                  管理者主控台
+                </Button>
+              )}
+              
+              {['admin', 'senior_supervisor', 'supervisor'].includes(currentUser?.role) && (
+                <Button variant="outline" size="sm" onClick={() => setLocation('/approval')}>
+                  審核請假
+                </Button>
+              )}
+              
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => {
+                  localStorage.removeItem('user');
+                  setLocation('/login');
+                }}
+              >
+                登出
               </Button>
               
               {/* 次要功能選單 */}
@@ -449,6 +693,7 @@ export default function LeaveCalendar() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  {!isReadOnly && (
                   <Dialog open={isEditingStaff} onOpenChange={setIsEditingStaff}>
                     <DialogTrigger asChild>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -478,21 +723,97 @@ export default function LeaveCalendar() {
                         <div className="space-y-2">
                           {staffMembers.map((staff, index) => (
                             <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                              <span>{staff}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveStaff(staff)}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStaff(staff.name, 'up')}
+                                    disabled={index === 0}
+                                    className="h-6 px-2"
+                                  >
+                                    ↑
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleMoveStaff(staff.name, 'down')}
+                                    disabled={index === staffMembers.length - 1}
+                                    className="h-6 px-2"
+                                  >
+                                    ↓
+                                  </Button>
+                                </div>
+                                <div className="flex flex-col">
+                                  <span>{staff.name}</span>
+                                  {staff.position && (
+                                    <span className="text-xs text-gray-500">{staff.position}</span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingStaff({ name: staff.name, newName: staff.name, position: staff.position || '' })}
+                                  className="text-blue-600 hover:text-blue-700"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveStaff(staff.name)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     </DialogContent>
                   </Dialog>
+                  )}
 
+                  {/* 編輯員工對話框 */}
+                  <Dialog open={editingStaff !== null} onOpenChange={(open) => !open && setEditingStaff(null)}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>編輯員工</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">員工名字</label>
+                          <Input
+                            placeholder="輸入新名字"
+                            value={editingStaff?.newName || ''}
+                            onChange={(e) => setEditingStaff(prev => prev ? {...prev, newName: e.target.value} : null)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEditStaff()}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">職稱</label>
+                          <Input
+                            placeholder="輸入職稱 (例:美容師、護理師)"
+                            value={editingStaff?.position || ''}
+                            onChange={(e) => setEditingStaff(prev => prev ? {...prev, position: e.target.value} : null)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleEditStaff()}
+                          />
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setEditingStaff(null)}>
+                            取消
+                          </Button>
+                          <Button onClick={handleEditStaff}>
+                            確認修改
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {!isReadOnly && permissions.canManageStaffSchedule && (
                   <DropdownMenuItem onClick={handleImageUpload} disabled={isProcessing}>
                     {isProcessing ? (
                       <>
@@ -506,6 +827,7 @@ export default function LeaveCalendar() {
                       </>
                     )}
                   </DropdownMenuItem>
+                  )}
 
                   <DropdownMenuSeparator />
 
@@ -524,11 +846,15 @@ export default function LeaveCalendar() {
                     儲存圖片
                   </DropdownMenuItem>
 
+                  {!isReadOnly && permissions.canManageStaffSchedule && (
+                  <>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={handleClear} className="text-red-600">
                     清除記錄
                   </DropdownMenuItem>
+                  </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -598,21 +924,39 @@ export default function LeaveCalendar() {
               </thead>
               <tbody>
                 {staffMembers.map((staff) => (
-                  <tr key={staff}>
+                  <tr key={staff.name}>
                     <td className="sticky left-0 z-10 bg-gray-100 border border-gray-400 px-3 py-2 text-sm font-medium">
-                      {staff}
+                      <div className="flex flex-col">
+                        <span>{staff.name}</span>
+                        {staff.position && (
+                          <span className="text-xs text-gray-500">{staff.position}</span>
+                        )}
+                      </div>
                     </td>
                     {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
                       <td
                         key={day}
-                        onClick={() => toggleLeave(staff, day)}
+                        onClick={() => toggleLeave(staff.name, day)}
                         className={`border border-gray-400 px-2 py-2 text-center text-xs cursor-pointer transition-colors hover:bg-blue-100 print:cursor-default ${
                           isWeekend(selectedYear, selectedMonth, day) ? 'bg-gray-200' : 'bg-white'
                         }`}
                       >
-                        {isLeave(staff, day) && (
-                          <span className="font-bold text-red-600">OFF</span>
-                        )}
+                        {(() => {
+                          const leaveType = getLeaveType(staff.name, day);
+                          if (!leaveType) return null;
+                          
+                          const colorClass = 
+                            leaveType === 'OFF' ? 'text-red-600' :
+                            leaveType === 'ON' ? 'text-green-600' :
+                            leaveType === '晚' ? 'text-purple-600' :
+                            'text-blue-600'; // 特
+                          
+                          return (
+                            <span className={`font-bold ${colorClass}`}>
+                              {leaveType}
+                            </span>
+                          );
+                        })()}
                       </td>
                     ))}
                   </tr>
@@ -624,7 +968,7 @@ export default function LeaveCalendar() {
 
         {/* 說明文字 */}
         <div className="mt-4 text-sm text-gray-600 print:hidden">
-          <p>• 點擊格子可以標記/取消 OFF (休假)</p>
+          <p>• 點擊格子切換狀態：空白 → OFF(紅) → ON(綠) → 晚(紫) → 特(藍) → 空白</p>
           <p>• 深色背景為週末日期</p>
           <p>• 其他功能(編輯員工、匯入圖片、匯出等)請點擊右上角選單</p>
           <p>• 資料已永久儲存到雲端資料庫,可跨裝置存取</p>
