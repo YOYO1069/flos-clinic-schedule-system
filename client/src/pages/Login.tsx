@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { Lock, User } from "lucide-react";
-import bcrypt from "bcryptjs";
+import { verifyPassword } from "@/lib/crypto";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -26,16 +26,12 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      console.log('🔍 開始查詢員工資料:', employeeId.trim());
-      
-      // 查詢使用者（從 users 表）
+      // 查詢使用者
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
-      
-      console.log('📊 查詢結果:', { data, error });
 
       if (error || !data) {
         toast.error("員工編號或密碼錯誤");
@@ -43,13 +39,9 @@ export default function Login() {
         return;
       }
 
-      // 驗證密碼（使用 bcrypt 比對加密密碼）
-      console.log('🔑 開始驗證密碼...');
-      const isPasswordValid = await bcrypt.compare(password, data.password);
-      console.log('✅ 密碼驗證結果:', isPasswordValid);
-      
+      // 驗證密碼
+      const isPasswordValid = await verifyPassword(password, data.password);
       if (!isPasswordValid) {
-        console.log('❌ 密碼錯誤');
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
@@ -65,10 +57,10 @@ export default function Login() {
 
       console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
       console.log('✅ localStorage 已存儲');
+
+      toast.success(`歡迎回來,${data.name}!`);
       
-      toast.success(`歡迎回來, ${data.name}!`);
-      
-      // 添加延遲確保 localStorage 完全寫入
+      // 添加延遲確保 localStorage 完全寫入，然後使用 window.location.href 強制刷新頁面
       setTimeout(() => {
         console.log('🔄 準備跳轉頁面...');
         

@@ -6,11 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase, tables } from "@/lib/supabase";
-import { Calendar, FileText, CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
-import { useLocation } from 'wouter';
+import { Calendar, FileText, CheckCircle, XCircle, Clock } from "lucide-react";
 import { format } from 'date-fns';
 import { zhTW } from 'date-fns/locale';
-import { utcToTaiwanTime } from '@/lib/timezone';
 
 interface LeaveRequest {
   id: number;
@@ -28,68 +26,58 @@ interface LeaveRequest {
 }
 
 const leaveTypes = [
-  // 不扣全勤的假別
-  { value: 'special', label: '特休假', noDeduct: true },
-  { value: 'marriage', label: '婚假', noDeduct: true },
-  { value: 'bereavement', label: '喪假', noDeduct: true },
-  { value: 'maternity', label: '產假', noDeduct: true },
-  { value: 'job_seeking', label: '謀職假', noDeduct: true },
-  { value: 'miscarriage', label: '流產假', noDeduct: true },
-  { value: 'prenatal_care', label: '安胎假', noDeduct: true },
-  { value: 'prenatal_checkup', label: '產檢假', noDeduct: true },
-  { value: 'paternity_checkup', label: '陪產檢假', noDeduct: true },
-  { value: 'official_injury', label: '公假工傷假', noDeduct: true },
-  { value: 'breastfeeding', label: '哺乳假', noDeduct: true },
-  { value: 'typhoon', label: '颱風假', noDeduct: true },
-  { value: 'menstrual', label: '生理假', noDeduct: true },
-  { value: 'family_care', label: '家庭照顧假', noDeduct: true },
-  
-  // 會扣全勤的假別
-  { value: 'sick', label: '病假', noDeduct: false },
-  { value: 'personal', label: '事假', noDeduct: false },
-  { value: 'compensatory', label: '補休', noDeduct: false },
-  { value: 'other', label: '其他', noDeduct: false }
+  { value: 'annual', label: '年假' },
+  { value: 'sick', label: '病假' },
+  { value: 'personal', label: '事假' },
+  { value: 'marriage', label: '婚假' },
+  { value: 'maternity', label: '產假' },
+  { value: 'paternity', label: '陪產假' },
+  { value: 'bereavement', label: '喪假' },
+  { value: 'other', label: '其他' }
 ];
 
 export default function LeaveManagement() {
-  const [, setLocation] = useLocation();
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   
   // 表單狀態
-  const [leaveType, setLeaveType] = useState('special');
+  const [leaveType, setLeaveType] = useState('annual');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
-  const [noDeductAttendance, setNoDeductAttendance] = useState(true);
 
-  // 檢查登入狀態
+  // 從 localStorage 讀取登入使用者資訊
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [employeeId, setEmployeeId] = useState<number | null>(null);
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
-    if (!userStr) {
-      setLocation('/login');
-      return;
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setCurrentUser(user);
+      setEmployeeId(user.id);
+      console.log('✅ 當前登入使用者:', user);
+    } else {
+      console.warn('⚠️ 未找到登入資訊，請先登入');
+      // 可選：重定向到登入頁面
+      // window.location.href = '/login';
     }
-    const user = JSON.parse(userStr);
-    setCurrentUser(user);
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (employeeId) {
       loadRequests();
     }
-  }, [currentUser]);
+  }, [employeeId]);
 
   // 載入請假記錄
   async function loadRequests() {
-    if (!currentUser) return;
     try {
       const { data, error } = await supabase
         .from(tables.leaveRequests)
         .select('*')
-        .eq('employee_id', currentUser.employee_id)
+        .eq('employee_id', employeeId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -112,8 +100,8 @@ export default function LeaveManagement() {
 
   // 提交請假申請
   async function submitRequest() {
-    if (!startDate || !endDate) {
-      alert('請選擇請假日期');
+    if (!startDate || !endDate || !reason) {
+      alert('請填寫完整資訊');
       return;
     }
 
@@ -125,20 +113,15 @@ export default function LeaveManagement() {
 
     setLoading(true);
     try {
-      // 檢查是否不扣全勤
-      const selectedType = leaveTypes.find(t => t.value === leaveType);
-      const noDeduct = selectedType?.noDeduct || false;
-
       const { error } = await supabase
         .from(tables.leaveRequests)
         .insert([{
-          employee_id: currentUser.employee_id,
+          employee_id: employeeId,
           leave_type: leaveType,
           start_date: startDate,
           end_date: endDate,
           days: days,
-          reason: '', // 不需要理由
-          no_deduct_attendance: noDeduct,
+          reason: reason,
           status: 'pending'
         }]);
 
@@ -146,7 +129,7 @@ export default function LeaveManagement() {
 
       alert('✅ 請假申請已提交!');
       setShowForm(false);
-      setLeaveType('special');
+      setLeaveType('annual');
       setStartDate('');
       setEndDate('');
       setReason('');
@@ -200,26 +183,19 @@ export default function LeaveManagement() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 p-6">
       <div className="max-w-6xl mx-auto">
-        {/* 標題和導航 */}
+        {/* 標題 */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <Button variant="ghost" onClick={() => setLocation('/')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              返回首頁
-            </Button>
-            <Button 
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-lg"
-              size="sm" 
-              onClick={() => setLocation('/attendance')}
-            >
-              <Clock className="w-4 h-4 mr-2" />
-              打卡
-            </Button>
-          </div>
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             請假管理系統
           </h1>
-          <p className="text-gray-600 mt-2">線上請假申請 · 即時審核狀態</p>
+          <p className="text-gray-600 mt-2">
+            線上請假申請 · 即時審核狀態
+            {currentUser && (
+              <span className="ml-4 text-purple-600 font-medium">
+                👤 {currentUser.name} ({currentUser.employee_id})
+              </span>
+            )}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -275,28 +251,15 @@ export default function LeaveManagement() {
                 </div>
               )}
 
-              {/* 顯示是否扣全勤 */}
-              {(() => {
-                const selectedType = leaveTypes.find(t => t.value === leaveType);
-                const noDeduct = selectedType?.noDeduct || false;
-                return (
-                  <div className={`p-3 rounded-lg border ${
-                    noDeduct 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-orange-50 border-orange-200'
-                  }`}>
-                    <p className={`text-sm ${
-                      noDeduct 
-                        ? 'text-green-700' 
-                        : 'text-orange-700'
-                    }`}>
-                      {noDeduct 
-                        ? '✅ 此假別不扣全勤' 
-                        : '⚠️ 此假別會扣全勤'}
-                    </p>
-                  </div>
-                );
-              })()}
+              <div className="space-y-2">
+                <Label>請假事由</Label>
+                <Textarea
+                  placeholder="請說明請假原因..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={4}
+                />
+              </div>
 
               <Button
                 className="w-full bg-gradient-to-r from-pink-500 to-purple-600"
@@ -367,12 +330,12 @@ export default function LeaveManagement() {
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          申請時間: {format(utcToTaiwanTime(request.created_at), 'yyyy/MM/dd HH:mm')}
+                          申請時間: {format(new Date(request.created_at), 'yyyy/MM/dd HH:mm')}
                         </div>
                         {request.approved_at && (
                           <div className="flex items-center gap-1">
                             <CheckCircle className="w-3 h-3" />
-                            審核時間: {format(utcToTaiwanTime(request.approved_at), 'yyyy/MM/dd HH:mm')}
+                            審核時間: {format(new Date(request.approved_at), 'yyyy/MM/dd HH:mm')}
                           </div>
                         )}
                       </div>
