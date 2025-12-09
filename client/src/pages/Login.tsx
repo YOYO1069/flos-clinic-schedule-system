@@ -26,12 +26,16 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // 查詢使用者
+      console.log('🔍 開始查詢員工資料:', employeeId.trim());
+      
+      // 查詢員工資料（從 employees 表）
       const { data, error } = await supabase
         .from('employees')
         .select('*')
         .eq('employee_id', employeeId.trim())
         .single();
+      
+      console.log('📊 查詢結果:', { data, error });
 
       if (error || !data) {
         toast.error("員工編號或密碼錯誤");
@@ -40,11 +44,38 @@ export default function Login() {
       }
 
       // 驗證密碼（使用 SHA-256）
+      console.log('🔑 開始驗證密碼...');
       const isPasswordValid = await verifyPassword(password, data.password);
+      console.log('✅ 密碼驗證結果:', isPasswordValid);
+      
       if (!isPasswordValid) {
+        console.log('❌ 密碼錯誤');
         toast.error("員工編號或密碼錯誤");
         setIsLoading(false);
         return;
+      }
+
+      // 記錄登入日誌
+      try {
+        // 獲取客戶端 IP（透過第三方服務）
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        const clientIp = ipData.ip;
+
+        await supabase
+          .from('flosclass_login_logs')
+          .insert({
+            employee_id: data.employee_id,
+            employee_name: data.name,
+            ip_address: clientIp,
+            success: true,
+            login_time: new Date().toISOString()
+          });
+        
+        console.log('📝 登入日誌已記錄');
+      } catch (logError) {
+        console.error('記錄登入日誌失敗:', logError);
+        // 不影響登入流程
       }
 
       // 儲存登入資訊到 localStorage
@@ -52,10 +83,10 @@ export default function Login() {
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
-        role: data.role
+        position: data.position
       }));
 
-      console.log('✅ 登入成功，用戶資訊:', data.name, data.role);
+      console.log('✅ 登入成功，用戶資訊:', data.name, data.position);
       console.log('✅ localStorage 已存儲');
 
       toast.success(`歡迎回來,${data.name}!`);
@@ -65,7 +96,7 @@ export default function Login() {
         console.log('🔄 準備跳轉頁面...');
         
         // 使用 window.location.href 強制刷新頁面
-        if (data.role === 'admin') {
+        if (data.employee_id === 'flosHBH012') {
           console.log('🔄 管理員跳轉到 /admin');
           window.location.href = '/admin';
         } else {
