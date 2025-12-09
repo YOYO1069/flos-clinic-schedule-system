@@ -24,7 +24,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { UserCog, Key, Search, ArrowLeft, Shield, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import bcrypt from "bcryptjs";
+import { hashPassword } from "@/lib/crypto";
 
 export default function AdminPanel() {
   const [, setLocation] = useLocation();
@@ -57,8 +57,8 @@ export default function AdminPanel() {
 
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from('users')
+      const { data, error} = await supabase
+        .from('employees')
         .select('*')
         .order('name');
 
@@ -78,7 +78,7 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const { error } = await supabase
-        .from('users')
+        .from('employees')
         .update({ role: newRole })
         .eq('employee_id', employeeId);
 
@@ -107,12 +107,12 @@ export default function AdminPanel() {
 
     setLoading(true);
     try {
-      // 在前端使用 bcryptjs 加密密碼
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      // 使用 SHA-256 雜湊密碼
+      const hashedPassword = await hashPassword(newPassword);
       
       // 更新資料庫
       const { error } = await supabase
-        .from('users')
+        .from('employees')
         .update({ 
           password: hashedPassword,
           password_changed: true
