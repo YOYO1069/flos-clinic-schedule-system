@@ -83,7 +83,8 @@ export default function Login() {
         id: data.id,
         employee_id: data.employee_id,
         name: data.name,
-        position: data.position
+        position: data.position,
+        role: data.role
       }));
 
       console.log('✅ 登入成功，用戶資訊:', data.name, data.position);
