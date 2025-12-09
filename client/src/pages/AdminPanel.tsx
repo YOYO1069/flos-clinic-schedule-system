@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,21 +21,104 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserCog, Key, Search, ArrowLeft, Shield, Lock } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle,
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { 
+  UserCog, 
+  Key, 
+  Search, 
+  ArrowLeft, 
+  Shield, 
+  Users, 
+  Clock, 
+  FileText,
+  Download,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  MapPin
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { hashPassword } from "@/lib/crypto";
 
-export default function AdminPanel() {
+interface Employee {
+  id: number;
+  employee_id: string;
+  name: string;
+  role: string;
+  position?: string;
+  phone?: string;
+  employment_status?: string;
+  created_at?: string;
+}
+
+interface AttendanceRecord {
+  id: number;
+  employee_id: number;
+  employee_name: string;
+  work_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  work_hours?: number;
+  check_in_latitude?: number;
+  check_in_longitude?: number;
+  check_out_latitude?: number;
+  check_out_longitude?: number;
+}
+
+interface LeaveRequest {
+  id: number;
+  employee_id: number;
+  leave_type: string;
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: string;
+  created_at: string;
+}
+
+export default function CompleteAdminPanel() {
   const [, setLocation] = useLocation();
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [employees, setEmployees] = useState<any[]>([]);
+  
+  // 員工管理
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showEmployeeDialog, setShowEmployeeDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  
+  // 新增/編輯員工
+  const [employeeForm, setEmployeeForm] = useState({
+    employee_id: "",
+    name: "",
+    role: "staff",
+    position: "",
+    phone: "",
+    password: ""
+  });
+  
+  // 打卡記錄
+  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [attendanceDateFilter, setAttendanceDateFilter] = useState("");
+  const [attendanceEmployeeFilter, setAttendanceEmployeeFilter] = useState("");
+  
+  // 請假記錄
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [leaveStatusFilter, setLeaveStatusFilter] = useState("all");
+  
   const [loading, setLoading] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -53,11 +137,15 @@ export default function AdminPanel() {
     
     setCurrentUser(user);
     loadEmployees();
+    loadAttendanceRecords();
+    loadLeaveRequests();
   }, [setLocation]);
 
+  // ==================== 員工管理 ====================
+  
   const loadEmployees = async () => {
     try {
-      const { data, error} = await supabase
+      const { data, error } = await supabase
         .from('employees')
         .select('*')
         .order('name');
@@ -70,8 +158,99 @@ export default function AdminPanel() {
     }
   };
 
-  const handleRoleChange = async (employeeId: string, newRole: string) => {
-    if (!confirm(`確定要將此員工的角色變更為「${getRoleName(newRole)}」嗎？`)) {
+  const handleAddEmployee = () => {
+    setEmployeeForm({
+      employee_id: "",
+      name: "",
+      role: "staff",
+      position: "",
+      phone: "",
+      password: ""
+    });
+    setSelectedEmployee(null);
+    setShowEmployeeDialog(true);
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEmployeeForm({
+      employee_id: employee.employee_id,
+      name: employee.name,
+      role: employee.role,
+      position: employee.position || "",
+      phone: employee.phone || "",
+      password: ""
+    });
+    setSelectedEmployee(employee);
+    setShowEmployeeDialog(true);
+  };
+
+  const handleSaveEmployee = async () => {
+    if (!employeeForm.employee_id || !employeeForm.name) {
+      toast.error('請填寫員工編號和姓名');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (selectedEmployee) {
+        // 編輯現有員工
+        const updateData: any = {
+          name: employeeForm.name,
+          role: employeeForm.role,
+          position: employeeForm.position,
+          phone: employeeForm.phone
+        };
+
+        // 如果有輸入新密碼，才更新密碼
+        if (employeeForm.password) {
+          updateData.password = await hashPassword(employeeForm.password);
+        }
+
+        const { error } = await supabase
+          .from('employees')
+          .update(updateData)
+          .eq('id', selectedEmployee.id);
+
+        if (error) throw error;
+        toast.success('員工資料更新成功');
+      } else {
+        // 新增員工
+        if (!employeeForm.password) {
+          toast.error('新增員工時必須設定密碼');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('employees')
+          .insert({
+            employee_id: employeeForm.employee_id,
+            name: employeeForm.name,
+            role: employeeForm.role,
+            position: employeeForm.position,
+            phone: employeeForm.phone,
+            password: await hashPassword(employeeForm.password),
+            employment_status: 'active'
+          });
+
+        if (error) throw error;
+        toast.success('員工新增成功');
+      }
+
+      setShowEmployeeDialog(false);
+      loadEmployees();
+    } catch (error: any) {
+      console.error('儲存員工資料失敗:', error);
+      toast.error('儲存失敗：' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleEmployeeStatus = async (employee: Employee) => {
+    const newStatus = employee.employment_status === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'active' ? '啟用' : '停用';
+    
+    if (!confirm(`確定要${action}「${employee.name}」嗎？`)) {
       return;
     }
 
@@ -79,11 +258,71 @@ export default function AdminPanel() {
     try {
       const { error } = await supabase
         .from('employees')
-        .update({ role: newRole })
-        .eq('employee_id', employeeId);
+        .update({ 
+          employment_status: newStatus,
+          resignation_date: newStatus === 'inactive' ? new Date().toISOString() : null
+        })
+        .eq('id', employee.id);
+
+      if (error) throw error;
+      toast.success(`${action}成功`);
+      loadEmployees();
+    } catch (error: any) {
+      console.error(`${action}失敗:`, error);
+      toast.error(`${action}失敗：` + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedEmployee || !newPassword) {
+      toast.error('請輸入新密碼');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('密碼長度至少需要 6 個字元');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const hashedPassword = await hashPassword(newPassword);
+      
+      const { error } = await supabase
+        .from('employees')
+        .update({ 
+          password: hashedPassword,
+          password_changed: false
+        })
+        .eq('id', selectedEmployee.id);
 
       if (error) throw error;
 
+      toast.success(`已重設「${selectedEmployee.name}」的密碼\n新密碼：${newPassword}`, {
+        duration: 5000
+      });
+      setNewPassword('');
+      setSelectedEmployee(null);
+      setShowPasswordDialog(false);
+    } catch (error: any) {
+      console.error('重設密碼失敗:', error);
+      toast.error('重設密碼失敗：' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (employeeId: number, newRole: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .update({ role: newRole })
+        .eq('id', employeeId);
+
+      if (error) throw error;
       toast.success('權限更新成功');
       loadEmployees();
     } catch (error: any) {
@@ -94,65 +333,160 @@ export default function AdminPanel() {
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!selectedEmployee) {
-      toast.error('請選擇要重設密碼的員工');
+  // ==================== 打卡記錄管理 ====================
+  
+  const loadAttendanceRecords = async () => {
+    try {
+      let query = supabase
+        .from('attendance_records')
+        .select('*')
+        .order('work_date', { ascending: false })
+        .order('check_in_time', { ascending: false });
+
+      if (attendanceDateFilter) {
+        query = query.eq('work_date', attendanceDateFilter);
+      }
+
+      if (attendanceEmployeeFilter) {
+        query = query.eq('employee_id', attendanceEmployeeFilter);
+      }
+
+      const { data, error } = await query.limit(100);
+
+      if (error) throw error;
+      setAttendanceRecords(data || []);
+    } catch (error: any) {
+      console.error('載入打卡記錄失敗:', error);
+      toast.error('載入打卡記錄失敗');
+    }
+  };
+
+  const handleExportAttendance = () => {
+    if (attendanceRecords.length === 0) {
+      toast.error('沒有資料可匯出');
       return;
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      toast.error('密碼長度至少需要 6 個字元');
+    const csv = [
+      ['日期', '員工姓名', '上班時間', '下班時間', '工時', '上班定位', '下班定位'].join(','),
+      ...attendanceRecords.map(record => [
+        record.work_date,
+        record.employee_name,
+        record.check_in_time || '',
+        record.check_out_time || '',
+        record.work_hours || '',
+        record.check_in_latitude && record.check_in_longitude 
+          ? `${record.check_in_latitude},${record.check_in_longitude}` 
+          : '',
+        record.check_out_latitude && record.check_out_longitude 
+          ? `${record.check_out_latitude},${record.check_out_longitude}` 
+          : ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `打卡記錄_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    
+    toast.success('匯出成功');
+  };
+
+  // ==================== 請假管理 ====================
+  
+  const loadLeaveRequests = async () => {
+    try {
+      let query = supabase
+        .from('leave_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (leaveStatusFilter !== 'all') {
+        query = query.eq('status', leaveStatusFilter);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setLeaveRequests(data || []);
+    } catch (error: any) {
+      console.error('載入請假記錄失敗:', error);
+      toast.error('載入請假記錄失敗');
+    }
+  };
+
+  const handleApproveLeave = async (leaveId: number) => {
+    if (!confirm('確定要批准此請假申請嗎？')) {
       return;
     }
 
     setLoading(true);
     try {
-      // 使用 SHA-256 雜湊密碼
-      const hashedPassword = await hashPassword(newPassword);
-      
-      // 更新資料庫
       const { error } = await supabase
-        .from('employees')
-        .update({ 
-          password: hashedPassword,
-          password_changed: true
+        .from('leave_requests')
+        .update({
+          status: 'approved',
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString()
         })
-        .eq('employee_id', selectedEmployee.employee_id);
+        .eq('id', leaveId);
 
       if (error) throw error;
-
-      toast.success(`已成功重設「${selectedEmployee.name}」的密碼\n新密碼：${newPassword}`, {
-        duration: 5000
-      });
-      setNewPassword('');
-      setSelectedEmployee(null);
-      setShowResetDialog(false);
+      toast.success('已批准請假');
+      loadLeaveRequests();
     } catch (error: any) {
-      console.error('重設密碼失敗:', error);
-      toast.error('重設密碼失敗：' + error.message);
+      console.error('批准失敗:', error);
+      toast.error('批准失敗：' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRejectLeave = async (leaveId: number, reason: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('leave_requests')
+        .update({
+          status: 'rejected',
+          approved_by: currentUser.id,
+          approved_at: new Date().toISOString(),
+          rejection_reason: reason
+        })
+        .eq('id', leaveId);
+
+      if (error) throw error;
+      toast.success('已拒絕請假');
+      loadLeaveRequests();
+    } catch (error: any) {
+      console.error('拒絕失敗:', error);
+      toast.error('拒絕失敗：' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==================== 輔助函數 ====================
+  
   const getRoleName = (role: string) => {
     const roleMap: { [key: string]: string } = {
       'admin': '管理員',
-      'senior_supervisor': '高階主管',
+      'senior_supervisor': '資深主管',
       'supervisor': '一般主管',
       'staff': '一般員工'
     };
     return roleMap[role] || role;
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    const colorMap: { [key: string]: string } = {
-      'admin': 'bg-red-100 text-red-700 border-red-300',
-      'senior_supervisor': 'bg-purple-100 text-purple-700 border-purple-300',
-      'supervisor': 'bg-blue-100 text-blue-700 border-blue-300',
-      'staff': 'bg-gray-100 text-gray-700 border-gray-300'
+  const getStatusBadge = (status: string) => {
+    const statusMap: { [key: string]: { text: string; color: string } } = {
+      'pending': { text: '待審核', color: 'bg-yellow-100 text-yellow-800' },
+      'approved': { text: '已批准', color: 'bg-green-100 text-green-800' },
+      'rejected': { text: '已拒絕', color: 'bg-red-100 text-red-800' }
     };
-    return colorMap[role] || 'bg-gray-100 text-gray-700 border-gray-300';
+    const s = statusMap[status] || { text: status, color: 'bg-gray-100 text-gray-800' };
+    return <span className={`px-2 py-1 rounded text-xs ${s.color}`}>{s.text}</span>;
   };
 
   const filteredEmployees = employees.filter(emp =>
@@ -161,199 +495,153 @@ export default function AdminPanel() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* 頂部導航 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation('/')}
-                className="gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                返回首頁
-              </Button>
-              <div className="h-6 w-px bg-gray-300" />
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">管理員面板</h1>
-                  <p className="text-sm text-gray-500">權限分配與帳號管理</p>
-                </div>
-              </div>
-            </div>
-            <div className="text-sm text-gray-600">
-              管理員：<span className="font-semibold text-gray-900">{currentUser?.name}</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation('/')}
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <Shield className="h-8 w-8 text-blue-600" />
+                管理員控制台
+              </h1>
+              <p className="text-gray-600 mt-1">系統管理與監控</p>
             </div>
           </div>
+          <div className="text-right">
+            <p className="text-sm text-gray-600">管理員</p>
+            <p className="font-semibold">{currentUser?.name}</p>
+          </div>
         </div>
-      </div>
 
-      {/* 主要內容 */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Tabs defaultValue="permissions" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2 bg-white shadow-sm">
-            <TabsTrigger value="permissions" className="gap-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
-              <UserCog className="w-4 h-4" />
-              權限分配
+        {/* Tabs */}
+        <Tabs defaultValue="employees" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="employees" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              員工管理
             </TabsTrigger>
-            <TabsTrigger value="password" className="gap-2 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
-              <Key className="w-4 h-4" />
-              帳號管理
+            <TabsTrigger value="attendance" className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              打卡記錄
+            </TabsTrigger>
+            <TabsTrigger value="leave" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              請假管理
             </TabsTrigger>
           </TabsList>
 
-          {/* 權限分配 Tab */}
-          <TabsContent value="permissions" className="space-y-6">
-            <Card className="p-6 shadow-sm border-gray-200">
-              <div className="space-y-6">
+          {/* 員工管理 Tab */}
+          <TabsContent value="employees" className="space-y-4">
+            <Card>
+              <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <UserCog className="w-5 h-5 text-indigo-600" />
-                      員工權限管理
-                    </h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      管理員工的系統權限等級（共 {employees.length} 位員工）
-                    </p>
+                    <CardTitle>員工管理</CardTitle>
+                    <CardDescription>管理所有員工資料和權限</CardDescription>
                   </div>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Button onClick={handleAddEmployee}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    新增員工
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       placeholder="搜尋員工姓名或編號..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 border-gray-300"
+                      className="pl-10"
                     />
                   </div>
                 </div>
 
-                <div className="border rounded-lg overflow-hidden shadow-sm">
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50 border-b border-gray-200">
-                        <TableHead className="font-semibold text-gray-700">員工編號</TableHead>
-                        <TableHead className="font-semibold text-gray-700">姓名</TableHead>
-                        <TableHead className="font-semibold text-gray-700">職位</TableHead>
-                        <TableHead className="font-semibold text-gray-700">目前權限</TableHead>
-                        <TableHead className="font-semibold text-gray-700 text-center">變更權限</TableHead>
+                      <TableRow>
+                        <TableHead>員工編號</TableHead>
+                        <TableHead>姓名</TableHead>
+                        <TableHead>角色</TableHead>
+                        <TableHead>職位</TableHead>
+                        <TableHead>狀態</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredEmployees.map((employee) => (
-                        <TableRow key={employee.employee_id} className="hover:bg-gray-50 transition-colors">
-                          <TableCell className="font-mono text-sm text-gray-600">
+                        <TableRow key={employee.id}>
+                          <TableCell className="font-mono text-sm">
                             {employee.employee_id}
                           </TableCell>
-                          <TableCell className="font-medium text-gray-900">
+                          <TableCell className="font-medium">
                             {employee.name}
                           </TableCell>
-                          <TableCell className="text-gray-600">
-                            {employee.position || '-'}
-                          </TableCell>
                           <TableCell>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor(employee.role)}`}>
-                              {getRoleName(employee.role)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
                             <Select
                               value={employee.role}
-                              onValueChange={(value) => handleRoleChange(employee.employee_id, value)}
-                              disabled={loading || employee.employee_id === currentUser?.employee_id}
+                              onValueChange={(value) => handleRoleChange(employee.id, value)}
+                              disabled={loading}
                             >
-                              <SelectTrigger className="w-40 mx-auto border-gray-300">
+                              <SelectTrigger className="w-40">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="staff">一般員工</SelectItem>
                                 <SelectItem value="supervisor">一般主管</SelectItem>
-                                <SelectItem value="senior_supervisor">高階主管</SelectItem>
+                                <SelectItem value="senior_supervisor">資深主管</SelectItem>
                                 <SelectItem value="admin">管理員</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {filteredEmployees.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>找不到符合條件的員工</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* 帳號管理 Tab */}
-          <TabsContent value="password" className="space-y-6">
-            <Card className="p-6 shadow-sm border-gray-200">
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Key className="w-5 h-5 text-violet-600" />
-                    密碼重設
-                  </h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    為員工重設登入密碼
-                  </p>
-                </div>
-
-                <div className="relative w-full max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="搜尋員工..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-gray-300"
-                  />
-                </div>
-
-                <div className="border rounded-lg overflow-hidden shadow-sm">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-gray-50 border-b border-gray-200">
-                        <TableHead className="font-semibold text-gray-700">員工編號</TableHead>
-                        <TableHead className="font-semibold text-gray-700">姓名</TableHead>
-                        <TableHead className="font-semibold text-gray-700">角色</TableHead>
-                        <TableHead className="font-semibold text-gray-700 text-center">操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredEmployees.map((employee) => (
-                        <TableRow key={employee.employee_id} className="hover:bg-gray-50 transition-colors">
-                          <TableCell className="font-mono text-sm text-gray-600">
-                            {employee.employee_id}
-                          </TableCell>
-                          <TableCell className="font-medium text-gray-900">
-                            {employee.name}
-                          </TableCell>
+                          <TableCell>{employee.position || '-'}</TableCell>
                           <TableCell>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor(employee.role)}`}>
-                              {getRoleName(employee.role)}
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              employee.employment_status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {employee.employment_status === 'active' ? '在職' : '離職'}
                             </span>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEditEmployee(employee)}
+                            >
+                              <Edit className="h-3 w-3" />
+                            </Button>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
                                 setSelectedEmployee(employee);
-                                setShowResetDialog(true);
+                                setShowPasswordDialog(true);
                               }}
-                              className="gap-2 border-violet-300 text-violet-700 hover:bg-violet-50"
                             >
-                              <Lock className="w-3.5 h-3.5" />
-                              重設密碼
+                              <Key className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleEmployeeStatus(employee)}
+                            >
+                              {employee.employment_status === 'active' ? (
+                                <XCircle className="h-3 w-3 text-red-600" />
+                              ) : (
+                                <CheckCircle className="h-3 w-3 text-green-600" />
+                              )}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -361,97 +649,371 @@ export default function AdminPanel() {
                     </TableBody>
                   </Table>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-                {filteredEmployees.length === 0 && (
-                  <div className="text-center py-12 text-gray-500">
-                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>找不到符合條件的員工</p>
+          {/* 打卡記錄 Tab */}
+          <TabsContent value="attendance" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>打卡記錄</CardTitle>
+                    <CardDescription>查看和管理所有員工打卡記錄</CardDescription>
                   </div>
-                )}
-              </div>
+                  <Button onClick={handleExportAttendance}>
+                    <Download className="h-4 w-4 mr-2" />
+                    匯出 CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <Label>日期篩選</Label>
+                    <Input
+                      type="date"
+                      value={attendanceDateFilter}
+                      onChange={(e) => {
+                        setAttendanceDateFilter(e.target.value);
+                        loadAttendanceRecords();
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>員工篩選</Label>
+                    <Select
+                      value={attendanceEmployeeFilter}
+                      onValueChange={(value) => {
+                        setAttendanceEmployeeFilter(value);
+                        loadAttendanceRecords();
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="所有員工" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">所有員工</SelectItem>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id.toString()}>
+                            {emp.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setAttendanceDateFilter('');
+                        setAttendanceEmployeeFilter('');
+                        loadAttendanceRecords();
+                      }}
+                    >
+                      清除篩選
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>日期</TableHead>
+                        <TableHead>員工</TableHead>
+                        <TableHead>上班時間</TableHead>
+                        <TableHead>下班時間</TableHead>
+                        <TableHead>工時</TableHead>
+                        <TableHead>定位</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {attendanceRecords.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-gray-500">
+                            暫無打卡記錄
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        attendanceRecords.map((record) => (
+                          <TableRow key={record.id}>
+                            <TableCell>{record.work_date}</TableCell>
+                            <TableCell>{record.employee_name}</TableCell>
+                            <TableCell>
+                              {record.check_in_time 
+                                ? new Date(record.check_in_time).toLocaleTimeString('zh-TW', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })
+                                : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {record.check_out_time 
+                                ? new Date(record.check_out_time).toLocaleTimeString('zh-TW', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })
+                                : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {record.work_hours ? `${record.work_hours.toFixed(1)} 小時` : '-'}
+                            </TableCell>
+                            <TableCell>
+                              {record.check_in_latitude && record.check_in_longitude ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    window.open(
+                                      `https://www.google.com/maps?q=${record.check_in_latitude},${record.check_in_longitude}`,
+                                      '_blank'
+                                    );
+                                  }}
+                                >
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  查看
+                                </Button>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 請假管理 Tab */}
+          <TabsContent value="leave" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>請假管理</CardTitle>
+                    <CardDescription>審核和管理所有請假申請</CardDescription>
+                  </div>
+                  <Select
+                    value={leaveStatusFilter}
+                    onValueChange={(value) => {
+                      setLeaveStatusFilter(value);
+                      loadLeaveRequests();
+                    }}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部</SelectItem>
+                      <SelectItem value="pending">待審核</SelectItem>
+                      <SelectItem value="approved">已批准</SelectItem>
+                      <SelectItem value="rejected">已拒絕</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>申請日期</TableHead>
+                        <TableHead>員工</TableHead>
+                        <TableHead>假別</TableHead>
+                        <TableHead>開始日期</TableHead>
+                        <TableHead>結束日期</TableHead>
+                        <TableHead>天數</TableHead>
+                        <TableHead>原因</TableHead>
+                        <TableHead>狀態</TableHead>
+                        <TableHead className="text-right">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leaveRequests.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center text-gray-500">
+                            暫無請假記錄
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        leaveRequests.map((leave) => (
+                          <TableRow key={leave.id}>
+                            <TableCell>
+                              {new Date(leave.created_at).toLocaleDateString('zh-TW')}
+                            </TableCell>
+                            <TableCell>
+                              {employees.find(e => e.id === leave.employee_id)?.name || '-'}
+                            </TableCell>
+                            <TableCell>{leave.leave_type}</TableCell>
+                            <TableCell>{leave.start_date}</TableCell>
+                            <TableCell>{leave.end_date}</TableCell>
+                            <TableCell>{leave.days} 天</TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {leave.reason}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(leave.status)}</TableCell>
+                            <TableCell className="text-right space-x-2">
+                              {leave.status === 'pending' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-green-600"
+                                    onClick={() => handleApproveLeave(leave.id)}
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    批准
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600"
+                                    onClick={() => {
+                                      const reason = prompt('請輸入拒絕原因：');
+                                      if (reason) {
+                                        handleRejectLeave(leave.id, reason);
+                                      }
+                                    }}
+                                  >
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    拒絕
+                                  </Button>
+                                </>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* 重設密碼對話框 */}
-      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-        <DialogContent className="sm:max-w-md">
+      {/* 新增/編輯員工對話框 */}
+      <Dialog open={showEmployeeDialog} onOpenChange={setShowEmployeeDialog}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-violet-600" />
-              重設密碼
+            <DialogTitle>
+              {selectedEmployee ? '編輯員工' : '新增員工'}
             </DialogTitle>
             <DialogDescription>
-              為「{selectedEmployee?.name}」設定新的登入密碼
+              {selectedEmployee ? '修改員工資料' : '建立新的員工帳號'}
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="p-4 bg-violet-50 border border-violet-200 rounded-lg">
-              <div className="text-sm text-violet-700 font-medium mb-1">
-                選定員工
-              </div>
-              <div className="text-lg font-semibold text-violet-900">
-                {selectedEmployee?.name}
-              </div>
-              <div className="text-sm text-violet-600 font-mono mt-1">
-                {selectedEmployee?.employee_id}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="newPassword" className="text-gray-700">新密碼</Label>
+          <div className="space-y-4">
+            <div>
+              <Label>員工編號 *</Label>
               <Input
-                id="newPassword"
-                type="text"
-                placeholder="請輸入新密碼（至少 6 個字元）"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="font-mono border-gray-300"
-                autoFocus
+                value={employeeForm.employee_id}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, employee_id: e.target.value })}
+                disabled={!!selectedEmployee}
+                placeholder="例如：flosXXX001"
               />
-              <p className="text-xs text-gray-500">
-                建議使用包含數字和字母的組合，長度至少 8 個字元
-              </p>
             </div>
-
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <div className="flex gap-2">
-                <div className="text-amber-600 mt-0.5">⚠️</div>
-                <div className="text-sm text-amber-700">
-                  <div className="font-medium mb-1">注意事項</div>
-                  <ul className="list-disc list-inside space-y-1 text-xs">
-                    <li>員工下次登入時需使用新密碼</li>
-                    <li>建議通知員工盡快修改密碼</li>
-                    <li>請妥善保管密碼，勿透過不安全管道傳送</li>
-                  </ul>
-                </div>
-              </div>
+            <div>
+              <Label>姓名 *</Label>
+              <Input
+                value={employeeForm.name}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, name: e.target.value })}
+                placeholder="員工姓名"
+              />
             </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleResetPassword}
-                disabled={loading || !newPassword}
-                className="flex-1 bg-violet-600 hover:bg-violet-700"
+            <div>
+              <Label>角色</Label>
+              <Select
+                value={employeeForm.role}
+                onValueChange={(value) => setEmployeeForm({ ...employeeForm, role: value })}
               >
-                {loading ? '處理中...' : '確認重設'}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowResetDialog(false);
-                  setSelectedEmployee(null);
-                  setNewPassword('');
-                }}
-                disabled={loading}
-                className="border-gray-300"
-              >
-                取消
-              </Button>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="staff">一般員工</SelectItem>
+                  <SelectItem value="supervisor">一般主管</SelectItem>
+                  <SelectItem value="senior_supervisor">資深主管</SelectItem>
+                  <SelectItem value="admin">管理員</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>職位</Label>
+              <Input
+                value={employeeForm.position}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, position: e.target.value })}
+                placeholder="例如：護理師、美容師"
+              />
+            </div>
+            <div>
+              <Label>電話</Label>
+              <Input
+                value={employeeForm.phone}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
+                placeholder="聯絡電話"
+              />
+            </div>
+            <div>
+              <Label>
+                密碼 {selectedEmployee ? '(留空表示不修改)' : '*'}
+              </Label>
+              <Input
+                type="password"
+                value={employeeForm.password}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, password: e.target.value })}
+                placeholder="至少 6 個字元"
+              />
             </div>
           </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmployeeDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveEmployee} disabled={loading}>
+              {loading ? '儲存中...' : '儲存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 重設密碼對話框 */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>重設密碼</DialogTitle>
+            <DialogDescription>
+              為「{selectedEmployee?.name}」設定新密碼
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>新密碼</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="至少 6 個字元"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowPasswordDialog(false);
+              setNewPassword('');
+            }}>
+              取消
+            </Button>
+            <Button onClick={handleResetPassword} disabled={loading}>
+              {loading ? '重設中...' : '確認重設'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
