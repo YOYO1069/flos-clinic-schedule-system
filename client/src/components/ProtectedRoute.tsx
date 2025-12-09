@@ -31,7 +31,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       
       // 驗證用戶是否仍然存在於數據庫中
       const { data, error } = await supabase
-        .from('users')
+        .from('employees')
         .select('id, employee_id, name, role')
         .eq('employee_id', user.employee_id)
         .single();
