@@ -52,7 +52,7 @@
 | 郭郁承 | flosGYC014 | flosGYC014 |
 | 何謙 | flosHQ019 | flosHQ019 |
 | 姜凱翔 | flosJKX017 | flosJKX017 |
-| 測試員工 | flosTEST001 | flosTEST001 |
+| 盧凌盈 | flosTEST001 | flosTEST001 |
 
 ---
 
@@ -157,6 +157,7 @@
 - ✅ 啟用修改密碼功能
 - ✅ 啟用打卡功能
 - ✅ 啟用請假管理功能
+- ✅ 更新測試員工為盧凌盈
 
 ---
 
