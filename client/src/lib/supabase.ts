@@ -1,18 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-// 醫師排班資料庫
-const doctorScheduleUrl = 'https://clzjdlykhjwrlksyjlfz.supabase.co'
-const doctorScheduleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsempkbHlraGp3cmxrc3lqbGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTM2ODAsImV4cCI6MjA3NTM2OTY4MH0.V6QAoh4N2aSF5CgDYfKTnY8cMQnDV3AYilj7TbpWJcU'
+// FLOS 診所資料庫（包含所有表：employees, doctor_shift_schedules 等）
+const supabaseUrl = 'https://clzjdlykhjwrlksyjlfz.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsempkbHlraGp3cmxrc3lqbGZ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3OTM2ODAsImV4cCI6MjA3NTM2OTY4MH0.V6QAoh4N2aSF5CgDYfKTnY8cMQnDV3AYilj7TbpWJcU'
 
-// 員工系統資料庫 (打卡/審核/排班)
-const staffSystemUrl = 'https://pizzpwesrbulfjylejlu.supabase.co'
-const staffSystemKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpenpwd2VzcmJ1bGZqeWxlamx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA2NDE1MzgsImV4cCI6MjA3NjIxNzUzOH0.xkVhoQhKBaPGkBzU1tuzAH49rP91gUaBLZFffcnKZIk'
+// 創建單一的 Supabase 客戶端實例
+export const supabase = createClient(supabaseUrl, supabaseKey)
 
-// 預設使用醫師排班資料庫（employees 表在這個資料庫中）
-export const supabase = createClient(doctorScheduleUrl, doctorScheduleKey)
-
-// 醫師排班專用客戶端
-export const doctorScheduleClient = createClient(doctorScheduleUrl, doctorScheduleKey)
+// 醫師排班專用客戶端（與主客戶端相同，保留以相容舊程式碼）
+export const doctorScheduleClient = supabase
 
 // 醫師資料
 export const doctors = [
