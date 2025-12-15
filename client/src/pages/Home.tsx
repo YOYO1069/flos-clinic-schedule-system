@@ -401,7 +401,13 @@ export default function Home() {
                 return (
                   <button
                     key={index}
-                    onClick={() => setLocation(item.path)}
+                    onClick={() => {
+                      if (item.isExternal) {
+                        window.location.href = item.path;
+                      } else {
+                        setLocation(item.path);
+                      }
+                    }}
                     className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor}`}
                     style={{
                       boxShadow: '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
@@ -443,7 +449,13 @@ export default function Home() {
               return (
                 <button
                   key={index}
-                  onClick={() => setLocation(item.path)}
+                  onClick={() => {
+                    if (item.isExternal) {
+                      window.location.href = item.path;
+                    } else {
+                      setLocation(item.path);
+                    }
+                  }}
                   className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
                   style={{
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
