@@ -136,25 +136,28 @@ export default function Home() {
     setLocation('/login');
   };
 
+  // warm-pika 網站 URL
+  const WARM_PIKA_URL = 'https://warm-pika-efe152.netlify.app';
+
   // 所有功能定義
   const allFeatures = [
-    { icon: Clock, label: '我的打卡', description: '查看打卡記錄', path: '/attendance', color: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '請假管理', description: '申請與查詢假單', path: '/leave-management', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: '/leave-approval', color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: '/leave-calendar', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: '/attendance-management', color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Users, label: '員工管理', description: '管理員工資料', path: '/employee-management', color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', roles: ['admin', 'senior_supervisor'] },
-    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: '/security', color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-200', roles: ['admin', 'senior_supervisor', 'supervisor'] },
-    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: '/attendance-settings', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', roles: ['admin'] },
-    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: '/admin', color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', roles: ['admin'] },
-    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: '/admin', color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', roles: ['admin'] },
+    { icon: Clock, label: '我的打卡', description: '查看打卡記錄', path: `${WARM_PIKA_URL}/attendance`, color: 'text-cyan-600', bgColor: 'bg-cyan-50', borderColor: 'border-cyan-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
+    { icon: FileText, label: '請假管理', description: '申請與查詢假單', path: `${WARM_PIKA_URL}/leave-management`, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
+    { icon: FileText, label: '請假審核', description: '查看員工請假申請', path: `${WARM_PIKA_URL}/approval`, color: 'text-green-600', bgColor: 'bg-green-50', borderColor: 'border-green-200', roles: ['admin', 'senior_supervisor', 'supervisor'], isExternal: true },
+    { icon: Calendar, label: '休假日曆', description: '員工休假系統', path: `${WARM_PIKA_URL}/leave-calendar`, color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
+    { icon: FileText, label: '打卡記錄', description: '查看全員打卡記錄', path: `${WARM_PIKA_URL}/attendance-management`, color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200', roles: ['admin', 'senior_supervisor', 'supervisor'], isExternal: true },
+    { icon: Users, label: '員工管理', description: '管理員工資料', path: `${WARM_PIKA_URL}/staff-management`, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', roles: ['admin'], isExternal: true },
+    { icon: Shield, label: '電子看板', description: '即時監控員工狀態', path: `${WARM_PIKA_URL}/attendance-dashboard`, color: 'text-fuchsia-600', bgColor: 'bg-fuchsia-50', borderColor: 'border-fuchsia-200', roles: ['admin', 'senior_supervisor', 'supervisor'], isExternal: true },
+    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: `${WARM_PIKA_URL}/attendance-settings`, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', roles: ['admin'], isExternal: true },
+    { icon: UserCog, label: '權限分配', description: '管理員工權限', path: `${WARM_PIKA_URL}/permission-management`, color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', roles: ['admin'], isExternal: true },
+    { icon: Key, label: '帳號管理', description: '重設員工密碼', path: `${WARM_PIKA_URL}/account-management`, color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', roles: ['admin'], isExternal: true },
   ];
 
   // 職能專區功能
   const professionalFeatures = [
-    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: '/doctor-portal', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: Activity, label: '護理師守則', description: '護理標準作業流程', path: '/nurse-sop', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
-    { icon: Sparkles, label: '美容師守則', description: '美容操作規範指南', path: '/beautician-sop', color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'] },
+    { icon: Stethoscope, label: '醫生專區', description: '病例操作與醫療工具', path: `${WARM_PIKA_URL}/doctor-portal`, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
+    { icon: Activity, label: '護理師守則', description: '護理標準作業流程', path: `${WARM_PIKA_URL}/nurse-sop`, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
+    { icon: Sparkles, label: '美容師守則', description: '美容操作規範指南', path: `${WARM_PIKA_URL}/beautician-sop`, color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
   ];
 
   // 未來功能
