@@ -21,10 +21,26 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { UserCog, Key, Search, ArrowLeft, Shield, Lock } from "lucide-react";
+import { UserCog, Key, Search, ArrowLeft, Shield, Lock, Briefcase, Edit2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
+
+// 預設職位選項
+const POSITION_OPTIONS = [
+  "美容師",
+  "護理師",
+  "諮詢師",
+  "助理",
+  "行政人員",
+  "櫃檯",
+  "醫師",
+  "管理員",
+  "老闆",
+  "行銷",
+  "兼職人員",
+  "其他"
+];
 
 export default function AdminPanel() {
   const [, setLocation] = useLocation();
@@ -35,6 +51,9 @@ export default function AdminPanel() {
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showPositionDialog, setShowPositionDialog] = useState(false);
+  const [newPosition, setNewPosition] = useState("");
+  const [customPosition, setCustomPosition] = useState("");
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -89,6 +108,42 @@ export default function AdminPanel() {
     } catch (error: any) {
       console.error('更新權限失敗:', error);
       toast.error('更新權限失敗：' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePositionChange = async () => {
+    if (!selectedEmployee) {
+      toast.error('請選擇要修改職位的員工');
+      return;
+    }
+
+    const finalPosition = newPosition === '其他' ? customPosition : newPosition;
+    
+    if (!finalPosition || finalPosition.trim() === '') {
+      toast.error('請選擇或輸入職位');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ position: finalPosition.trim() })
+        .eq('employee_id', selectedEmployee.employee_id);
+
+      if (error) throw error;
+
+      toast.success(`已成功將「${selectedEmployee.name}」的職位更新為「${finalPosition.trim()}」`);
+      setNewPosition('');
+      setCustomPosition('');
+      setSelectedEmployee(null);
+      setShowPositionDialog(false);
+      loadEmployees();
+    } catch (error: any) {
+      console.error('更新職位失敗:', error);
+      toast.error('更新職位失敗：' + error.message);
     } finally {
       setLoading(false);
     }
@@ -155,6 +210,21 @@ export default function AdminPanel() {
     return colorMap[role] || 'bg-gray-100 text-gray-700 border-gray-300';
   };
 
+  const getPositionBadgeColor = (position: string) => {
+    const colorMap: { [key: string]: string } = {
+      '美容師': 'bg-pink-100 text-pink-700 border-pink-300',
+      '護理師': 'bg-green-100 text-green-700 border-green-300',
+      '諮詢師': 'bg-cyan-100 text-cyan-700 border-cyan-300',
+      '醫師': 'bg-blue-100 text-blue-700 border-blue-300',
+      '助理': 'bg-yellow-100 text-yellow-700 border-yellow-300',
+      '行政人員': 'bg-orange-100 text-orange-700 border-orange-300',
+      '櫃檯': 'bg-indigo-100 text-indigo-700 border-indigo-300',
+      '管理員': 'bg-red-100 text-red-700 border-red-300',
+      '老闆': 'bg-purple-100 text-purple-700 border-purple-300',
+    };
+    return colorMap[position] || 'bg-gray-100 text-gray-700 border-gray-300';
+  };
+
   const filteredEmployees = employees.filter(emp =>
     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -183,7 +253,7 @@ export default function AdminPanel() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900 tracking-tight">管理員面板</h1>
-                  <p className="text-sm text-gray-500">權限分配與帳號管理</p>
+                  <p className="text-sm text-gray-500">權限分配、職位管理與帳號管理</p>
                 </div>
               </div>
             </div>
@@ -197,10 +267,14 @@ export default function AdminPanel() {
       {/* 主要內容 */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Tabs defaultValue="permissions" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2 bg-white shadow-sm">
+          <TabsList className="grid w-full max-w-lg grid-cols-3 bg-white shadow-sm">
             <TabsTrigger value="permissions" className="gap-2 data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700">
               <UserCog className="w-4 h-4" />
               權限分配
+            </TabsTrigger>
+            <TabsTrigger value="position" className="gap-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700">
+              <Briefcase className="w-4 h-4" />
+              職位管理
             </TabsTrigger>
             <TabsTrigger value="password" className="gap-2 data-[state=active]:bg-violet-50 data-[state=active]:text-violet-700">
               <Key className="w-4 h-4" />
@@ -253,8 +327,10 @@ export default function AdminPanel() {
                           <TableCell className="font-medium text-gray-900">
                             {employee.name}
                           </TableCell>
-                          <TableCell className="text-gray-600">
-                            {employee.position || '-'}
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPositionBadgeColor(employee.position)}`}>
+                              {employee.position || '-'}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleBadgeColor(employee.role)}`}>
@@ -280,6 +356,126 @@ export default function AdminPanel() {
                           </TableCell>
                         </TableRow>
                       ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {filteredEmployees.length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    <Search className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>找不到符合條件的員工</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* 職位管理 Tab */}
+          <TabsContent value="position" className="space-y-6">
+            <Card className="p-6 shadow-sm border-gray-200">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <Briefcase className="w-5 h-5 text-emerald-600" />
+                      員工職位管理
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      管理員工的職位設定（用於績效計算）
+                    </p>
+                  </div>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="搜尋員工..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 border-gray-300"
+                    />
+                  </div>
+                </div>
+
+                {/* 職位說明卡片 */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-pink-50 border border-pink-200 rounded-lg">
+                    <div className="text-sm text-pink-700 font-medium mb-1">美容師</div>
+                    <div className="text-xs text-pink-600">
+                      卸洗敷麻、清粉刺、海菲秀、Seyo、潔比爾、鑽石超塑、英特波
+                    </div>
+                  </div>
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-sm text-green-700 font-medium mb-1">護理師</div>
+                    <div className="text-xs text-green-600">
+                      鑽石超塑、英特波、點滴、Embody/Neo、震波、猛健樂
+                    </div>
+                  </div>
+                  <div className="p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
+                    <div className="text-sm text-cyan-700 font-medium mb-1">諮詢師/其他</div>
+                    <div className="text-xs text-cyan-600">
+                      電波、音波、光電雷射（跟診人員費用）
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border rounded-lg overflow-hidden shadow-sm">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-50 border-b border-gray-200">
+                        <TableHead className="font-semibold text-gray-700">員工編號</TableHead>
+                        <TableHead className="font-semibold text-gray-700">姓名</TableHead>
+                        <TableHead className="font-semibold text-gray-700">目前職位</TableHead>
+                        <TableHead className="font-semibold text-gray-700">績效計算類別</TableHead>
+                        <TableHead className="font-semibold text-gray-700 text-center">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredEmployees.map((employee) => {
+                        const position = employee.position || '';
+                        let calcCategory = '諮詢師';
+                        if (position === '美容師') calcCategory = '美容師';
+                        else if (position === '護理師') calcCategory = '護理師';
+                        
+                        return (
+                          <TableRow key={employee.employee_id} className="hover:bg-gray-50 transition-colors">
+                            <TableCell className="font-mono text-sm text-gray-600">
+                              {employee.employee_id}
+                            </TableCell>
+                            <TableCell className="font-medium text-gray-900">
+                              {employee.name}
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPositionBadgeColor(employee.position)}`}>
+                                {employee.position || '未設定'}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                calcCategory === '美容師' ? 'bg-pink-100 text-pink-700 border-pink-300' :
+                                calcCategory === '護理師' ? 'bg-green-100 text-green-700 border-green-300' :
+                                'bg-cyan-100 text-cyan-700 border-cyan-300'
+                              }`}>
+                                {calcCategory}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedEmployee(employee);
+                                  setNewPosition(employee.position || '');
+                                  setCustomPosition('');
+                                  setShowPositionDialog(true);
+                                }}
+                                className="gap-2 border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                編輯職位
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
@@ -373,6 +569,111 @@ export default function AdminPanel() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* 職位編輯對話框 */}
+      <Dialog open={showPositionDialog} onOpenChange={setShowPositionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-emerald-600" />
+              編輯職位
+            </DialogTitle>
+            <DialogDescription>
+              為「{selectedEmployee?.name}」設定職位
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <div className="text-sm text-emerald-700 font-medium mb-1">
+                選定員工
+              </div>
+              <div className="text-lg font-semibold text-emerald-900">
+                {selectedEmployee?.name}
+              </div>
+              <div className="text-sm text-emerald-600 font-mono mt-1">
+                {selectedEmployee?.employee_id}
+              </div>
+              <div className="text-sm text-emerald-600 mt-1">
+                目前職位：{selectedEmployee?.position || '未設定'}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="position" className="text-gray-700">選擇職位</Label>
+              <Select
+                value={newPosition}
+                onValueChange={(value) => {
+                  setNewPosition(value);
+                  if (value !== '其他') {
+                    setCustomPosition('');
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full border-gray-300">
+                  <SelectValue placeholder="請選擇職位" />
+                </SelectTrigger>
+                <SelectContent>
+                  {POSITION_OPTIONS.map((pos) => (
+                    <SelectItem key={pos} value={pos}>{pos}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {newPosition === '其他' && (
+              <div className="space-y-2">
+                <Label htmlFor="customPosition" className="text-gray-700">自訂職位名稱</Label>
+                <Input
+                  id="customPosition"
+                  type="text"
+                  placeholder="請輸入自訂職位名稱"
+                  value={customPosition}
+                  onChange={(e) => setCustomPosition(e.target.value)}
+                  className="border-gray-300"
+                />
+              </div>
+            )}
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex gap-2">
+                <div className="text-amber-600 mt-0.5">💡</div>
+                <div className="text-sm text-amber-700">
+                  <div className="font-medium mb-1">績效計算說明</div>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li><strong>美容師</strong>：按美容師費率計算操作費</li>
+                    <li><strong>護理師</strong>：按護理師費率計算（較高）</li>
+                    <li><strong>其他職位</strong>：按諮詢師費率計算</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handlePositionChange}
+                disabled={loading || (!newPosition || (newPosition === '其他' && !customPosition))}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+              >
+                {loading ? '處理中...' : '確認更新'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPositionDialog(false);
+                  setSelectedEmployee(null);
+                  setNewPosition('');
+                  setCustomPosition('');
+                }}
+                disabled={loading}
+                className="border-gray-300"
+              >
+                取消
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 重設密碼對話框 */}
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
