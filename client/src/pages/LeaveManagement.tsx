@@ -133,6 +133,7 @@ export default function LeaveManagement() {
         .from(tables.leaveRequests)
         .insert([{
           employee_id: currentUser.employee_id,
+          employee_name: currentUser.name || '未知', // 加入員工姓名
           leave_type: leaveType,
           start_date: startDate,
           end_date: endDate,
