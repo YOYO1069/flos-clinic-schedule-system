@@ -95,21 +95,11 @@ export default function LeaveApproval() {
         return;
       }
 
-      // 載入所有使用者資料
-      const { data: userData, error: userError } = await supabase
-        .from('employees')
-        .select('id, name, role');
-
-      if (userError) throw userError;
-
-      // 建立使用者 ID 到資料的對應
-      const userMap = new Map(userData?.map(u => [u.id, u]) || []);
-
-      // 合併請假申請和員工資料
+      // 直接使用資料庫中的 employee_name，避免跨表查詢問題
       let filteredRequests = leaveData.map(req => ({
         ...req,
-        employee_name: userMap.get(req.employee_id)?.name || '未知',
-        employee_role: userMap.get(req.employee_id)?.role || 'staff'
+        employee_name: req.employee_name || '未知',
+        employee_role: 'staff' // 預設為 staff，可根據需要調整
       }));
 
       // 根據權限過濾
