@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Calendar, Users, Clock, Fingerprint, Monitor, ClipboardList } from "lucide-react";
+import { Calendar, Users, Clock, Fingerprint, Monitor, ClipboardList, MapPin, Settings } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { UserRole } from "@/lib/permissions";
 
@@ -8,6 +8,9 @@ export default function ScheduleHome() {
   const [, setLocation] = useLocation();
   const [user, setUser] = useState<any>(null);
   const { permissions } = usePermissions(user?.role as UserRole);
+  
+  // 判斷是否為管理者（admin 或 senior_supervisor）
+  const isAdmin = user?.role === 'admin' || user?.role === 'senior_supervisor';
   
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -61,26 +64,44 @@ export default function ScheduleHome() {
     }
   ].filter(item => item.show);
 
+  // 管理者專屬功能
+  const adminItems = [
+    {
+      icon: MapPin,
+      label: '打卡地點總覽',
+      color: 'from-red-500 to-rose-600',
+      path: '/admin-attendance-overview',
+      show: isAdmin
+    },
+    {
+      icon: Settings,
+      label: '打卡設定',
+      color: 'from-gray-500 to-slate-600',
+      path: '/attendance-settings',
+      show: isAdmin && permissions.canAccessAttendanceSettings
+    }
+  ].filter(item => item.show);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         {/* 頭部 */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-black text-slate-800 mb-2">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-black text-slate-800 mb-1">
             FLOS 曜診所
           </h1>
-          <p className="text-slate-600 font-medium">排班管理系統</p>
+          <p className="text-slate-600 font-medium text-sm">排班管理系統</p>
           <button
             onClick={() => setLocation('/')}
-            className="mt-4 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            className="mt-3 text-xs text-slate-500 hover:text-slate-700 transition-colors"
           >
             ← 返回主頁
           </button>
         </div>
 
-        {/* 圖文選單 - 2x3 網格 */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="grid grid-cols-2 md:grid-cols-3">
+        {/* 圖文選單 - 緊湊版 */}
+        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-4">
+          <div className="grid grid-cols-3 md:grid-cols-6">
             {menuItems.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -88,42 +109,83 @@ export default function ScheduleHome() {
                   key={index}
                   onClick={() => setLocation(item.path)}
                   className={`
-                    group relative aspect-square p-6 
-                    flex flex-col items-center justify-center gap-4
-                    border-r border-b border-slate-200
+                    group relative aspect-square p-3 
+                    flex flex-col items-center justify-center gap-2
+                    border-r border-b border-slate-100
                     hover:bg-slate-50 transition-all duration-300
-                    ${index % 3 === 2 ? 'md:border-r-0' : ''}
-                    ${index % 2 === 1 ? 'border-r-0 md:border-r' : ''}
-                    ${index >= menuItems.length - (menuItems.length % 3 || 3) ? 'border-b-0' : ''}
+                    last:border-r-0
                   `}
                 >
-                  {/* 圖標容器 */}
+                  {/* 圖標容器 - 縮小版 */}
                   <div className={`
-                    w-20 h-20 rounded-2xl 
+                    w-12 h-12 rounded-xl 
                     bg-gradient-to-br ${item.color}
                     flex items-center justify-center
-                    transform group-hover:scale-110 group-hover:rotate-3
+                    transform group-hover:scale-110
                     transition-all duration-300
-                    shadow-lg group-hover:shadow-xl
+                    shadow-md group-hover:shadow-lg
                   `}>
-                    <Icon className="w-10 h-10 text-white" strokeWidth={2.5} />
+                    <Icon className="w-6 h-6 text-white" strokeWidth={2.5} />
                   </div>
                   
-                  {/* 文字標籤 */}
-                  <span className="text-slate-700 font-bold text-lg group-hover:text-slate-900 transition-colors">
+                  {/* 文字標籤 - 縮小版 */}
+                  <span className="text-slate-700 font-semibold text-xs group-hover:text-slate-900 transition-colors text-center leading-tight">
                     {item.label}
                   </span>
-
-                  {/* 懸停效果 */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-transparent to-slate-100/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                 </button>
               );
             })}
           </div>
         </div>
 
+        {/* 管理者專區 - 只有 admin 或 senior_supervisor 可見 */}
+        {adminItems.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600">
+              <h2 className="text-white font-bold text-sm flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-white/20 rounded text-xs">Admin Only</span>
+                管理者專區
+              </h2>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-6 p-2 gap-2">
+              {adminItems.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setLocation(item.path)}
+                    className={`
+                      group p-3 rounded-xl
+                      flex flex-col items-center justify-center gap-2
+                      hover:bg-slate-50 transition-all duration-300
+                      border border-slate-100
+                    `}
+                  >
+                    {/* 圖標容器 */}
+                    <div className={`
+                      w-10 h-10 rounded-lg 
+                      bg-gradient-to-br ${item.color}
+                      flex items-center justify-center
+                      transform group-hover:scale-110
+                      transition-all duration-300
+                      shadow-md
+                    `}>
+                      <Icon className="w-5 h-5 text-white" strokeWidth={2.5} />
+                    </div>
+                    
+                    {/* 文字標籤 */}
+                    <span className="text-slate-700 font-semibold text-xs group-hover:text-slate-900 transition-colors text-center leading-tight">
+                      {item.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* 底部信息 */}
-        <div className="mt-6 text-center text-sm text-slate-500">
+        <div className="mt-4 text-center text-xs text-slate-500">
           {user && (
             <p>歡迎回來，<span className="font-semibold text-slate-700">{user.name}</span></p>
           )}
