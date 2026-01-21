@@ -238,7 +238,7 @@ export default function Home() {
                   boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
                 }}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-3 h-3" />
                 <span className="text-sm font-semibold">登出</span>
               </button>
             </div>
@@ -264,7 +264,7 @@ export default function Home() {
               <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2">
-                    <Key className="w-4 h-4" />
+                    <Key className="w-3 h-3" />
                     修改密碼
                   </Button>
                 </DialogTrigger>
@@ -422,7 +422,7 @@ export default function Home() {
                     }}
                   >
                     <div className="flex flex-col items-center">
-                      <div className={`w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
+                      <div className={`w-6 h-6 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
                         boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                       }}>
                         <Icon className={`w-5 h-5 ${item.color}`} />
@@ -477,10 +477,10 @@ export default function Home() {
                         <ExternalLink className="w-3 h-3 text-white" />
                       </div>
                     )}
-                    <div className={`w-8 h-8 ${item.bgColor} rounded-xl flex items-center justify-center mb-1.5 border ${item.borderColor || 'border-gray-200'}`} style={{
+                    <div className={`w-6 h-6 ${item.bgColor} rounded-xl flex items-center justify-center mb-1.5 border ${item.borderColor || 'border-gray-200'}`} style={{
                       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                     }}>
-                      <Icon className={`w-4 h-4 ${item.color}`} />
+                      <Icon className={`w-3 h-3 ${item.color}`} />
                     </div>
                     <h3 className="text-xs font-bold text-gray-900 mb-1 text-center w-full">{item.label}</h3>
                     <p className="text-[10px] text-gray-600 leading-tight text-center w-full">{item.description}</p>
@@ -522,7 +522,7 @@ export default function Home() {
                   }}
                 >
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
+                    <div className={`w-6 h-6 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
                       boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
                     }}>
                       <Icon className={`w-5 h-5 ${item.color}`} />
