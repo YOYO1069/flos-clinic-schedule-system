@@ -575,7 +575,7 @@ export default function Home() {
                       });
                     }
                   }}
-                  cclassName="bg-gray-50 rounded-xl p-2.5 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80""
+                  className="bg-gray-50 rounded-xl p-2.5 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80"
                   style={{
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
                   }}
