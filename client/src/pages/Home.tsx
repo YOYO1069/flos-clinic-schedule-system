@@ -149,6 +149,7 @@ export default function Home() {
     { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: `${WARM_PIKA_URL}/attendance-settings`, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', roles: ['admin'], isExternal: true },
     { icon: UserCog, label: '權限分配', description: '管理員工權限', path: `${WARM_PIKA_URL}/permission-management`, color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', roles: ['admin'], isExternal: true },
     { icon: Key, label: '帳號管理', description: '重設員工密碼', path: `${WARM_PIKA_URL}/account-management`, color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', roles: ['admin'], isExternal: true },
+    { icon: MapPin, label: '打卡地點總覽', description: '查看所有員工打卡方式與地點', path: `${WARM_PIKA_URL}/admin-attendance-overview`, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin'], isExternal: true },
   ];
 
   // 職能專區功能 - 連結到 warm-pika（包含排班系統）
@@ -160,11 +161,7 @@ export default function Home() {
     { icon: Calendar, label: '休假日曆', description: '查看工作與休假', path: `${WARM_PIKA_URL}/leave-calendar`, color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', roles: ['admin', 'senior_supervisor', 'supervisor', 'staff'], isExternal: true },
   ];
 
-  // 管理者專區功能（只有 admin 可見）
-  const adminFeatures = [
-    { icon: MapPin, label: '打卡地點總覽', description: '查看所有員工打卡方式與地點', path: `${WARM_PIKA_URL}/admin-attendance-overview`, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', isExternal: true },
-    { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: `${WARM_PIKA_URL}/attendance-settings`, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', isExternal: true },
-  ];
+
 
   // 未來功能
   const upcomingFeatures = [
@@ -413,58 +410,6 @@ export default function Home() {
                         localStorage.setItem('user', JSON.stringify(currentUser));
                         window.location.href = item.path;
                       } else {
-                        setLocation(item.path);
-                      }
-                    }}
-                    className={`bg-white rounded-md p-1.5 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor} w-[70px]`}
-                    style={{
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className={`w-6 h-6 ${item.bgColor} rounded-lg flex items-center justify-center mb-0.5 border border-gray-100`} style={{
-                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
-                      }}>
-                        <Icon className={`w-3 h-3 ${item.color}`} />
-                      </div>
-                      <h3 className="text-xs font-semibold text-gray-900 text-center w-full leading-tight">{item.label}</h3>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 管理者專區 - 只有 admin 可見 */}
-        {currentUser?.role === 'admin' && (
-          <div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-1 h-6 bg-gradient-to-b from-red-500 to-orange-600 rounded-full"></div>
-              <h2 className="text-xl font-bold text-gray-900">管理者專區</h2>
-              <Badge variant="outline" className="border-red-400 text-red-700 text-xs font-bold bg-red-50 px-2.5 py-0.5">
-                Admin Only
-              </Badge>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {adminFeatures.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      if (item.isExternal) {
-                        localStorage.setItem('user', JSON.stringify(currentUser));
-                        window.location.href = item.path;
-                      } else if (item.path) {
                         setLocation(item.path);
                       }
                     }}
