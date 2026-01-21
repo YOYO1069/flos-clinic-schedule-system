@@ -393,7 +393,7 @@ export default function Home() {
                 專業資源
               </Badge>
             </div>
-            <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
+            <div className="grid grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5">
               {professionalPortalFeatures.map((item, index) => {
                 const Icon = item.icon;
                 return (
@@ -443,7 +443,7 @@ export default function Home() {
             <div className="w-1 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
             <h2 className="text-xl font-bold text-gray-900">常用功能</h2>
           </div>
-          <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5">
             {features.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -458,7 +458,7 @@ export default function Home() {
                       setLocation(item.path);
                     }
                   }}
-                  className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
+                  className={`bg-white rounded-lg p-2 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
                   style={{
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
                   }}
@@ -477,10 +477,10 @@ export default function Home() {
                         <ExternalLink className="w-3 h-3 text-white" />
                       </div>
                     )}
-                    <div className={`w-10 h-10 ${item.bgColor} rounded-xl flex items-center justify-center mb-3 border-2 ${item.borderColor || 'border-gray-200'}`} style={{
+                    <div className={`w-8 h-8 ${item.bgColor} rounded-xl flex items-center justify-center mb-1.5 border ${item.borderColor || 'border-gray-200'}`} style={{
                       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                     }}>
-                      <Icon className={`w-6 h-6 ${item.color}`} />
+                      <Icon className={`w-4 h-4 ${item.color}`} />
                     </div>
                     <h3 className="text-xs font-bold text-gray-900 mb-1 text-center w-full">{item.label}</h3>
                     <p className="text-[10px] text-gray-600 leading-tight text-center w-full">{item.description}</p>
@@ -500,7 +500,7 @@ export default function Home() {
               規劃中
             </Badge>
           </div>
-          <div className="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
+          <div className="grid grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5">
             {upcomingFeatures.map((item, index) => {
               const Icon = item.icon;
               return (
