@@ -9,7 +9,7 @@ import {
   Clock, FileText, Calendar, Users, Shield, Settings, 
   DollarSign, TrendingUp, Award, MessageSquare, BookOpen, Gift, Heart,
   LogOut, User, UserCog, Key, Stethoscope, FileHeart, PenTool, ExternalLink,
-  Activity, Sparkles
+  Activity, Sparkles, MapPin
 } from "lucide-react";
 import { toast } from "sonner";
 import { doctorScheduleClient, SCHEDULE_TABLE, supabase } from "@/lib/supabase";
@@ -151,6 +151,7 @@ export default function Home() {
     { icon: Settings, label: '打卡設定', description: '設定打卡規則', path: `${WARM_PIKA_URL}/attendance-settings`, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', roles: ['admin'], isExternal: true },
     { icon: UserCog, label: '權限分配', description: '管理員工權限', path: `${WARM_PIKA_URL}/permission-management`, color: 'text-indigo-600', bgColor: 'bg-indigo-50', borderColor: 'border-indigo-200', roles: ['admin'], isExternal: true },
     { icon: Key, label: '帳號管理', description: '重設員工密碼', path: `${WARM_PIKA_URL}/account-management`, color: 'text-violet-600', bgColor: 'bg-violet-50', borderColor: 'border-violet-200', roles: ['admin'], isExternal: true },
+    { icon: MapPin, label: '打卡地點總覽', description: '查看所有員工打卡方式與地點', path: `${WARM_PIKA_URL}/admin-attendance-overview`, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', roles: ['admin'], isExternal: true },
   ];
 
   // 職能專區功能
@@ -395,7 +396,7 @@ export default function Home() {
                 專業資源
               </Badge>
             </div>
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="flex flex-wrap gap-1.5">
               {professionalPortalFeatures.map((item, index) => {
                 const Icon = item.icon;
                 return (
@@ -408,27 +409,26 @@ export default function Home() {
                         setLocation(item.path);
                       }
                     }}
-                    className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor}`}
+                    className={`bg-white rounded-md p-1.5 hover:bg-gray-50 transition-all duration-200 group border ${item.borderColor} w-[70px]`}
                     style={{
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)'
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)';
                       e.currentTarget.style.transform = 'translateY(-2px)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)';
+                      e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
                     <div className="flex flex-col items-center">
-                      <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100`} style={{
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
+                      <div className={`w-6 h-6 ${item.bgColor} rounded-lg flex items-center justify-center mb-0.5 border border-gray-100`} style={{
+                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
                       }}>
-                        <Icon className={`w-6 h-6 ${item.color}`} />
+                        <Icon className={`w-3 h-3 ${item.color}`} />
                       </div>
-                      <h3 className="text-sm font-bold text-gray-900 mb-0.5 text-center w-full">{item.label}</h3>
-                      <p className="text-xs text-gray-500 leading-tight text-center w-full">{item.description}</p>
+                      <h3 className="text-xs font-semibold text-gray-900 text-center w-full leading-tight">{item.label}</h3>
                     </div>
                   </button>
                 );
@@ -443,7 +443,7 @@ export default function Home() {
             <div className="w-1 h-6 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
             <h2 className="text-xl font-bold text-gray-900">常用功能</h2>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5">
             {features.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -456,7 +456,7 @@ export default function Home() {
                       setLocation(item.path);
                     }
                   }}
-                  className={`bg-white rounded-xl p-4 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
+                  className={`bg-white rounded-lg p-2 hover:bg-gray-50 transition-all duration-200 group border-2 ${item.borderColor}`}
                   style={{
                     boxShadow: '0 2px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)'
                   }}
@@ -475,13 +475,13 @@ export default function Home() {
                         <ExternalLink className="w-3 h-3 text-white" />
                       </div>
                     )}
-                    <div className={`w-14 h-14 ${item.bgColor} rounded-xl flex items-center justify-center mb-3 border-2 ${item.borderColor || 'border-gray-200'}`} style={{
+                    <div className={`w-6 h-6 ${item.bgColor} rounded-xl flex items-center justify-center mb-1.5 border ${item.borderColor || 'border-gray-200'}`} style={{
                       boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.06)'
                     }}>
-                      <Icon className={`w-7 h-7 ${item.color}`} />
+                      <Icon className={`w-3 h-3 ${item.color}`} />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 mb-1 text-center w-full">{item.label}</h3>
-                    <p className="text-xs text-gray-600 leading-tight text-center w-full">{item.description}</p>
+                    <h3 className="text-xs font-bold text-gray-900 mb-1 text-center w-full">{item.label}</h3>
+                    <p className="text-[10px] text-gray-600 leading-tight text-center w-full">{item.description}</p>
                   </div>
                 </button>
               );
@@ -498,7 +498,7 @@ export default function Home() {
               規劃中
             </Badge>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-1.5">
             {upcomingFeatures.map((item, index) => {
               const Icon = item.icon;
               return (
@@ -514,19 +514,19 @@ export default function Home() {
                       });
                     }
                   }}
-                  className="bg-gray-50 rounded-xl p-4 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80"
+                  className="bg-gray-50 rounded-xl p-2.5 transition-all duration-200 group border border-gray-200 cursor-pointer opacity-60 hover:opacity-80"
                   style={{
                     boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.04)'
                   }}
                 >
                   <div className="flex flex-col items-center">
-                    <div className={`w-12 h-12 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
+                    <div className={`w-6 h-6 ${item.bgColor} rounded-lg flex items-center justify-center mb-2.5 border border-gray-100 opacity-70`} style={{
                       boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.04)'
                     }}>
-                      <Icon className={`w-6 h-6 ${item.color}`} />
+                      <Icon className={`w-5 h-5 ${item.color}`} />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-600 mb-0.5 text-center w-full">{item.label}</h3>
-                    <p className="text-xs text-gray-400 leading-tight text-center w-full">{item.description}</p>
+                    <h3 className="text-xs font-bold text-gray-600 mb-0.5 text-center w-full">{item.label}</h3>
+                    <p className="text-[10px] text-gray-400 leading-tight text-center w-full">{item.description}</p>
                     <div className="mt-2 text-center w-full">
                       <span className="text-xs text-amber-600 font-bold">開發中</span>
                     </div>
